@@ -1,0 +1,168 @@
+{
+  "entities": {
+    "Job": {
+      "title": "Job",
+      "description": "Marine electrical diagnostic and installation job record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "reference": { "type": "string", "maxLength": 64 },
+        "clientName": { "type": "string", "maxLength": 128 },
+        "clientEmail": { "type": "string", "maxLength": 128 },
+        "clientPhone": { "type": "string", "maxLength": 64 },
+        "vesselName": { "type": "string", "maxLength": 128 },
+        "vesselType": { "type": "string", "maxLength": 128 },
+        "berthLocation": { "type": "string", "maxLength": 128 },
+        "serviceCategory": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "maxLength": 64 },
+        "hourlyRate": { "type": "number" },
+        "diagnosticHours": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 5000 },
+        "totalLabor": { "type": "number" },
+        "totalMaterials": { "type": "number" },
+        "totalEstimated": { "type": "number" },
+        "depositPaid": { "type": "boolean" },
+        "depositAmount": { "type": "number" },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "reference", "clientName", "vesselName", "serviceCategory", "status"]
+    },
+    "CatalogItem": {
+      "title": "CatalogItem",
+      "description": "Marine electrical hardware catalog and stock item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "specification": { "type": "string", "maxLength": 256 },
+        "unit": { "type": "string", "maxLength": 32 },
+        "unitPrice": { "type": "number" },
+        "inStock": { "type": "boolean" },
+        "stockCount": { "type": "number" },
+        "imageUrl": { "type": "string", "maxLength": 512 }
+      },
+      "required": ["id", "name", "category", "unitPrice", "stockCount"]
+    },
+    "PostalOrder": {
+      "title": "PostalOrder",
+      "description": "Online store postal order for marine electrical supplies",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "orderNumber": { "type": "string", "maxLength": 64 },
+        "customerName": { "type": "string", "maxLength": 128 },
+        "customerEmail": { "type": "string", "maxLength": 128 },
+        "customerPhone": { "type": "string", "maxLength": 64 },
+        "shippingMethod": { "type": "string", "maxLength": 64 },
+        "shippingCost": { "type": "number" },
+        "subtotal": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string", "maxLength": 64 },
+        "paymentStatus": { "type": "string", "maxLength": 64 },
+        "orderStatus": { "type": "string", "maxLength": 64 },
+        "trackingNumber": { "type": "string", "maxLength": 128 },
+        "trackingCarrier": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "orderNumber", "customerName", "customerEmail", "total", "orderStatus"]
+    },
+    "VesselSpec": {
+      "title": "VesselSpec",
+      "description": "Vessel electrical configuration specifications and history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "vesselName": { "type": "string", "maxLength": 128 },
+        "makeModel": { "type": "string", "maxLength": 128 },
+        "year": { "type": "number" },
+        "hinNumber": { "type": "string", "maxLength": 64 },
+        "sailNumber": { "type": "string", "maxLength": 64 },
+        "homeMarina": { "type": "string", "maxLength": 128 },
+        "berthPontoon": { "type": "string", "maxLength": 64 },
+        "systemVoltage": { "type": "string", "maxLength": 32 },
+        "houseBatteryType": { "type": "string", "maxLength": 64 },
+        "houseCapacityAh": { "type": "number" },
+        "generalNotes": { "type": "string", "maxLength": 5000 },
+        "lastInspectionDate": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "vesselName", "systemVoltage"]
+    },
+    "StockAlert": {
+      "title": "StockAlert",
+      "description": "Automated alert for low warehouse stock",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "itemId": { "type": "string", "maxLength": 128 },
+        "itemName": { "type": "string", "maxLength": 128 },
+        "itemCategory": { "type": "string", "maxLength": 64 },
+        "specification": { "type": "string", "maxLength": 256 },
+        "stockCount": { "type": "number" },
+        "timestamp": { "type": "string", "maxLength": 64 },
+        "triggerSource": { "type": "string", "maxLength": 64 },
+        "emailRecipient": { "type": "string", "maxLength": 128 },
+        "emailSubject": { "type": "string", "maxLength": 256 },
+        "emailBody": { "type": "string", "maxLength": 5000 },
+        "dismissed": { "type": "boolean" }
+      },
+      "required": ["id", "itemId", "itemName", "stockCount"]
+    },
+    "PanelConfig": {
+      "title": "PanelConfig",
+      "description": "Custom marine switch panel laser-cut configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "material": { "type": "string", "maxLength": 64 },
+        "widthMm": { "type": "number" },
+        "heightMm": { "type": "number" },
+        "gangCount": { "type": "number" },
+        "mountingHoleStyle": { "type": "string", "maxLength": 64 },
+        "backlightColor": { "type": "string", "maxLength": 64 },
+        "packageOption": { "type": "string", "maxLength": 64 },
+        "estimatedPrice": { "type": "number" }
+      },
+      "required": ["id", "material", "widthMm", "heightMm", "gangCount"]
+    },
+    "TestConnection": {
+      "title": "TestConnection",
+      "description": "Firestore healthcheck and connectivity verification",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "maxLength": 32 }
+      },
+      "required": ["status"]
+    }
+  },
+  "firestore": {
+    "/jobs/{jobId}": {
+      "schema": "Job",
+      "description": "Client jobs, quotes, and service diagnostics"
+    },
+    "/catalog/{itemId}": {
+      "schema": "CatalogItem",
+      "description": "Workshop marine hardware store inventory"
+    },
+    "/postal_orders/{orderId}": {
+      "schema": "PostalOrder",
+      "description": "Postal dispatch orders and customer tracking"
+    },
+    "/vessel_specs/{specId}": {
+      "schema": "VesselSpec",
+      "description": "Vessel electrical configuration specifications"
+    },
+    "/stock_alerts/{alertId}": {
+      "schema": "StockAlert",
+      "description": "Low stock notices and supplier reorder emails"
+    },
+    "/panel_configs/{configId}": {
+      "schema": "PanelConfig",
+      "description": "Laser-cut custom panel designs"
+    },
+    "/test/{docId}": {
+      "schema": "TestConnection",
+      "description": "System healthcheck ping"
+    }
+  }
+}

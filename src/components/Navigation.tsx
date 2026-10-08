@@ -12,6 +12,7 @@ interface NavigationProps {
   onOpenBookingModal: () => void;
   cartCount?: number;
   onOpenCart?: () => void;
+  isFirebaseConnected?: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -21,7 +22,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   setCurrentUserRole,
   onOpenBookingModal,
   cartCount = 0,
-  onOpenCart
+  onOpenCart,
+  isFirebaseConnected = false
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
@@ -145,6 +147,17 @@ export const Navigation: React.FC<NavigationProps> = ({
               Admin (AJW)
             </button>
           </div>
+
+          {/* Real-time Firestore Cloud Sync Status */}
+          {isFirebaseConnected && (
+            <div 
+              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-950/70 border border-emerald-500/30 rounded-lg text-[10px] font-mono text-emerald-300"
+              title="Connected to live Firebase Firestore database"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Firestore Live</span>
+            </div>
+          )}
 
           {/* In-App PWA Install Button */}
           <PWAInstallButton />

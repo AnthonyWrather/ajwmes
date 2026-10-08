@@ -18,6 +18,17 @@ import { FreeHostingGuideModal } from './components/modals/FreeHostingGuideModal
 import { Logo } from './components/brand/Logo';
 import { PWAInstallButton } from './components/pwa/PWAInstallButton';
 import { ShieldCheck, MapPin, Clock, Github, HelpCircle, Phone, Mail, Bell, Truck, CheckCircle2, ArrowRight, X, AlertTriangle } from 'lucide-react';
+import { 
+  subscribeJobs, 
+  syncJobToFirestore, 
+  subscribeCatalog, 
+  syncCatalogItemToFirestore, 
+  seedCatalogToFirestore, 
+  subscribePostalOrders, 
+  syncPostalOrderToFirestore, 
+  subscribeVesselSpec, 
+  syncVesselSpecToFirestore 
+} from './lib/firebase';
 
 
 export default function App() {
@@ -116,6 +127,48 @@ export default function App() {
   const [isHostingGuideOpen, setIsHostingGuideOpen] = useState(false);
   const [selectedInitialService, setSelectedInitialService] = useState<ServiceType>('diagnostic');
   const [pendingPanelConfig, setPendingPanelConfig] = useState<SwitchPanelConfig | undefined>(undefined);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
+
+  // Firestore Real-time Synchronization
+  useEffect(() => {
+    // Seed default baseline catalog if remote catalog collection is empty
+    seedCatalogToFirestore(DEFAULT_CATALOG);
+
+    const unsubJobs = subscribeJobs((remoteJobs) => {
+      if (remoteJobs && remoteJobs.length > 0) {
+        setJobs(remoteJobs);
+      }
+      setIsFirebaseConnected(true);
+    });
+
+    const unsubCatalog = subscribeCatalog((remoteCatalog) => {
+      if (remoteCatalog && remoteCatalog.length > 0) {
+        setCatalog(remoteCatalog);
+      }
+      setIsFirebaseConnected(true);
+    });
+
+    const unsubOrders = subscribePostalOrders((remoteOrders) => {
+      if (remoteOrders && remoteOrders.length > 0) {
+        setPostalOrders(remoteOrders);
+      }
+      setIsFirebaseConnected(true);
+    });
+
+    const unsubSpec = subscribeVesselSpec((remoteSpec) => {
+      if (remoteSpec && remoteSpec.id) {
+        setVesselSpec(remoteSpec);
+      }
+      setIsFirebaseConnected(true);
+    });
+
+    return () => {
+      unsubJobs();
+      unsubCatalog();
+      unsubOrders();
+      unsubSpec();
+    };
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
@@ -220,11 +273,13 @@ export default function App() {
       prev.map(item => {
         if (item.id === itemId) {
           const newCount = (item.stockCount ?? 0) + restockCount;
-          return {
+          const updatedItem = {
             ...item,
             stockCount: newCount,
             inStock: newCount > 0
           };
+          syncCatalogItemToFirestore(updatedItem);
+          return updatedItem;
         }
         return item;
       })
@@ -240,6 +295,7 @@ export default function App() {
       if (prevItem && (prevItem.stockCount ?? 0) > 0 && (newItem.stockCount ?? 0) === 0) {
         triggerZeroStockAlert(newItem, triggerSource);
       }
+      syncCatalogItemToFirestore(newItem);
     });
     setCatalog(newCatalog);
   };
@@ -248,59 +304,70 @@ export default function App() {
   // Handler: Send Message in Discussion Thread
   const handleSendMessage = (jobId: string, message: MessageItem) => {
     setJobs(prev =>
-      prev.map(j =>
-        j.id === jobId ? { ...j, messages: [...j.messages, message] } : j
-      )
+      prev.map(j => {
+        if (j.id === jobId) {
+          const updated = { ...j, messages: [...j.messages, message] };
+          syncJobToFirestore(updated);
+          return updated;
+        }
+        return j;
+      })
     );
   };
 
   // Handler: Approve Quote
   const handleApproveQuote = (jobId: string) => {
     setJobs(prev =>
-      prev.map(j =>
-        j.id === jobId
-          ? {
-              ...j,
-              status: 'quote_accepted',
-              messages: [
-                ...j.messages,
-                {
-                  id: `msg-${Date.now()}`,
-                  sender: 'client',
-                  senderName: j.clientName,
-                  text: 'Quote accepted by boat owner. Ready to schedule diagnostics/fitment.',
-                  timestamp: 'Just now'
-                }
-              ]
-            }
-          : j
-      )
+      prev.map(j => {
+        if (j.id === jobId) {
+          const updated: JobRecord = {
+            ...j,
+            status: 'quote_accepted',
+            messages: [
+              ...j.messages,
+              {
+                id: `msg-${Date.now()}`,
+                sender: 'client',
+                senderName: j.clientName,
+                text: 'Quote accepted by boat owner. Ready to schedule diagnostics/fitment.',
+                timestamp: 'Just now'
+              }
+            ]
+          };
+          syncJobToFirestore(updated);
+          return updated;
+        }
+        return j;
+      })
     );
   };
 
   // Handler: Pay Deposit via Stripe
   const handlePayDeposit = (jobId: string, amount: number) => {
     setJobs(prev =>
-      prev.map(j =>
-        j.id === jobId
-          ? {
-              ...j,
-              depositPaid: true,
-              depositAmount: amount,
-              status: j.status === 'quote_requested' ? 'scheduled' : j.status,
-              messages: [
-                ...j.messages,
-                {
-                  id: `msg-${Date.now()}`,
-                  sender: 'client',
-                  senderName: 'System / Stripe',
-                  text: `£${amount}.00 deposit successfully secured via Stripe checkout.`,
-                  timestamp: 'Just now'
-                }
-              ]
-            }
-          : j
-      )
+      prev.map(j => {
+        if (j.id === jobId) {
+          const updated: JobRecord = {
+            ...j,
+            depositPaid: true,
+            depositAmount: amount,
+            status: j.status === 'quote_requested' ? 'scheduled' : j.status,
+            messages: [
+              ...j.messages,
+              {
+                id: `msg-${Date.now()}`,
+                sender: 'client',
+                senderName: 'System / Stripe',
+                text: `£${amount}.00 deposit successfully secured via Stripe checkout.`,
+                timestamp: 'Just now'
+              }
+            ]
+          };
+          syncJobToFirestore(updated);
+          return updated;
+        }
+        return j;
+      })
     );
   };
 
@@ -313,7 +380,7 @@ export default function App() {
         const totalMaterials = Number(
           materials.reduce((sum, m) => sum + m.quantity * m.unitPrice, 0).toFixed(2)
         );
-        return {
+        const updated: JobRecord = {
           ...j,
           diagnosticHours: hours,
           materialsUsed: materials,
@@ -331,6 +398,8 @@ export default function App() {
             }
           ]
         };
+        syncJobToFirestore(updated);
+        return updated;
       })
     );
   };
@@ -364,6 +433,7 @@ export default function App() {
     };
 
     setJobs([fullJob, ...jobs]);
+    syncJobToFirestore(fullJob);
     setCurrentUserRole('client');
     setCurrentTab('portal');
   };
@@ -413,6 +483,7 @@ export default function App() {
     };
 
     setJobs([fullJob, ...jobs]);
+    syncJobToFirestore(fullJob);
     setCurrentUserRole('client');
     setCurrentTab('portal');
   };
@@ -470,6 +541,7 @@ export default function App() {
 
   const handleSubmitPostalOrder = (order: PostalOrder) => {
     setPostalOrders(prev => [order, ...prev]);
+    syncPostalOrderToFirestore(order);
     // Decrement stock from catalog and trigger alert if hits 0
     setCatalog(prev =>
       prev.map(catItem => {
@@ -481,6 +553,7 @@ export default function App() {
             stockCount: newStock,
             inStock: newStock > 0
           };
+          syncCatalogItemToFirestore(updatedItem);
           if ((catItem.stockCount ?? 0) > 0 && newStock === 0) {
             triggerZeroStockAlert(updatedItem, 'order_placement');
           }
@@ -506,7 +579,7 @@ export default function App() {
     setPostalOrders(prev =>
       prev.map(o => {
         if (o.id !== orderId) return o;
-        return {
+        const updatedOrder: PostalOrder = {
           ...o,
           orderStatus: status,
           trackingNumber: resolvedTracking || o.trackingNumber,
@@ -514,6 +587,8 @@ export default function App() {
           dispatchedAt: status === 'dispatched' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.dispatchedAt,
           deliveredAt: status === 'delivered' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.deliveredAt
         };
+        syncPostalOrderToFirestore(updatedOrder);
+        return updatedOrder;
       })
     );
 
@@ -594,6 +669,11 @@ export default function App() {
     });
   };
 
+  const handleUpdateVesselSpec = (newSpec: VesselSpec) => {
+    setVesselSpec(newSpec);
+    syncVesselSpecToFirestore(newSpec);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Bar Navigation */}
@@ -611,6 +691,7 @@ export default function App() {
           setCurrentTab('store');
           setIsCartOpen(true);
         }}
+        isFirebaseConnected={isFirebaseConnected}
       />
 
       {/* Main Container */}
@@ -705,7 +786,7 @@ export default function App() {
             postalOrders={postalOrders}
             activeSubTab={portalSubTab}
             onSubTabChange={setPortalSubTab}
-            onUpdateVesselSpec={setVesselSpec}
+            onUpdateVesselSpec={handleUpdateVesselSpec}
             onSendMessage={handleSendMessage}
             onApproveQuote={handleApproveQuote}
             onPayDeposit={handlePayDeposit}

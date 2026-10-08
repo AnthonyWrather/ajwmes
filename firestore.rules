@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Default-Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'anthonywrather@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // System connectivity test
+    match /test/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Marine hardware catalog (Public browse, Admin & app update)
+    match /catalog/{itemId} {
+      allow read: if isValidId(itemId);
+      allow write: if isValidId(itemId);
+    }
+
+    // Client diagnostics, quotes, and installation jobs
+    match /jobs/{jobId} {
+      allow read: if isValidId(jobId);
+      allow write: if isValidId(jobId);
+    }
+
+    // Customer postal orders and tracking
+    match /postal_orders/{orderId} {
+      allow read: if isValidId(orderId);
+      allow write: if isValidId(orderId);
+    }
+
+    // Vessel electrical specification profiles
+    match /vessel_specs/{specId} {
+      allow read: if isValidId(specId);
+      allow write: if isValidId(specId);
+    }
+
+    // Low inventory stock alerts
+    match /stock_alerts/{alertId} {
+      allow read: if isValidId(alertId);
+      allow write: if isValidId(alertId);
+    }
+
+    // Custom switch panel laser designs
+    match /panel_configs/{configId} {
+      allow read: if isValidId(configId);
+      allow write: if isValidId(configId);
+    }
+  }
+}
