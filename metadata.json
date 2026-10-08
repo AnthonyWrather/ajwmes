@@ -1,0 +1,8 @@
+{
+  "name": "AJW Marine Electrical Services",
+  "description": "Marine electrical diagnostics by the hour, lithium battery banks, solar arrays, navigation installs, and replica/custom switch panels with companion PWA field app.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
+

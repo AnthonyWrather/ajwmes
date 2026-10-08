@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Standard Browser Print Styles for Packing Slips & Workshop Documents
+   ========================================================================== */
+
+@media print {
+  /* Standard paper dimensions & clean margins */
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 10mm 12mm;
+  }
+
+  /* Force light background and high-contrast dark text */
+  html, body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* When the packing slip modal is active during print, hide the application shell completely */
+  body.packing-slip-modal-open #root {
+    display: none !important;
+  }
+
+  /* Hide screen-only UI elements */
+  .no-print,
+  .print-hidden,
+  button,
+  header:not(.packing-slip-header),
+  nav,
+  footer,
+  aside {
+    display: none !important;
+  }
+
+  /* Reset portal modal overlay so it flows natively into printable document */
+  #packing-slip-portal-root {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Packing slip sheet styles for clean print output */
+  .packing-slip-sheet {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    page-break-after: avoid;
+  }
+
+  /* Keep table rows intact and avoid awkward page cutoffs */
+  table {
+    page-break-inside: auto;
+    width: 100% !important;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Prevent split of quality assurance block and header */
+  .avoid-page-break {
+    page-break-inside: avoid !important;
+  }
+}
