@@ -2,7 +2,7 @@ import React from 'react';
 import { Logo } from './brand/Logo';
 import { PWAInstallButton } from './pwa/PWAInstallButton';
 import { UserRole } from '../types';
-import { Sparkles, User, Shield, Wrench, Menu, X, ShoppingBag, Truck } from 'lucide-react';
+import { Sparkles, User, Shield, Wrench, Menu, X, ShoppingBag, Truck, WifiOff, RefreshCw } from 'lucide-react';
 
 interface NavigationProps {
   currentTab: string;
@@ -13,6 +13,8 @@ interface NavigationProps {
   cartCount?: number;
   onOpenCart?: () => void;
   isFirebaseConnected?: boolean;
+  onRetrySync?: () => void;
+  isCheckingSync?: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -23,7 +25,9 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenBookingModal,
   cartCount = 0,
   onOpenCart,
-  isFirebaseConnected = false
+  isFirebaseConnected = false,
+  onRetrySync,
+  isCheckingSync = false
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
@@ -149,7 +153,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
 
           {/* Real-time Firestore Cloud Sync Status */}
-          {isFirebaseConnected && (
+          {isFirebaseConnected ? (
             <div 
               className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-950/70 border border-emerald-500/30 rounded-lg text-[10px] font-mono text-emerald-300"
               title="Connected to live Firebase Firestore database"
@@ -157,6 +161,25 @@ export const Navigation: React.FC<NavigationProps> = ({
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Firestore Live</span>
             </div>
+          ) : (
+            <button
+              onClick={onRetrySync}
+              disabled={isCheckingSync}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-amber-950/80 hover:bg-amber-900/80 border border-amber-500/40 rounded-lg text-[10px] font-mono text-amber-300 transition-colors cursor-pointer group"
+              title="Firestore disconnected · Data sync is delayed. Click to retry connection."
+            >
+              {isCheckingSync ? (
+                <RefreshCw className="w-3 h-3 text-amber-400 animate-spin" />
+              ) : (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                </span>
+              )}
+              <span className="group-hover:underline">
+                {isCheckingSync ? 'Connecting...' : 'Sync Delayed (Offline)'}
+              </span>
+            </button>
           )}
 
           {/* In-App PWA Install Button */}
@@ -227,6 +250,32 @@ export const Navigation: React.FC<NavigationProps> = ({
             >
               Anthony's Admin Workshop
             </button>
+          </div>
+
+          {/* Mobile Connection Status Row */}
+          <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px]">
+            <div className="flex items-center gap-1.5">
+              {isFirebaseConnected ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-300 font-medium">Firestore Live (Syncing)</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span className="text-amber-300 font-medium">Firestore Disconnected (Sync Delayed)</span>
+                </>
+              )}
+            </div>
+            {!isFirebaseConnected && onRetrySync && (
+              <button
+                onClick={onRetrySync}
+                disabled={isCheckingSync}
+                className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/40 text-[10px] font-semibold"
+              >
+                {isCheckingSync ? 'Connecting...' : 'Retry'}
+              </button>
+            )}
           </div>
         </div>
       )}

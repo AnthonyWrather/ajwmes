@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, JobRecord, CatalogItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder } from './types';
+import { UserRole, JobRecord, CatalogItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState } from './types';
 import { DEFAULT_CATALOG, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
+import { FirestoreSyncBanner } from './components/common/FirestoreSyncBanner';
 import { LandingHero } from './components/home/LandingHero';
 import { ServicesSection } from './components/home/ServicesSection';
 import { StoreFront } from './components/store/StoreFront';
@@ -27,7 +28,11 @@ import {
   subscribePostalOrders, 
   syncPostalOrderToFirestore, 
   subscribeVesselSpec, 
-  syncVesselSpecToFirestore 
+  syncVesselSpecToFirestore,
+  subscribeConnectionState,
+  retryFirestoreConnection,
+  toggleSimulatedOffline,
+  getConnectionState
 } from './lib/firebase';
 
 
@@ -127,7 +132,25 @@ export default function App() {
   const [isHostingGuideOpen, setIsHostingGuideOpen] = useState(false);
   const [selectedInitialService, setSelectedInitialService] = useState<ServiceType>('diagnostic');
   const [pendingPanelConfig, setPendingPanelConfig] = useState<SwitchPanelConfig | undefined>(undefined);
-  const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<FirestoreConnectionState>(() => getConnectionState());
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState(connectionState.isConnected);
+
+  // Subscribe to reactive Firestore connection state
+  useEffect(() => {
+    const unsubConnection = subscribeConnectionState((state) => {
+      setConnectionState(state);
+      setIsFirebaseConnected(state.isConnected);
+    });
+    return () => unsubConnection();
+  }, []);
+
+  const handleRetryConnection = async () => {
+    return await retryFirestoreConnection();
+  };
+
+  const handleToggleSimulatedOffline = async (forceOffline: boolean) => {
+    return await toggleSimulatedOffline(forceOffline);
+  };
 
   // Firestore Real-time Synchronization
   useEffect(() => {
@@ -676,6 +699,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+      {/* Subtle UI Indicator at the top of the app: Warns users if disconnected from Firestore */}
+      <FirestoreSyncBanner
+        connectionState={connectionState}
+        onRetry={handleRetryConnection}
+        onToggleSimulatedOffline={handleToggleSimulatedOffline}
+      />
+
       {/* Top Bar Navigation */}
       <Navigation
         currentTab={currentTab}
@@ -692,6 +722,8 @@ export default function App() {
           setIsCartOpen(true);
         }}
         isFirebaseConnected={isFirebaseConnected}
+        onRetrySync={handleRetryConnection}
+        isCheckingSync={connectionState.isChecking}
       />
 
       {/* Main Container */}

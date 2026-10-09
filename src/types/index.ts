@@ -257,3 +257,12 @@ export interface VesselSpec {
   lastInspectionDate: string;
   historyLog: ElectricalLogEntry[];
 }
+
+export interface FirestoreConnectionState {
+  isConnected: boolean;
+  isChecking: boolean;
+  lastConnectedAt: string | null;
+  pendingSyncCount: number;
+  errorMessage?: string;
+  isSimulatedOffline?: boolean;
+}
