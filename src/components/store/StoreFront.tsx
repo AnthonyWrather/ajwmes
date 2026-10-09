@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CatalogItem, CartItem, PostalOrder, PostalOrderShippingAddress } from '../../types';
+import { normalizeImageUrl } from '../../utils/imageUrl';
 import { 
   ShoppingBag, 
   Search, 
@@ -374,10 +375,14 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                   <div className="relative aspect-4/3 w-full bg-slate-950 overflow-hidden">
                     {product.imageUrl ? (
                       <img
-                        src={product.imageUrl}
+                        src={normalizeImageUrl(product.imageUrl)}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails to load
+                          (e.currentTarget as HTMLElement).style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-700">
@@ -652,7 +657,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                         >
                           <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden shrink-0 border border-slate-800">
                             {item.item.imageUrl ? (
-                              <img src={item.item.imageUrl} alt="" className="w-full h-full object-cover" />
+                              <img src={normalizeImageUrl(item.item.imageUrl)} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <Package className="w-6 h-6 m-4 text-slate-600" />
                             )}

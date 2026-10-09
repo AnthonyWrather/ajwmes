@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CatalogItem, SupplierPurchaseOrder, SupplierInfo } from '../../types';
+import { normalizeImageUrl } from '../../utils/imageUrl';
 import { MARINE_SUPPLIERS, getDefaultSupplierForCategory, generateSupplierPOEmail } from '../../data/supplierData';
 import { 
   Building2, 
@@ -153,9 +154,12 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
           <div className="flex items-center gap-3">
             {item.imageUrl ? (
               <img
-                src={item.imageUrl}
+                src={normalizeImageUrl(item.imageUrl)}
                 alt={item.name}
                 className="w-14 h-14 object-cover rounded-xl border border-slate-800 shrink-0"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-14 h-14 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 shrink-0">

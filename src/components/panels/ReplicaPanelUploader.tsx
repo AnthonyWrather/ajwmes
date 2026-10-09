@@ -21,7 +21,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
   const [materialPref, setMaterialPref] = useState('acrylic_black');
   const [notes, setNotes] = useState('Current plastic panel has cracked screw lugs and faded rocker labels.');
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([
-    '/src/assets/images/marine_switch_panel_laser_1791400808406.jpg'
+    '/assets/images/marine_switch_panel_laser_1791400808406.jpg'
   ]);
   const [isSubmitted, setIsSubmitted] = useState(false);
 

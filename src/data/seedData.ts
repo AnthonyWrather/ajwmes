@@ -11,7 +11,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 1.40,
     inStock: true,
     stockCount: 150,
-    imageUrl: '/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
+    imageUrl: '/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
     badge: 'Popular for Nav Lights'
   },
   {
@@ -23,7 +23,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 2.80,
     inStock: true,
     stockCount: 100,
-    imageUrl: '/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
+    imageUrl: '/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
     badge: 'Bestseller'
   },
   {
@@ -35,7 +35,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 7.20,
     inStock: true,
     stockCount: 45,
-    imageUrl: '/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg'
+    imageUrl: '/assets/images/marine_cable_spool_crimping_1791421463275.jpg'
   },
   {
     id: 'cab-35',
@@ -46,7 +46,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 13.50,
     inStock: true,
     stockCount: 30,
-    imageUrl: '/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
+    imageUrl: '/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
     badge: 'Battery Banks'
   },
   {
@@ -58,7 +58,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 18.90,
     inStock: true,
     stockCount: 20,
-    imageUrl: '/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg'
+    imageUrl: '/assets/images/marine_cable_spool_crimping_1791421463275.jpg'
   },
 
   // Fuse Blocks & Protection
@@ -71,7 +71,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 28.00,
     inStock: true,
     stockCount: 8,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
     badge: 'Most Popular'
   },
   {
@@ -83,7 +83,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 44.00,
     inStock: true,
     stockCount: 6,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
     badge: 'Full Refits'
   },
   {
@@ -95,7 +95,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 26.50,
     inStock: true,
     stockCount: 12,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
     badge: 'ABYC Essential'
   },
   {
@@ -107,7 +107,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 22.00,
     inStock: true,
     stockCount: 10,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
   },
 
   // Busbars & Power Distribution
@@ -120,7 +120,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 32.00,
     inStock: true,
     stockCount: 14,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
   },
   {
     id: 'bus-250',
@@ -131,7 +131,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 42.00,
     inStock: true,
     stockCount: 9,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
   },
 
   // Marine Switches, Terminals & Accessories
@@ -144,7 +144,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 8.50,
     inStock: true,
     stockCount: 40,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
     badge: 'Marine Standard'
   },
   {
@@ -156,7 +156,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 11.00,
     inStock: true,
     stockCount: 25,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg'
   },
   {
     id: 'term-heatshrink-pack',
@@ -167,7 +167,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 18.50,
     inStock: true,
     stockCount: 18,
-    imageUrl: '/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
+    imageUrl: '/assets/images/marine_cable_spool_crimping_1791421463275.jpg',
     badge: 'Workshop Grade'
   },
   {
@@ -179,7 +179,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 24.50,
     inStock: true,
     stockCount: 11,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
     badge: 'Safety Essential'
   },
   {
@@ -191,7 +191,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 16.50,
     inStock: true,
     stockCount: 22,
-    imageUrl: '/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
+    imageUrl: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg',
     badge: 'Budget Boater Pick'
   },
 
@@ -205,7 +205,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 128.00,
     inStock: true,
     stockCount: 4,
-    imageUrl: '/src/assets/images/marine_lithium_battery_bank_1791400821608.jpg',
+    imageUrl: '/assets/images/marine_lithium_battery_bank_1791400821608.jpg',
     badge: 'Official Victron'
   },
   {
@@ -217,7 +217,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 65.00,
     inStock: true,
     stockCount: 5,
-    imageUrl: '/src/assets/images/marine_solar_array_yacht_1791400831647.jpg',
+    imageUrl: '/assets/images/marine_solar_array_yacht_1791400831647.jpg',
     badge: 'Official Victron'
   },
   {
@@ -229,7 +229,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 195.00,
     inStock: true,
     stockCount: 3,
-    imageUrl: '/src/assets/images/marine_lithium_battery_bank_1791400821608.jpg',
+    imageUrl: '/assets/images/marine_lithium_battery_bank_1791400821608.jpg',
     badge: 'Lithium Protection'
   },
 
@@ -243,7 +243,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 45.00,
     inStock: true,
     stockCount: 99,
-    imageUrl: '/src/assets/images/marine_switch_panel_laser_1791400808406.jpg',
+    imageUrl: '/assets/images/marine_switch_panel_laser_1791400808406.jpg',
     badge: 'Custom Engraved'
   },
   {
@@ -255,7 +255,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 88.00,
     inStock: true,
     stockCount: 99,
-    imageUrl: '/src/assets/images/marine_switch_panel_laser_1791400808406.jpg',
+    imageUrl: '/assets/images/marine_switch_panel_laser_1791400808406.jpg',
     badge: 'Complete DIY Kit'
   },
   {
@@ -267,7 +267,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
     unitPrice: 135.00,
     inStock: true,
     stockCount: 99,
-    imageUrl: '/src/assets/images/marine_switch_panel_laser_1791400808406.jpg',
+    imageUrl: '/assets/images/marine_switch_panel_laser_1791400808406.jpg',
     badge: 'Ready to Fit'
   }
 ];
@@ -366,7 +366,7 @@ export const INITIAL_JOBS: JobRecord[] = [
     depositAmount: 0,
     createdAt: '2026-10-07 09:15',
     replicaImages: [
-      '/src/assets/images/marine_switch_panel_laser_1791400808406.jpg'
+      '/assets/images/marine_switch_panel_laser_1791400808406.jpg'
     ],
     messages: [
       {

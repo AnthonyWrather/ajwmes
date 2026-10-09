@@ -33,7 +33,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       subtitle: 'Trace Dead Batteries, Dim Lights & Ground Faults',
       desc: 'Battery flat after sitting for a few days? We use professional DC clamp meters and digital conductance testers to trace phantom draws, clean corroded earth busses, and repair intermittent faults without expensive unnecessary parts.',
       price: '£25 / hr · Typical check 1–2 hrs (£25–£50)',
-      image: '/src/assets/images/budget_boat_wiring_clean_1791420126772.jpg',
+      image: '/assets/images/budget_boat_wiring_clean_1791420126772.jpg',
       badge: 'Most Popular for Day Boats',
       badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-500/30',
       tags: ['Parasitic Drain Tracing', 'Battery State-of-Health', 'Corroded Busbars', 'Earth Faults']
@@ -45,7 +45,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       subtitle: 'Practical Wiring for Skiffs, RIBs & Weekenders',
       desc: 'Clean, marine-grade installations of standalone fishfinders/depth sounders, auxiliary battery boxes with isolator switches, 12V USB charger sockets, LED deck worklights, and swing-mooring trickle solar kits.',
       price: '£25 / hr labor + trade price parts',
-      image: '/src/assets/images/budget_small_cruiser_boat_1791420135992.jpg',
+      image: '/assets/images/budget_small_cruiser_boat_1791420135992.jpg',
       badge: 'Budget-Friendly',
       badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-500/30',
       tags: ['Fishfinder Installs', 'Mooring Solar Trickle', 'Auxiliary Battery Boxes', 'Deck Worklights']
@@ -57,7 +57,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       subtitle: 'Automatic Float Switches & Cockpit Alarms',
       desc: 'Rewiring unreliable bilge pumps with Rule SuperSwitch float switches, manual/auto/off helm override switches, high-water warning buzzers, and continuous unswitched fused power directly to your battery.',
       price: '£25 / hr · Typically 1.5–2 hrs labor',
-      image: '/src/assets/images/hero_workspace_display_1791400165479.jpg',
+      image: '/assets/images/hero_workspace_display_1791400165479.jpg',
       badge: 'Safety Essential',
       badgeColor: 'bg-amber-950 text-amber-300 border-amber-500/30',
       tags: ['Auto Float Switches', 'High-Water Buzzer', 'Tinned Marine Wire', 'Emergency Overrides']
@@ -69,7 +69,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       subtitle: 'Precision Marine Fabrication & Engraving',
       desc: 'Bespoke switchboards and exact drop-in replacements for Westerly, Moody, Sadler in 3mm matte black acrylic, white marine acrylic, or solid marine wood. Backlit circuit labels, push breakers, USB chargers, and digital voltmeters.',
       price: 'From £45 (Faceplate) · Full Pre-Wired Units',
-      image: '/src/assets/images/marine_switch_panel_laser_1791400808406.jpg',
+      image: '/assets/images/marine_switch_panel_laser_1791400808406.jpg',
       badge: 'Workshop Crafted',
       badgeColor: 'bg-sky-950 text-sky-300 border-sky-500/30',
       tags: ['Westerly Replicas', 'Moody Drop-in', 'Carling Rockers', 'Custom Backlit Labels']
@@ -81,7 +81,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       subtitle: 'Safe High-Capacity Storage',
       desc: 'Upgrade tired lead-acid banks to lightweight LiFePO4. We install Victron Orion DC-DC chargers to protect engine alternator diodes, SmartShunts, and class-6 tinned copper battery links.',
       price: '£25 / hr labor + materials at wholesale trade rates',
-      image: '/src/assets/images/marine_lithium_battery_bank_1791400821608.jpg',
+      image: '/assets/images/marine_lithium_battery_bank_1791400821608.jpg',
       badge: 'High Performance',
       badgeColor: 'bg-sky-950 text-sky-300 border-sky-500/30',
       tags: ['Victron Energy', 'DC-DC Chargers', 'Alternator Protection', 'SmartShunt Bluetooth']
@@ -93,7 +93,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       subtitle: 'Off-Grid Cruising Independence',
       desc: 'Design and wiring of rigid and semi-flexible solar panel arrays on coachroofs or stainless stern arches. Paired with ultra-fast Victron SmartSolar MPPT controllers.',
       price: 'Free sizing estimate · £25 / hr installation',
-      image: '/src/assets/images/marine_solar_array_yacht_1791400831647.jpg',
+      image: '/assets/images/marine_solar_array_yacht_1791400831647.jpg',
       badge: 'Self Sufficiency',
       badgeColor: 'bg-sky-950 text-sky-300 border-sky-500/30',
       tags: ['Stern Arch Wiring', 'MPPT Controllers', 'Monocrystalline', 'Split Charging']
@@ -105,7 +105,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
       subtitle: 'Glass Bridge Helm Electronics',
       desc: 'Installation of multifunction touch chartplotters, sonar transducers, radar domes, AIS transponders, VHF radios, and clean backbone network termination.',
       price: '£25 / hr labor + hardware',
-      image: '/src/assets/images/marine_helm_navigation_1791400844235.jpg',
+      image: '/assets/images/marine_helm_navigation_1791400844235.jpg',
       badge: 'Electronics Refit',
       badgeColor: 'bg-sky-950 text-sky-300 border-sky-500/30',
       tags: ['NMEA 2000 Backbones', 'Chartplotters', 'Autopilots', 'AIS Transponders']
