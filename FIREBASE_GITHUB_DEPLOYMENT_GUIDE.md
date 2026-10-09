@@ -55,7 +55,7 @@ Every time you commit or merge changes into your GitHub repository, GitHub Actio
    ```
 2. The CLI will ask:
    - *For which GitHub repository would you like to set up a GitHub workflow?* -> Enter your repo (e.g. `username/repo-name`).
-   - *Set up the workflow to run a build script before every deploy?* -> Press **Yes**, script: `npm ci && npm run build`.
+   - *Set up the workflow to run a build script before every deploy?* -> Press **Yes**, script: `npm install && npm run build`.
    - *Set up automatic deployment to your site's live channel when a PR is merged?* -> Press **Yes**, branch: `main` (or `master`).
 3. Firebase CLI will automatically create the required encrypted secret (`FIREBASE_SERVICE_ACCOUNT_...`) in your GitHub repository settings!
 4. From now on, any `git push` to your GitHub repository will build and deploy your website automatically in under 60 seconds.
