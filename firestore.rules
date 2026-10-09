@@ -10,65 +10,52 @@ service cloud.firestore {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'anthonywrather@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
-    }
-
-    // System connectivity test
+    // Healthcheck test connection
     match /test/{docId} {
-      allow read: if true;
-      allow write: if true;
+      allow get, list: if true;
+      allow create, update, delete: if true;
     }
 
     // Marine hardware catalog (Public browse, Admin & app update)
     match /catalog/{itemId} {
-      allow read: if isValidId(itemId);
-      allow write: if isValidId(itemId);
+      allow get: if isValidId(itemId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(itemId);
     }
 
     // Client diagnostics, quotes, and installation jobs
     match /jobs/{jobId} {
-      allow read: if isValidId(jobId);
-      allow write: if isValidId(jobId);
+      allow get: if isValidId(jobId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(jobId);
     }
 
     // Customer postal orders and tracking
     match /postal_orders/{orderId} {
-      allow read: if isValidId(orderId);
-      allow write: if isValidId(orderId);
+      allow get: if isValidId(orderId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(orderId);
     }
 
     // Vessel electrical specification profiles
     match /vessel_specs/{specId} {
-      allow read: if isValidId(specId);
-      allow write: if isValidId(specId);
+      allow get: if isValidId(specId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(specId);
     }
 
     // Low inventory stock alerts
     match /stock_alerts/{alertId} {
-      allow read: if isValidId(alertId);
-      allow write: if isValidId(alertId);
+      allow get: if isValidId(alertId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(alertId);
     }
 
     // Custom switch panel laser designs
     match /panel_configs/{configId} {
-      allow read: if isValidId(configId);
-      allow write: if isValidId(configId);
+      allow get: if isValidId(configId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(configId);
     }
   }
 }

@@ -96,10 +96,14 @@ export function subscribeJobs(onUpdate: (jobs: JobRecord[]) => void) {
   );
 }
 
+function cleanForFirestore<T>(obj: T): any {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 export async function syncJobToFirestore(job: JobRecord) {
   const docPath = `jobs/${job.id}`;
   try {
-    await setDoc(doc(db, 'jobs', job.id), job, { merge: true });
+    await setDoc(doc(db, 'jobs', job.id), cleanForFirestore(job), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -124,7 +128,7 @@ export function subscribeCatalog(onUpdate: (catalog: CatalogItem[]) => void) {
 export async function syncCatalogItemToFirestore(item: CatalogItem) {
   const docPath = `catalog/${item.id}`;
   try {
-    await setDoc(doc(db, 'catalog', item.id), item, { merge: true });
+    await setDoc(doc(db, 'catalog', item.id), cleanForFirestore(item), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -137,7 +141,7 @@ export async function seedCatalogToFirestore(items: CatalogItem[]) {
     if (existing.empty) {
       const batch = writeBatch(db);
       for (const item of items) {
-        batch.set(doc(db, colPath, item.id), item);
+        batch.set(doc(db, colPath, item.id), cleanForFirestore(item));
       }
       await batch.commit();
     }
@@ -165,7 +169,7 @@ export function subscribePostalOrders(onUpdate: (orders: PostalOrder[]) => void)
 export async function syncPostalOrderToFirestore(order: PostalOrder) {
   const docPath = `postal_orders/${order.id}`;
   try {
-    await setDoc(doc(db, 'postal_orders', order.id), order, { merge: true });
+    await setDoc(doc(db, 'postal_orders', order.id), cleanForFirestore(order), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -190,7 +194,7 @@ export function subscribeVesselSpec(onUpdate: (spec: VesselSpec) => void) {
 export async function syncVesselSpecToFirestore(spec: VesselSpec) {
   const docPath = `vessel_specs/${spec.id}`;
   try {
-    await setDoc(doc(db, 'vessel_specs', spec.id), spec, { merge: true });
+    await setDoc(doc(db, 'vessel_specs', spec.id), cleanForFirestore(spec), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
