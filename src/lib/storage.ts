@@ -1,3 +1,4 @@
+import { getApps, getApp, initializeApp } from 'firebase/app';
 import { 
   getStorage, 
   ref, 
@@ -8,12 +9,14 @@ import {
   UploadTaskSnapshot,
   StorageReference
 } from 'firebase/storage';
-import { app } from './firebase';
 import firebaseConfig from '../../firebase-applet-config.json';
+
+// Safely obtain Firebase app without circular dependency
+const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Firebase Storage with the configured storage bucket
 export const storage = getStorage(
-  app, 
+  firebaseApp, 
   firebaseConfig.storageBucket ? `gs://${firebaseConfig.storageBucket}` : undefined
 );
 

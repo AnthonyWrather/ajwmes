@@ -133,9 +133,32 @@
         "status": { "type": "string", "maxLength": 32 }
       },
       "required": ["status"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access control (RBAC)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "role": { "type": "string", "enum": ["guest", "client", "technician", "postal", "admin"] },
+        "phone": { "type": "string", "maxLength": 64 },
+        "vesselName": { "type": "string", "maxLength": 128 },
+        "vesselType": { "type": "string", "maxLength": 128 },
+        "marinaBerth": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "lastLoginAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "role"]
     }
   },
   "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User account profiles and assigned RBAC roles"
+    },
     "/jobs/{jobId}": {
       "schema": "Job",
       "description": "Client jobs, quotes, and service diagnostics"

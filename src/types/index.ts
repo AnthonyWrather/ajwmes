@@ -1,11 +1,22 @@
-export type UserRole = 'guest' | 'client' | 'admin';
+export type UserRole = 'guest' | 'client' | 'admin' | 'technician' | 'postal';
+
+export interface RoleInfo {
+  role: UserRole;
+  label: string;
+  shortLabel: string;
+  badge: string;
+  description: string;
+  allowedFeatures: string[];
+  color: string;
+}
 
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   role: UserRole;
+  avatarUrl?: string;
   vesselName?: string;
   vesselType?: string;
   marinaBerth?: string;

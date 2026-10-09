@@ -22,7 +22,7 @@ import { ImageLightboxModal } from '../common/ImageLightboxModal';
 
 interface JobDiscussionThreadProps {
   job: JobRecord;
-  currentUserRole: 'client' | 'admin';
+  currentUserRole: 'client' | 'admin' | 'technician';
   onSendMessage: (jobId: string, message: MessageItem) => void;
   onApproveQuote?: (jobId: string) => void;
   onPayDeposit?: (jobId: string, amount: number) => void;
@@ -52,10 +52,17 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
     e.preventDefault();
     if (!inputText.trim()) return;
 
+    const isStaff = currentUserRole === 'admin' || currentUserRole === 'technician';
+    const senderName = currentUserRole === 'admin'
+      ? 'Anthony (AJW Marine)'
+      : currentUserRole === 'technician'
+      ? 'Solent Field Tech (AJW Marine)'
+      : job.clientName;
+
     const newMessage: MessageItem = {
       id: `msg-${Date.now()}`,
-      sender: currentUserRole === 'admin' ? 'ajw' : 'client',
-      senderName: currentUserRole === 'admin' ? 'Anthony (AJW Marine)' : job.clientName,
+      sender: isStaff ? 'ajw' : 'client',
+      senderName,
       text: inputText.trim(),
       timestamp: 'Just now'
     };
@@ -90,10 +97,16 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
         }
       });
 
-      const senderName = currentUserRole === 'admin' ? 'Anthony (AJW Marine)' : job.clientName;
+      const isStaff = currentUserRole === 'admin' || currentUserRole === 'technician';
+      const senderName = currentUserRole === 'admin'
+        ? 'Anthony (AJW Marine)'
+        : currentUserRole === 'technician'
+        ? 'Solent Field Tech (AJW Marine)'
+        : job.clientName;
+
       const photoMessage: MessageItem = {
         id: `msg-photo-${Date.now()}`,
-        sender: currentUserRole === 'admin' ? 'ajw' : 'client',
+        sender: isStaff ? 'ajw' : 'client',
         senderName,
         text: `📷 [Attached Switch Panel Image: ${file.name}]\nSaved to Firebase Cloud Storage (${uploaded.formattedSize}).`,
         timestamp: 'Just now',

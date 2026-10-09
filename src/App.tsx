@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, JobRecord, CatalogItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState } from './types';
+import { UserRole, UserProfile, JobRecord, CatalogItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState } from './types';
 import { DEFAULT_CATALOG, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
@@ -12,6 +12,17 @@ import { ReplicaPanelUploader } from './components/panels/ReplicaPanelUploader';
 import { ClientVesselPortal } from './components/client/ClientVesselPortal';
 import { PostalOrderTracker } from './components/orders/PostalOrderTracker';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { TechnicianWorkspace } from './components/technician/TechnicianWorkspace';
+import { PostalWorkspace } from './components/postal/PostalWorkspace';
+import { AuthModal } from './components/auth/AuthModal';
+import { 
+  getSavedRole, 
+  saveCurrentRole, 
+  getSavedUserProfile, 
+  saveUserProfile, 
+  DEMO_PROFILES, 
+  ROLE_CONFIGS 
+} from './lib/auth';
 import { SupplierReorderModal } from './components/admin/SupplierReorderModal';
 import { StockAlertEmailModal } from './components/admin/StockAlertEmailModal';
 import { BookingQuoteModal } from './components/forms/BookingQuoteModal';
@@ -127,13 +138,36 @@ export default function App() {
   const [supplierReorderItem, setSupplierReorderItem] = useState<CatalogItem | null>(null);
   const [viewingAlertEmail, setViewingAlertEmail] = useState<StockAlert | null>(null);
 
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('guest');
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>(() => getSavedRole());
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>(() => getSavedUserProfile());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isHostingGuideOpen, setIsHostingGuideOpen] = useState(false);
   const [selectedInitialService, setSelectedInitialService] = useState<ServiceType>('diagnostic');
   const [pendingPanelConfig, setPendingPanelConfig] = useState<SwitchPanelConfig | undefined>(undefined);
   const [connectionState, setConnectionState] = useState<FirestoreConnectionState>(() => getConnectionState());
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(connectionState.isConnected);
+
+  const handleRoleChange = (newRole: UserRole) => {
+    setCurrentUserRole(newRole);
+    saveCurrentRole(newRole);
+    const demoProfile = DEMO_PROFILES.find(p => p.role === newRole);
+    if (demoProfile) {
+      setCurrentUserProfile(demoProfile);
+      saveUserProfile(demoProfile);
+    }
+  };
+
+  const handleUpdateJobStatus = (jobId: string, newStatus: JobRecord['status']) => {
+    setJobs(prev =>
+      prev.map(j => {
+        if (j.id !== jobId) return j;
+        const updated: JobRecord = { ...j, status: newStatus };
+        syncJobToFirestore(updated);
+        return updated;
+      })
+    );
+  };
 
   // Subscribe to reactive Firestore connection state
   useEffect(() => {
@@ -711,7 +745,7 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         currentUserRole={currentUserRole}
-        setCurrentUserRole={setCurrentUserRole}
+        setCurrentUserRole={handleRoleChange}
         onOpenBookingModal={() => {
           setSelectedInitialService('diagnostic');
           setIsBookingModalOpen(true);
@@ -724,6 +758,8 @@ export default function App() {
         isFirebaseConnected={isFirebaseConnected}
         onRetrySync={handleRetryConnection}
         isCheckingSync={connectionState.isChecking}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        currentUserProfile={currentUserProfile}
       />
 
       {/* Main Container */}
@@ -836,23 +872,90 @@ export default function App() {
 
         {/* Tab 6: Anthony's Admin & Workshop Dashboard */}
         {currentTab === 'admin' && (
-          <AdminDashboard
+          currentUserRole === 'admin' ? (
+            <AdminDashboard
+              jobs={jobs}
+              catalog={catalog}
+              snapshots={snapshots}
+              postalOrders={postalOrders}
+              stockAlerts={stockAlerts}
+              onSendMessage={handleSendMessage}
+              onSaveJobSheet={handleSaveJobSheet}
+              onUpdateCatalog={handleUpdateCatalog}
+              onCreateSnapshot={handleCreateSnapshot}
+              onRestoreSnapshot={handleRestoreSnapshot}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
+              onOpenSupplierReorder={setSupplierReorderItem}
+              onViewAlertEmail={setViewingAlertEmail}
+            />
+          ) : (
+            <div className="max-w-2xl mx-auto p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-4">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">
+                Admin Workshop Access Restricted
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Your current active role is <strong className="text-white capitalize">{currentUserRole}</strong>. The Master Workshop includes catalog pricing, laser printing, and global administration reserved for Anthony Wrather.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                {currentUserRole === 'technician' && (
+                  <button
+                    onClick={() => setCurrentTab('technician')}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Go to Technician Jobs Station
+                  </button>
+                )}
+                {currentUserRole === 'postal' && (
+                  <button
+                    onClick={() => setCurrentTab('postal')}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Go to Postal Dispatch Station
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Switch Role / Authenticate
+                </button>
+              </div>
+            </div>
+          )
+        )}
+
+        {/* Tab 7: Solent Marine Technician Workstation */}
+        {currentTab === 'technician' && (
+          <TechnicianWorkspace
             jobs={jobs}
             catalog={catalog}
-            snapshots={snapshots}
-            postalOrders={postalOrders}
-            stockAlerts={stockAlerts}
             onSendMessage={handleSendMessage}
             onSaveJobSheet={handleSaveJobSheet}
-            onUpdateCatalog={handleUpdateCatalog}
-            onCreateSnapshot={handleCreateSnapshot}
-            onRestoreSnapshot={handleRestoreSnapshot}
+            onUpdateJobStatus={handleUpdateJobStatus}
+          />
+        )}
+
+        {/* Tab 8: Workshop Postal Dispatch Station */}
+        {currentTab === 'postal' && (
+          <PostalWorkspace
+            orders={postalOrders}
             onUpdateOrderStatus={handleUpdateOrderStatus}
-            onOpenSupplierReorder={setSupplierReorderItem}
-            onViewAlertEmail={setViewingAlertEmail}
           />
         )}
       </main>
+
+      {/* Firebase Authentication & 5-Role Governance Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUserRole={currentUserRole}
+        onSelectRole={handleRoleChange}
+        currentUserProfile={currentUserProfile}
+        onUpdateUserProfile={setCurrentUserProfile}
+      />
 
       {/* Booking & Quote Modal */}
       <BookingQuoteModal

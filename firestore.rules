@@ -16,6 +16,13 @@ service cloud.firestore {
       allow create, update, delete: if true;
     }
 
+    // User profile documents (Firebase Authentication & RBAC)
+    match /users/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(userId);
+    }
+
     // Marine hardware catalog (Public browse, Admin & app update)
     match /catalog/{itemId} {
       allow get: if isValidId(itemId);
