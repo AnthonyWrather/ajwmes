@@ -1,7 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SwitchPanelConfig, SwitchConfig } from '../../types';
 import { INITIAL_SAMPLE_PANEL } from '../../data/seedData';
-import { Sliders, Sparkles, Check, Download, Layers, ShieldCheck, Ruler } from 'lucide-react';
+import { 
+  Sliders, 
+  Sparkles, 
+  Check, 
+  Download, 
+  Layers, 
+  ShieldCheck, 
+  Ruler, 
+  Cloud, 
+  Camera, 
+  Loader2, 
+  Trash2, 
+  Eye, 
+  ExternalLink 
+} from 'lucide-react';
+import { 
+  uploadSwitchPanelImage, 
+  uploadSvgAsStorageImage, 
+  deleteSwitchPanelImage, 
+  UploadedPanelImage 
+} from '../../lib/storage';
+import { ImageLightboxModal } from '../common/ImageLightboxModal';
 
 interface SwitchPanelDesignerProps {
   onOrderPanel?: (config: SwitchPanelConfig) => void;
@@ -9,8 +30,24 @@ interface SwitchPanelDesignerProps {
 
 export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrderPanel }) => {
   const [config, setConfig] = useState<SwitchPanelConfig>(INITIAL_SAMPLE_PANEL);
-  const [activeTab, setActiveTab] = useState<'layout' | 'switches' | 'options'>('layout');
+  const [activeTab, setActiveTab] = useState<'layout' | 'switches' | 'options' | 'cloud_assets'>('layout');
   const [orderModalOpen, setOrderModalOpen] = useState(false);
+
+  // Cloud reference photos state
+  const [referencePhotos, setReferencePhotos] = useState<UploadedPanelImage[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadProgress, setPhotoUploadProgress] = useState(0);
+
+  // CAD Cloud Save State
+  const [isSavingCad, setIsSavingCad] = useState(false);
+  const [savedCadUrl, setSavedCadUrl] = useState<string | null>(null);
+
+  // Lightbox
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [lightboxTitle, setLightboxTitle] = useState<string>('');
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Recalculate estimated pricing based on options
   const calculatePrice = (cfg: SwitchPanelConfig) => {
@@ -29,10 +66,8 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
     if (cfg.packageOption === 'faceplate_only') {
       return Math.round(base);
     } else if (cfg.packageOption === 'diy_kit') {
-      // Add switches + terminals (£8 per switch kit)
       return Math.round(base + cfg.gangCount * 8 + 12);
     } else {
-      // Assembled and bench-tested (materials + 1.5 hrs labor)
       return Math.round(base + cfg.gangCount * 12 + 35);
     }
   };
@@ -65,7 +100,6 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
       }
     }
 
-    // Auto adjust panel width if many switches
     let minWidth = Math.max(160, Math.ceil(count / 2) * 55 + (config.hasVoltmeter ? 45 : 0));
     updateConfig({
       gangCount: count,
@@ -90,6 +124,65 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
     }
   };
 
+  // Upload reference photo to Firebase Storage
+  const handleUploadReferencePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+
+    setIsUploadingPhoto(true);
+    setPhotoUploadProgress(0);
+
+    try {
+      const uploaded = await uploadSwitchPanelImage(file, {
+        jobReference: `CAD-${config.gangCount}GANG`,
+        category: 'mounting_cavity',
+        onProgress: (info) => setPhotoUploadProgress(info.progress)
+      });
+
+      setReferencePhotos(prev => [...prev, uploaded]);
+    } catch (err) {
+      console.error('Failed to upload reference photo:', err);
+      alert(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploadingPhoto(false);
+      setPhotoUploadProgress(0);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
+
+  // Save current CAD SVG drawing directly to Firebase Storage
+  const handleSaveCadToFirebase = async () => {
+    if (!svgRef.current) return;
+    setIsSavingCad(true);
+
+    try {
+      const svgSerializer = new XMLSerializer();
+      const svgString = svgSerializer.serializeToString(svgRef.current);
+      const filename = `switch_panel_${config.gangCount}gang_${config.widthMm}x${config.heightMm}mm_${Date.now()}.svg`;
+
+      const result = await uploadSvgAsStorageImage(svgString, filename, {
+        jobReference: `CAD-${config.gangCount}GANG`,
+        vesselName: 'Custom Specification'
+      });
+
+      setSavedCadUrl(result.url);
+    } catch (err) {
+      console.error('Failed to save CAD SVG to Firebase Storage:', err);
+      alert('Could not save CAD design to Firebase Storage.');
+    } finally {
+      setIsSavingCad(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photo: UploadedPanelImage) => {
+    try {
+      await deleteSwitchPanelImage(photo.storagePath);
+    } catch (e) {
+      console.warn('Error deleting photo:', e);
+    }
+    setReferencePhotos(prev => prev.filter(p => p.id !== photo.id));
+  };
+
   // Material visual colors
   const materialColors = {
     acrylic_black: { bg: '#0F172A', border: '#334155', text: '#F8FAFC', label: 'Matte Black Marine Acrylic (3mm)' },
@@ -102,6 +195,13 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
   return (
     <div className="w-full space-y-6">
+      <ImageLightboxModal
+        isOpen={!!lightboxUrl}
+        imageUrl={lightboxUrl}
+        imageTitle={lightboxTitle}
+        onClose={() => setLightboxUrl(null)}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
@@ -109,7 +209,12 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
             <Sparkles className="w-3.5 h-3.5" />
             <span>Laser Workshop Tool</span>
             <span aria-hidden="true">·</span>
-            <span>Laser-Engraved & Cut in Gosport</span>
+            <span>Laser-Engraved &amp; Cut in Gosport</span>
+            <span aria-hidden="true">·</span>
+            <span className="text-emerald-400 flex items-center gap-1 font-mono">
+              <Cloud className="w-3 h-3" />
+              <span>Firebase Cloud Storage</span>
+            </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
             Replica/Custom Switch Panel Designer
@@ -148,6 +253,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
           {/* SVG Visual Render Frame */}
           <div className="w-full aspect-16/10 bg-slate-950 rounded-xl p-4 flex items-center justify-center overflow-hidden border border-slate-800 relative shadow-inner">
             <svg
+              ref={svgRef}
               viewBox={`0 0 ${config.widthMm + 20} ${config.heightMm + 20}`}
               className="max-w-full max-h-full drop-shadow-2xl transition-all duration-300"
             >
@@ -317,17 +423,36 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
             </svg>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Marine grade UV-stable acrylic & sealed marine components</span>
-            </span>
+          {/* Action Row */}
+          <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800 gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveCadToFirebase}
+                disabled={isSavingCad}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
+              >
+                {isSavingCad ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
+                <span>{isSavingCad ? 'Saving...' : 'Save CAD to Firebase Storage'}</span>
+              </button>
+              {savedCadUrl && (
+                <a
+                  href={savedCadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-emerald-400 flex items-center gap-1 hover:underline"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>CAD Saved (Cloud Link)</span>
+                </a>
+              )}
+            </div>
+
             <button
               onClick={() => {
                 if (onOrderPanel) onOrderPanel(config);
                 setOrderModalOpen(true);
               }}
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow-sm shadow-sky-600/30 transition-all text-xs"
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow-sm shadow-sky-600/30 transition-all text-xs cursor-pointer"
             >
               Order / Request Quote for this Panel
             </button>
@@ -337,30 +462,39 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
         {/* Right 5 Cols: Customization Controls */}
         <div className="lg:col-span-5 bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-5">
           {/* Sub Navigation Tabs */}
-          <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl">
+          <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl overflow-x-auto">
             <button
               onClick={() => setActiveTab('layout')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 ${
                 activeTab === 'layout' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Dimensions & Material
+              Layout
             </button>
             <button
               onClick={() => setActiveTab('switches')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 ${
                 activeTab === 'switches' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Switch Labels ({config.gangCount})
+              Switches ({config.gangCount})
             </button>
             <button
               onClick={() => setActiveTab('options')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 ${
                 activeTab === 'options' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Kit & Accessories
+              Kit
+            </button>
+            <button
+              onClick={() => setActiveTab('cloud_assets')}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 flex items-center justify-center gap-1 ${
+                activeTab === 'cloud_assets' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              <span>Reference Photos ({referencePhotos.length})</span>
             </button>
           </div>
 
@@ -513,7 +647,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
               {/* Accessories toggles */}
               <div className="pt-2 border-t border-slate-800 space-y-2">
                 <label className="font-semibold text-slate-300 block">
-                  Add-on Laser Cutouts & Meters
+                  Add-on Laser Cutouts &amp; Meters
                 </label>
                 <label className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer">
                   <span>Digital LED Voltmeter Cutout (29mm)</span>
@@ -531,6 +665,90 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                     checked={config.hasUsbCharger}
                     onChange={e => updateConfig({ hasUsbCharger: e.target.checked })}
                     className="rounded text-sky-600 focus:ring-0"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 4: Reference Photos & Cloud Storage */}
+          {activeTab === 'cloud_assets' && (
+            <div className="space-y-4 text-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-white">Upload Existing Boat Panel Photos</h4>
+                  <p className="text-[11px] text-slate-400">
+                    Directly stored in Firebase Storage to verify cutouts against old panels.
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-400 px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/30">
+                  Firebase Cloud Storage
+                </span>
+              </div>
+
+              {/* Uploading progress bar */}
+              {isUploadingPhoto && (
+                <div className="p-3 bg-slate-950 border border-sky-500/40 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs text-sky-300">
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" />
+                      <span>Uploading to Firebase Cloud Storage...</span>
+                    </span>
+                    <span className="font-mono">{photoUploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className="bg-sky-500 h-1.5 rounded-full transition-all duration-200" 
+                      style={{ width: `${photoUploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Photos List */}
+              <div className="grid grid-cols-2 gap-2">
+                {referencePhotos.map(photo => (
+                  <div 
+                    key={photo.id}
+                    className="relative aspect-4/3 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 group"
+                  >
+                    <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setLightboxUrl(photo.url);
+                          setLightboxTitle(photo.name);
+                        }}
+                        className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700"
+                        title="Zoom In"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePhoto(photo)}
+                        className="p-1.5 bg-rose-600/80 text-white rounded-lg hover:bg-rose-600"
+                        title="Delete from Firebase Storage"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <span className="absolute bottom-1 left-1.5 right-1.5 text-[9px] bg-black/75 px-1 py-0.5 rounded text-white truncate font-mono">
+                      {photo.originalName}
+                    </span>
+                  </div>
+                ))}
+
+                <label className="aspect-4/3 border-2 border-dashed border-slate-800 hover:border-emerald-500 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-950/60 text-slate-400 hover:text-white">
+                  <Camera className="w-5 h-5 text-emerald-400 mb-1" />
+                  <span className="text-[11px] font-semibold">Upload Photo</span>
+                  <span className="text-[9px] text-emerald-400 font-mono">Firebase Storage</span>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingPhoto}
+                    onChange={handleUploadReferencePhoto}
+                    className="hidden"
                   />
                 </label>
               </div>
@@ -558,7 +776,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                 onClick={() => setOrderModalOpen(false)}
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg text-xs"
               >
-                Continue to Quote & Booking
+                Continue to Quote &amp; Booking
               </button>
             </div>
           </div>

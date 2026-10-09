@@ -42,11 +42,13 @@ export interface FirestoreErrorInfo {
 }
 
 // Initialize Firebase App
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // CRITICAL: The app will break without specifying firestoreDatabaseId
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+export { storage, uploadSwitchPanelImage, uploadMultiplePanelImages, deleteSwitchPanelImage, isFirebaseStorageUrl } from './storage';
+export type { UploadedPanelImage, UploadProgressInfo } from './storage';
 
 // Connection state manager
 let connectionState: FirestoreConnectionState = {

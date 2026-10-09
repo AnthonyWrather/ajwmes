@@ -1,6 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { JobRecord, MessageItem } from '../../types';
-import { Send, Paperclip, CheckCircle2, ShieldCheck, Clock, CreditCard, ExternalLink, Image as ImageIcon, Truck, Package, Bell } from 'lucide-react';
+import { 
+  Send, 
+  Paperclip, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Clock, 
+  CreditCard, 
+  ExternalLink, 
+  Image as ImageIcon, 
+  Truck, 
+  Package, 
+  Bell, 
+  Cloud, 
+  Loader2, 
+  Eye, 
+  Plus 
+} from 'lucide-react';
+import { uploadSwitchPanelImage, isFirebaseStorageUrl } from '../../lib/storage';
+import { ImageLightboxModal } from '../common/ImageLightboxModal';
 
 interface JobDiscussionThreadProps {
   job: JobRecord;
@@ -21,6 +39,14 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Lightbox Modal State
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [lightboxTitle, setLightboxTitle] = useState<string>('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +72,57 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
     }, 1500);
   };
 
+  // Upload an image attachment directly to Firebase Storage
+  const handleAttachPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+
+    setIsUploadingPhoto(true);
+    setUploadProgress(0);
+
+    try {
+      const uploaded = await uploadSwitchPanelImage(file, {
+        jobReference: job.reference,
+        vesselName: job.vesselName,
+        category: 'chat_attachment',
+        onProgress: (info) => {
+          setUploadProgress(info.progress);
+        }
+      });
+
+      const senderName = currentUserRole === 'admin' ? 'Anthony (AJW Marine)' : job.clientName;
+      const photoMessage: MessageItem = {
+        id: `msg-photo-${Date.now()}`,
+        sender: currentUserRole === 'admin' ? 'ajw' : 'client',
+        senderName,
+        text: `📷 [Attached Switch Panel Image: ${file.name}]\nSaved to Firebase Cloud Storage (${uploaded.formattedSize}).`,
+        timestamp: 'Just now',
+        attachments: [uploaded.url]
+      };
+
+      onSendMessage(job.id, photoMessage);
+    } catch (err) {
+      console.error('Failed to attach photo to chat:', err);
+      alert(err instanceof Error ? err.message : 'Photo upload failed. Check connection.');
+    } finally {
+      setIsUploadingPhoto(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[650px] shadow-xl">
+      {/* Lightbox Modal */}
+      <ImageLightboxModal
+        isOpen={!!lightboxUrl}
+        imageUrl={lightboxUrl}
+        imageTitle={lightboxTitle}
+        onClose={() => setLightboxUrl(null)}
+      />
+
       {/* Thread Header */}
       <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -59,7 +134,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
             <span className="text-slate-300">{job.berthLocation}</span>
           </div>
           <h3 className="text-base font-bold text-white mt-0.5">
-            Service Discussion & Diagnostic Record
+            Service Discussion &amp; Diagnostic Record
           </h3>
         </div>
 
@@ -80,21 +155,49 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
             {/* Initial Job Brief Banner */}
             <div className="bg-slate-950/80 border border-slate-800/80 p-3.5 rounded-xl text-xs space-y-2">
               <div className="flex items-center justify-between text-slate-400">
-                <span className="font-semibold text-slate-200">Initial Job Scope & Notes</span>
+                <span className="font-semibold text-slate-200">Initial Job Scope &amp; Notes</span>
                 <span>{job.createdAt}</span>
               </div>
               <p className="text-slate-300 leading-relaxed">{job.notes}</p>
+
+              {/* Uploaded Switch Panel Photos Section */}
               {job.replicaImages && job.replicaImages.length > 0 && (
-                <div className="pt-2 flex items-center gap-2">
-                  <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                    <ImageIcon className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Attached Photos:</span>
-                  </span>
-                  {job.replicaImages.map((img: string, i: number) => (
-                    <a key={i} href={img} target="_blank" rel="noreferrer" className="text-[11px] text-sky-400 hover:underline">
-                      View Photo {i + 1}
-                    </a>
-                  ))}
+                <div className="pt-2 border-t border-slate-800/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-sky-400 flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Switch Panel Reference Photos ({job.replicaImages.length})</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                      <Cloud className="w-3 h-3" />
+                      <span>Firebase Storage</span>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {job.replicaImages.map((img: string, i: number) => (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setLightboxUrl(img);
+                          setLightboxTitle(`Switch Panel Reference Photo ${i + 1}`);
+                        }}
+                        className="group relative aspect-4/3 bg-slate-900 rounded-lg overflow-hidden border border-slate-800 hover:border-sky-500 cursor-pointer transition-all shadow-sm"
+                      >
+                        <img 
+                          src={img} 
+                          alt={`Reference ${i + 1}`} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Eye className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="absolute bottom-1 left-1.5 text-[9px] bg-black/75 px-1 rounded text-white font-mono">
+                          Photo {i + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -172,14 +275,62 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
                     }`}
                   >
                     <p>{msg.text}</p>
+
+                    {/* Inline Image Attachment if any */}
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="mt-2.5 pt-2 border-t border-white/20 grid grid-cols-2 gap-2">
+                        {msg.attachments.map((attachUrl, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setLightboxUrl(attachUrl);
+                              setLightboxTitle(`Chat Attachment from ${msg.senderName}`);
+                            }}
+                            className="aspect-4/3 rounded-lg overflow-hidden bg-black/40 border border-white/20 cursor-pointer hover:opacity-90 transition-opacity relative group"
+                          >
+                            <img src={attachUrl} alt="Attached switch panel" className="w-full h-full object-cover" />
+                            <span className="absolute bottom-1 right-1 text-[8px] bg-black/75 px-1 rounded text-white font-mono">
+                              Click to zoom
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
 
+          {/* Uploading progress notification */}
+          {isUploadingPhoto && (
+            <div className="bg-sky-950/70 border border-sky-500/40 rounded-xl p-2.5 mb-2 text-xs text-sky-300 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" />
+                <span>Uploading photo to Firebase Storage...</span>
+              </span>
+              <span className="font-mono font-bold">{uploadProgress}%</span>
+            </div>
+          )}
+
           {/* Message Input Box */}
-          <form onSubmit={handleSend} className="pt-3 border-t border-slate-800 flex gap-2">
+          <form onSubmit={handleSend} className="pt-3 border-t border-slate-800 flex gap-2 items-center">
+            {/* Attach Image button with Firebase Storage upload */}
+            <label 
+              className="p-2.5 bg-slate-950 border border-slate-800 hover:border-sky-500 text-slate-400 hover:text-sky-400 rounded-xl cursor-pointer transition-colors"
+              title="Upload Switch Panel Photo to Firebase Storage"
+            >
+              <Paperclip className="w-4 h-4" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                disabled={isUploadingPhoto}
+                onChange={handleAttachPhoto}
+                className="hidden"
+              />
+            </label>
+
             <input
               type="text"
               placeholder={`Reply as ${currentUserRole === 'admin' ? 'Anthony (AJW Marine)' : job.clientName}...`}
@@ -189,7 +340,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Send</span>
@@ -282,7 +433,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
               </div>
             )}
             <p className="text-[10px] text-slate-500 text-center">
-              Stripe 256-bit encryption · Apple Pay & Cards
+              Stripe 256-bit encryption · Apple Pay &amp; Cards
             </p>
           </div>
         </div>
