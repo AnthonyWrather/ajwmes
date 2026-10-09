@@ -4,7 +4,8 @@ import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { VesselSpecManager } from './VesselSpecManager';
 import { PostalOrderTracker } from '../orders/PostalOrderTracker';
 import { OrderTrackingProgress } from './OrderTrackingProgress';
-import { Anchor, Clock, Wrench, ShieldCheck, ChevronRight, Plus, AlertCircle, FileText, MessageSquare, ShoppingBag, Truck, Package, CheckCircle2 } from 'lucide-react';
+import { VesselPdfSummaryModal } from './VesselPdfSummaryModal';
+import { Anchor, Clock, Wrench, ShieldCheck, ChevronRight, Plus, AlertCircle, FileText, MessageSquare, ShoppingBag, Truck, Package, CheckCircle2, Printer, Download } from 'lucide-react';
 
 interface ClientVesselPortalProps {
   jobs: JobRecord[];
@@ -38,6 +39,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
   onNavigateToTracker
 }) => {
   const [internalTab, setInternalTab] = useState<'specs' | 'jobs' | 'orders'>('specs');
+  const [showPdfSummaryModal, setShowPdfSummaryModal] = useState(false);
   const portalTab = activeSubTab || internalTab;
 
   const handleTabChange = (tab: 'specs' | 'jobs' | 'orders') => {
@@ -123,6 +125,16 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
             </button>
           </div>
 
+          {/* Direct Option to Generate Visual On-Board Spec Summary PDF */}
+          <button
+            onClick={() => setShowPdfSummaryModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 hover:border-sky-400 rounded-xl text-xs font-semibold shadow-sm transition-all whitespace-nowrap"
+            title="Generate a visual PDF summary of vessel electrical specifications suitable for on-board printing"
+          >
+            <Printer className="w-3.5 h-3.5 text-sky-400" />
+            <span>Print On-Board Spec (PDF)</span>
+          </button>
+
           <button
             onClick={onRequestNewService}
             className="flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all whitespace-nowrap"
@@ -168,10 +180,48 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
       {/* Tab 1: Vessel Technical Specifications & Electrical History */}
       {portalTab === 'specs' && (
-        <VesselSpecManager
-          vesselSpec={vesselSpec}
-          onUpdateVesselSpec={onUpdateVesselSpec}
-        />
+        <div className="space-y-6">
+          {/* On-Board Print Callout Card */}
+          <div className="bg-gradient-to-r from-sky-950/80 via-slate-900 to-slate-900 border border-sky-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl shadow-sky-950/20">
+            <div className="flex items-start gap-3.5">
+              <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-sky-400 shrink-0 mt-0.5 md:mt-0">
+                <Printer className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-sky-300 uppercase tracking-wide">
+                    On-Board Technical Print Station
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30">
+                    A4 Single-Page or Dossier
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold text-white mt-0.5">
+                  Visual Vessel Electrical Specification Summary (PDF)
+                </h3>
+                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                  Generate a high-contrast visual PDF summary of {vesselSpec.vesselName}'s {vesselSpec.systemVoltage} DC system, domestic battery capacity ({vesselSpec.houseCapacityAh}Ah {vesselSpec.houseBatteryType}), solar &amp; shore charging, emergency isolation checklist, and critical fuse amperages — formatted for local printing on board, helm laminating, and insurance surveys.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-stretch md:self-auto shrink-0">
+              <button
+                onClick={() => setShowPdfSummaryModal(true)}
+                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/30 transition-all whitespace-nowrap"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Open Print &amp; PDF Station</span>
+              </button>
+            </div>
+          </div>
+
+          <VesselSpecManager
+            vesselSpec={vesselSpec}
+            onUpdateVesselSpec={onUpdateVesselSpec}
+            onOpenPdfModal={() => setShowPdfSummaryModal(true)}
+          />
+        </div>
       )}
 
       {/* Tab 2: Postal Orders & Deliveries */}
@@ -376,6 +426,13 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
           </div>
         </div>
       )}
+
+      {/* Visual PDF Summary Modal for On-Board Printing */}
+      <VesselPdfSummaryModal
+        isOpen={showPdfSummaryModal}
+        onClose={() => setShowPdfSummaryModal(false)}
+        vesselSpec={vesselSpec}
+      />
     </div>
   );
 };

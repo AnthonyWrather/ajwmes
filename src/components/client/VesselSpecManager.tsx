@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
 import { VesselSpec, ElectricalLogEntry } from '../../types';
 import { generateVesselPdf } from '../../utils/generateVesselPdf';
+import { VesselPdfSummaryModal } from './VesselPdfSummaryModal';
 import { Anchor, Battery, Sun, Zap, Shield, Wrench, Plus, Check, Edit3, Save, Printer, Calendar, FileText, ChevronDown, ChevronUp, AlertCircle, Download, FileDown } from 'lucide-react';
 
 interface VesselSpecManagerProps {
   vesselSpec: VesselSpec;
   onUpdateVesselSpec: (updated: VesselSpec) => void;
+  onOpenPdfModal?: () => void;
 }
 
 export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
   vesselSpec,
-  onUpdateVesselSpec
+  onUpdateVesselSpec,
+  onOpenPdfModal
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'overview' | 'dc_power' | 'ac_safety' | 'nav_electronics' | 'history'>('overview');
   const [formData, setFormData] = useState<VesselSpec>(vesselSpec);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showInternalPdfModal, setShowInternalPdfModal] = useState(false);
 
   // New Log Entry Modal State
   const [showAddLogModal, setShowAddLogModal] = useState(false);
@@ -72,6 +76,14 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
     window.print();
   };
 
+  const handleOpenPrintStation = () => {
+    if (onOpenPdfModal) {
+      onOpenPdfModal();
+    } else {
+      setShowInternalPdfModal(true);
+    }
+  };
+
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const handleDownloadPdf = () => {
@@ -112,13 +124,12 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
           {!isEditing ? (
             <>
               <button
-                onClick={handleDownloadPdf}
-                disabled={isGeneratingPdf}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-semibold shadow-sm transition-all"
-                title="Download formatted marine survey PDF dossier"
+                onClick={handleOpenPrintStation}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/40 rounded-xl text-xs font-semibold shadow-sm transition-all"
+                title="Generate visual PDF summary of electrical specifications suitable for on-board printing"
               >
-                <FileDown className="w-3.5 h-3.5 text-sky-400" />
-                <span>{isGeneratingPdf ? 'Creating PDF...' : 'Download PDF Spec'}</span>
+                <Printer className="w-3.5 h-3.5 text-sky-400" />
+                <span>Print On-Board Spec (PDF)</span>
               </button>
 
               <button
@@ -130,12 +141,13 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
               </button>
 
               <button
-                onClick={handlePrintSpec}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
-                title="Print or export PDF spec sheet"
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf}
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
+                title="Direct PDF download"
               >
-                <Printer className="w-3.5 h-3.5 text-sky-400" />
-                <span>Print</span>
+                <FileDown className="w-3.5 h-3.5 text-slate-400" />
+                <span>{isGeneratingPdf ? 'Creating...' : 'Direct PDF'}</span>
               </button>
             </>
           ) : (
@@ -972,6 +984,13 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
           </div>
         </div>
       )}
+
+      {/* Internal Visual PDF Modal if invoked independently */}
+      <VesselPdfSummaryModal
+        isOpen={showInternalPdfModal}
+        onClose={() => setShowInternalPdfModal(false)}
+        vesselSpec={formData}
+      />
     </div>
   );
 };
