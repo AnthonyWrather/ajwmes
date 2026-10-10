@@ -15,6 +15,9 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { TechnicianWorkspace } from './components/technician/TechnicianWorkspace';
 import { PostalWorkspace } from './components/postal/PostalWorkspace';
 import { AuthModal } from './components/auth/AuthModal';
+import { SignInModal } from './components/auth/SignInModal';
+import { SignOffModal } from './components/auth/SignOffModal';
+import { AccountManagementModal } from './components/auth/AccountManagementModal';
 import { 
   getSavedRole, 
   saveCurrentRole, 
@@ -30,6 +33,18 @@ import { FreeHostingGuideModal } from './components/modals/FreeHostingGuideModal
 import { Logo } from './components/brand/Logo';
 import { PWAInstallButton } from './components/pwa/PWAInstallButton';
 import { ShieldCheck, MapPin, Clock, Github, HelpCircle, Phone, Mail, Bell, Truck, CheckCircle2, ArrowRight, X, AlertTriangle } from 'lucide-react';
+import { 
+  AppRoute, 
+  RbacAction, 
+  canAccessRoute, 
+  canPerformAction, 
+  enforceAction, 
+  ActionCheckResult, 
+  getDefaultRouteForRole 
+} from './lib/rbac';
+import { RBACRouteGuard } from './components/rbac/RBACRouteGuard';
+import { RBACPermissionsModal } from './components/rbac/RBACPermissionsModal';
+import { RBACActionDeniedToast } from './components/rbac/RBACActionDeniedToast';
 import { 
   subscribeJobs, 
   syncJobToFirestore, 
@@ -138,9 +153,17 @@ export default function App() {
   const [supplierReorderItem, setSupplierReorderItem] = useState<CatalogItem | null>(null);
   const [viewingAlertEmail, setViewingAlertEmail] = useState<StockAlert | null>(null);
 
+  // RBAC State Management
+  const [isPermissionsMatrixOpen, setIsPermissionsMatrixOpen] = useState(false);
+  const [actionDenial, setActionDenial] = useState<ActionCheckResult | null>(null);
+
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>(() => getSavedRole());
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>(() => getSavedUserProfile());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [isSignOffModalOpen, setIsSignOffModalOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [authToast, setAuthToast] = useState<{ title: string; message: string; type: 'success' | 'info' } | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isHostingGuideOpen, setIsHostingGuideOpen] = useState(false);
   const [selectedInitialService, setSelectedInitialService] = useState<ServiceType>('diagnostic');
@@ -156,16 +179,66 @@ export default function App() {
       setCurrentUserProfile(demoProfile);
       saveUserProfile(demoProfile);
     }
+    // Strict RBAC: Automatically redirect if current tab is not authorized for the new role
+    if (!canAccessRoute(newRole, currentTab as AppRoute)) {
+      setCurrentTab(getDefaultRouteForRole(newRole));
+    }
   };
 
+  const handleSuccessSignIn = (profile: UserProfile) => {
+    setCurrentUserProfile(profile);
+    setCurrentUserRole(profile.role);
+    saveUserProfile(profile);
+    setAuthToast({
+      title: `Welcome, ${profile.name}`,
+      message: `Signed in successfully with ${ROLE_CONFIGS[profile.role].label} permissions.`,
+      type: 'success'
+    });
+    // If not allowed on current route, redirect to role's primary view
+    if (!canAccessRoute(profile.role, currentTab as AppRoute)) {
+      setCurrentTab(getDefaultRouteForRole(profile.role));
+    } else if (profile.role === 'client' && currentTab === 'home') {
+      setCurrentTab('portal');
+    }
+  };
+
+  const handleConfirmSignOff = () => {
+    const guestProfile = DEMO_PROFILES.find(p => p.role === 'guest') || DEMO_PROFILES[4];
+    setCurrentUserProfile(guestProfile);
+    setCurrentUserRole('guest');
+    saveUserProfile(guestProfile);
+    setAuthToast({
+      title: 'Signed Off',
+      message: 'You have signed off. Browsing in public Guest Visitor mode.',
+      type: 'info'
+    });
+    if (!canAccessRoute('guest', currentTab as AppRoute)) {
+      setCurrentTab(getDefaultRouteForRole('guest'));
+    }
+  };
+
+  // Auto-dismiss auth toast after 6 seconds
+  useEffect(() => {
+    if (!authToast) return;
+    const timer = setTimeout(() => setAuthToast(null), 6000);
+    return () => clearTimeout(timer);
+  }, [authToast]);
+
   const handleUpdateJobStatus = (jobId: string, newStatus: JobRecord['status']) => {
-    setJobs(prev =>
-      prev.map(j => {
-        if (j.id !== jobId) return j;
-        const updated: JobRecord = { ...j, status: newStatus };
-        syncJobToFirestore(updated);
-        return updated;
-      })
+    enforceAction(
+      currentUserRole,
+      'update_job_status',
+      () => {
+        setJobs(prev =>
+          prev.map(j => {
+            if (j.id !== jobId) return j;
+            const updated: JobRecord = { ...j, status: newStatus };
+            syncJobToFirestore(updated);
+            return updated;
+          })
+        );
+      },
+      (denial) => setActionDenial(denial)
     );
   };
 
@@ -302,6 +375,15 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [activeStockAlertToast]);
 
+  // Auto-dismiss action denial toast after 8 seconds
+  useEffect(() => {
+    if (!actionDenial) return;
+    const timer = setTimeout(() => {
+      setActionDenial(null);
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [actionDenial]);
+
   // Automated Zero-Stock Alert Trigger (Fires when stockCount hits 0)
   const triggerZeroStockAlert = (item: CatalogItem, triggerSource: StockAlert['triggerSource'] = 'manual_adjustment') => {
     const { subject, body } = generateStockAlertEmail(item, triggerSource);
@@ -324,140 +406,183 @@ export default function App() {
     setActiveStockAlertToast(newAlert);
   };
 
-  // Restock item callback from SupplierReorderModal
+  // Restock item callback from SupplierReorderModal (Admin only)
   const handleRestockItem = (itemId: string, restockCount: number) => {
-    setCatalog(prev =>
-      prev.map(item => {
-        if (item.id === itemId) {
-          const newCount = (item.stockCount ?? 0) + restockCount;
-          const updatedItem = {
-            ...item,
-            stockCount: newCount,
-            inStock: newCount > 0
-          };
-          syncCatalogItemToFirestore(updatedItem);
-          return updatedItem;
-        }
-        return item;
-      })
+    enforceAction(
+      currentUserRole,
+      'restock_catalog_inventory',
+      () => {
+        setCatalog(prev =>
+          prev.map(item => {
+            if (item.id === itemId) {
+              const newCount = (item.stockCount ?? 0) + restockCount;
+              const updatedItem = {
+                ...item,
+                stockCount: newCount,
+                inStock: newCount > 0
+              };
+              syncCatalogItemToFirestore(updatedItem);
+              return updatedItem;
+            }
+            return item;
+          })
+        );
+        // Dismiss zero stock toast for this item if open
+        setActiveStockAlertToast(prev => prev && prev.itemId === itemId ? null : prev);
+      },
+      (denial) => setActionDenial(denial)
     );
-    // Dismiss zero stock toast for this item if open
-    setActiveStockAlertToast(prev => prev && prev.itemId === itemId ? null : prev);
   };
 
-  // Safe catalog updater that checks for transitions to stockCount = 0
+  // Safe catalog updater that checks for transitions to stockCount = 0 (Admin only)
   const handleUpdateCatalog = (newCatalog: CatalogItem[], triggerSource: StockAlert['triggerSource'] = 'manual_adjustment') => {
-    newCatalog.forEach(newItem => {
-      const prevItem = catalog.find(c => c.id === newItem.id);
-      if (prevItem && (prevItem.stockCount ?? 0) > 0 && (newItem.stockCount ?? 0) === 0) {
-        triggerZeroStockAlert(newItem, triggerSource);
-      }
-      syncCatalogItemToFirestore(newItem);
-    });
-    setCatalog(newCatalog);
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        newCatalog.forEach(newItem => {
+          const prevItem = catalog.find(c => c.id === newItem.id);
+          if (prevItem && (prevItem.stockCount ?? 0) > 0 && (newItem.stockCount ?? 0) === 0) {
+            triggerZeroStockAlert(newItem, triggerSource);
+          }
+          syncCatalogItemToFirestore(newItem);
+        });
+        setCatalog(newCatalog);
+      },
+      (denial) => setActionDenial(denial)
+    );
   };
 
 
   // Handler: Send Message in Discussion Thread
   const handleSendMessage = (jobId: string, message: MessageItem) => {
-    setJobs(prev =>
-      prev.map(j => {
-        if (j.id === jobId) {
-          const updated = { ...j, messages: [...j.messages, message] };
-          syncJobToFirestore(updated);
-          return updated;
-        }
-        return j;
-      })
-    );
-  };
-
-  // Handler: Approve Quote
-  const handleApproveQuote = (jobId: string) => {
-    setJobs(prev =>
-      prev.map(j => {
-        if (j.id === jobId) {
-          const updated: JobRecord = {
-            ...j,
-            status: 'quote_accepted',
-            messages: [
-              ...j.messages,
-              {
-                id: `msg-${Date.now()}`,
-                sender: 'client',
-                senderName: j.clientName,
-                text: 'Quote accepted by boat owner. Ready to schedule diagnostics/fitment.',
-                timestamp: 'Just now'
-              }
-            ]
-          };
-          syncJobToFirestore(updated);
-          return updated;
-        }
-        return j;
-      })
-    );
-  };
-
-  // Handler: Pay Deposit via Stripe
-  const handlePayDeposit = (jobId: string, amount: number) => {
-    setJobs(prev =>
-      prev.map(j => {
-        if (j.id === jobId) {
-          const updated: JobRecord = {
-            ...j,
-            depositPaid: true,
-            depositAmount: amount,
-            status: j.status === 'quote_requested' ? 'scheduled' : j.status,
-            messages: [
-              ...j.messages,
-              {
-                id: `msg-${Date.now()}`,
-                sender: 'client',
-                senderName: 'System / Stripe',
-                text: `£${amount}.00 deposit successfully secured via Stripe checkout.`,
-                timestamp: 'Just now'
-              }
-            ]
-          };
-          syncJobToFirestore(updated);
-          return updated;
-        }
-        return j;
-      })
-    );
-  };
-
-  // Handler: Save Labor & Materials Job Sheet (Admin)
-  const handleSaveJobSheet = (jobId: string, hours: number, materials: MaterialLineItem[]) => {
-    setJobs(prev =>
-      prev.map(j => {
-        if (j.id !== jobId) return j;
-        const totalLabor = Number((hours * j.hourlyRate).toFixed(2));
-        const totalMaterials = Number(
-          materials.reduce((sum, m) => sum + m.quantity * m.unitPrice, 0).toFixed(2)
-        );
-        const updated: JobRecord = {
-          ...j,
-          diagnosticHours: hours,
-          materialsUsed: materials,
-          totalLabor,
-          totalMaterials,
-          totalEstimated: Number((totalLabor + totalMaterials).toFixed(2)),
-          messages: [
-            ...j.messages,
-            {
-              id: `msg-${Date.now()}`,
-              sender: 'ajw',
-              senderName: 'Anthony (AJW Marine)',
-              text: `Updated on-vessel job sheet: ${hours}h diagnostic labor logged (£${totalLabor}) + ${materials.length} material items (£${totalMaterials}).`,
-              timestamp: 'Just now'
+    const requiredAction: RbacAction = message.sender === 'client' ? 'send_client_message' : 'send_technician_message';
+    enforceAction(
+      currentUserRole,
+      requiredAction,
+      () => {
+        setJobs(prev =>
+          prev.map(j => {
+            if (j.id === jobId) {
+              const updated = { ...j, messages: [...j.messages, message] };
+              syncJobToFirestore(updated);
+              return updated;
             }
-          ]
-        };
-        syncJobToFirestore(updated);
-        return updated;
-      })
+            return j;
+          })
+        );
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Handler: Approve Quote (Client or Admin)
+  const handleApproveQuote = (jobId: string) => {
+    enforceAction(
+      currentUserRole,
+      'approve_quote',
+      () => {
+        setJobs(prev =>
+          prev.map(j => {
+            if (j.id === jobId) {
+              const updated: JobRecord = {
+                ...j,
+                status: 'quote_accepted',
+                messages: [
+                  ...j.messages,
+                  {
+                    id: `msg-${Date.now()}`,
+                    sender: 'client',
+                    senderName: j.clientName,
+                    text: 'Quote accepted by boat owner. Ready to schedule diagnostics/fitment.',
+                    timestamp: 'Just now'
+                  }
+                ]
+              };
+              syncJobToFirestore(updated);
+              return updated;
+            }
+            return j;
+          })
+        );
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Handler: Pay Deposit via Stripe (Client or Admin)
+  const handlePayDeposit = (jobId: string, amount: number) => {
+    enforceAction(
+      currentUserRole,
+      'pay_deposit',
+      () => {
+        setJobs(prev =>
+          prev.map(j => {
+            if (j.id === jobId) {
+              const updated: JobRecord = {
+                ...j,
+                depositPaid: true,
+                depositAmount: amount,
+                status: j.status === 'quote_requested' ? 'scheduled' : j.status,
+                messages: [
+                  ...j.messages,
+                  {
+                    id: `msg-${Date.now()}`,
+                    sender: 'client',
+                    senderName: 'System / Stripe',
+                    text: `£${amount}.00 deposit successfully secured via Stripe checkout.`,
+                    timestamp: 'Just now'
+                  }
+                ]
+              };
+              syncJobToFirestore(updated);
+              return updated;
+            }
+            return j;
+          })
+        );
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Handler: Save Labor & Materials Job Sheet (Technician or Admin)
+  const handleSaveJobSheet = (jobId: string, hours: number, materials: MaterialLineItem[]) => {
+    enforceAction(
+      currentUserRole,
+      'log_diagnostic_hours',
+      () => {
+        setJobs(prev =>
+          prev.map(j => {
+            if (j.id !== jobId) return j;
+            const totalLabor = Number((hours * j.hourlyRate).toFixed(2));
+            const totalMaterials = Number(
+              materials.reduce((sum, m) => sum + m.quantity * m.unitPrice, 0).toFixed(2)
+            );
+            const updated: JobRecord = {
+              ...j,
+              diagnosticHours: hours,
+              materialsUsed: materials,
+              totalLabor,
+              totalMaterials,
+              totalEstimated: Number((totalLabor + totalMaterials).toFixed(2)),
+              messages: [
+                ...j.messages,
+                {
+                  id: `msg-${Date.now()}`,
+                  sender: 'ajw',
+                  senderName: 'Anthony (AJW Marine)',
+                  text: `Updated on-vessel job sheet: ${hours}h diagnostic labor logged (£${totalLabor}) + ${materials.length} material items (£${totalMaterials}).`,
+                  timestamp: 'Just now'
+                }
+              ]
+            };
+            syncJobToFirestore(updated);
+            return updated;
+          })
+        );
+      },
+      (denial) => setActionDenial(denial)
     );
   };
 
@@ -545,21 +670,35 @@ export default function App() {
     setCurrentTab('portal');
   };
 
-  // Catalog Snapshot Controls
+  // Catalog Snapshot Controls (Admin only)
   const handleCreateSnapshot = (label: string) => {
-    const snap: CatalogSnapshot = {
-      id: `snap-${Date.now()}`,
-      timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
-      label,
-      itemsCount: catalog.length,
-      items: [...catalog]
-    };
-    setSnapshots([snap, ...snapshots]);
+    enforceAction(
+      currentUserRole,
+      'create_catalog_snapshot',
+      () => {
+        const snap: CatalogSnapshot = {
+          id: `snap-${Date.now()}`,
+          timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+          label,
+          itemsCount: catalog.length,
+          items: [...catalog]
+        };
+        setSnapshots([snap, ...snapshots]);
+      },
+      (denial) => setActionDenial(denial)
+    );
   };
 
   const handleRestoreSnapshot = (snapshot: CatalogSnapshot) => {
-    setCatalog([...snapshot.items]);
-    alert(`Catalog restored to save point: "${snapshot.label}" (${snapshot.itemsCount} items)`);
+    enforceAction(
+      currentUserRole,
+      'restore_catalog_snapshot',
+      () => {
+        setCatalog([...snapshot.items]);
+        alert(`Catalog restored to save point: "${snapshot.label}" (${snapshot.itemsCount} items)`);
+      },
+      (denial) => setActionDenial(denial)
+    );
   };
 
   // Cart & Store Front Handlers
@@ -627,108 +766,120 @@ export default function App() {
     trackingNumber?: string,
     carrier?: string
   ) => {
-    const existingOrder = postalOrders.find(o => o.id === orderId);
-    const orderNumber = existingOrder?.orderNumber || orderId;
-    const resolvedTracking = trackingNumber || existingOrder?.trackingNumber || (status === 'dispatched' ? `GB${Math.floor(100000000 + Math.random() * 900000000)}RM` : undefined);
-    const resolvedCarrier = carrier || existingOrder?.trackingCarrier || 'Royal Mail Tracked 24';
+    enforceAction(
+      currentUserRole,
+      'update_postal_status',
+      () => {
+        const existingOrder = postalOrders.find(o => o.id === orderId);
+        const orderNumber = existingOrder?.orderNumber || orderId;
+        const resolvedTracking = trackingNumber || existingOrder?.trackingNumber || (status === 'dispatched' ? `GB${Math.floor(100000000 + Math.random() * 900000000)}RM` : undefined);
+        const resolvedCarrier = carrier || existingOrder?.trackingCarrier || 'Royal Mail Tracked 24';
 
-    // 1. Update postal orders state
-    setPostalOrders(prev =>
-      prev.map(o => {
-        if (o.id !== orderId) return o;
-        const updatedOrder: PostalOrder = {
-          ...o,
-          orderStatus: status,
-          trackingNumber: resolvedTracking || o.trackingNumber,
-          trackingCarrier: resolvedCarrier || o.trackingCarrier,
-          dispatchedAt: status === 'dispatched' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.dispatchedAt,
-          deliveredAt: status === 'delivered' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.deliveredAt
-        };
-        syncPostalOrderToFirestore(updatedOrder);
-        return updatedOrder;
-      })
-    );
+        // 1. Update postal orders state
+        setPostalOrders(prev =>
+          prev.map(o => {
+            if (o.id !== orderId) return o;
+            const updatedOrder: PostalOrder = {
+              ...o,
+              orderStatus: status,
+              trackingNumber: resolvedTracking || o.trackingNumber,
+              trackingCarrier: resolvedCarrier || o.trackingCarrier,
+              dispatchedAt: status === 'dispatched' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.dispatchedAt,
+              deliveredAt: status === 'delivered' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.deliveredAt
+            };
+            syncPostalOrderToFirestore(updatedOrder);
+            return updatedOrder;
+          })
+        );
 
-    // 2. Generate simulated activity feed notification message
-    const destinationLabel = existingOrder?.shippingAddress.isMarinaDelivery
-      ? `${existingOrder.shippingAddress.marinaName} (${existingOrder.shippingAddress.berthNumber || 'Berth Pontoon'})`
-      : existingOrder
-      ? `${existingOrder.shippingAddress.addressLine1}, ${existingOrder.shippingAddress.postcode}`
-      : 'registered delivery address';
+        // 2. Generate simulated activity feed notification message
+        const destinationLabel = existingOrder?.shippingAddress.isMarinaDelivery
+          ? `${existingOrder.shippingAddress.marinaName} (${existingOrder.shippingAddress.berthNumber || 'Berth Pontoon'})`
+          : existingOrder
+          ? `${existingOrder.shippingAddress.addressLine1}, ${existingOrder.shippingAddress.postcode}`
+          : 'registered delivery address';
 
-    let headline = '';
-    let notificationBody = '';
+        let headline = '';
+        let notificationBody = '';
 
-    switch (status) {
-      case 'dispatched':
-        headline = `Postal Order Dispatched (${orderNumber})`;
-        notificationBody = `Your parts parcel has been dispatched from the Gosport workshop via ${resolvedCarrier}. Tracking Number: ${resolvedTracking || 'Active'}. In transit to ${destinationLabel}.`;
-        break;
-      case 'delivered':
-        headline = `Postal Order Delivered (${orderNumber})`;
-        notificationBody = `Consignment delivery confirmed to ${destinationLabel}. All ordered marine wiring and electrical components safely arrived on vessel.`;
-        break;
-      case 'processing':
-      case 'packed':
-        headline = `Order Bench Assembly & Packing (${orderNumber})`;
-        notificationBody = `Your order is on the Gosport bench: continuous tinned marine cables measured & cut, terminal crimps verified, and sealed in weatherproof packaging.`;
-        break;
-      case 'ready_for_pickup':
-        headline = `Ready for Solent Collection (${orderNumber})`;
-        notificationBody = `Order ${orderNumber} is packaged and ready for collection at Anthony's Gosport workshop or Haslar drop-off point.`;
-        break;
-      case 'pending':
-      case 'received':
-      default:
-        headline = `Postal Order Queued (${orderNumber})`;
-        notificationBody = `Order ${orderNumber} is confirmed and added to the workshop fulfillment schedule. Stock components reserved.`;
-        break;
-    }
-
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const activityMessage: MessageItem = {
-      id: `msg-dispatch-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      sender: 'ajw',
-      senderName: 'Anthony (Workshop Postal Dispatch)',
-      text: `📦 [${headline}]\n${notificationBody}`,
-      timestamp: `Today at ${timeStr}`
-    };
-
-    // 3. Automatically push to the client's job portal activity feed
-    setJobs(prevJobs => {
-      // Find matching job for this order's client
-      const matchingJob = existingOrder ? prevJobs.find(j =>
-        j.clientEmail.toLowerCase() === existingOrder.customerEmail.toLowerCase() ||
-        j.clientName.toLowerCase() === existingOrder.customerName.toLowerCase()
-      ) : null;
-
-      return prevJobs.map(job => {
-        // If matched by customer email/name, update that job.
-        // Also update the primary client job (job-101) so it is immediately visible in the demo portal!
-        if (matchingJob ? (job.id === matchingJob.id || job.id === 'job-101') : (job.id === 'job-101' || job === prevJobs[0])) {
-          return {
-            ...job,
-            messages: [...job.messages, activityMessage]
-          };
+        switch (status) {
+          case 'dispatched':
+            headline = `Postal Order Dispatched (${orderNumber})`;
+            notificationBody = `Your parts parcel has been dispatched from the Gosport workshop via ${resolvedCarrier}. Tracking Number: ${resolvedTracking || 'Active'}. In transit to ${destinationLabel}.`;
+            break;
+          case 'delivered':
+            headline = `Postal Order Delivered (${orderNumber})`;
+            notificationBody = `Consignment delivery confirmed to ${destinationLabel}. All ordered marine wiring and electrical components safely arrived on vessel.`;
+            break;
+          case 'processing':
+          case 'packed':
+            headline = `Order Bench Assembly & Packing (${orderNumber})`;
+            notificationBody = `Your order is on the Gosport bench: continuous tinned marine cables measured & cut, terminal crimps verified, and sealed in weatherproof packaging.`;
+            break;
+          case 'ready_for_pickup':
+            headline = `Ready for Solent Collection (${orderNumber})`;
+            notificationBody = `Order ${orderNumber} is packaged and ready for collection at Anthony's Gosport workshop or Haslar drop-off point.`;
+            break;
+          case 'pending':
+          case 'received':
+          default:
+            headline = `Postal Order Queued (${orderNumber})`;
+            notificationBody = `Order ${orderNumber} is confirmed and added to the workshop fulfillment schedule. Stock components reserved.`;
+            break;
         }
-        return job;
-      });
-    });
 
-    // 4. Trigger simulated real-time notification toast
-    setActiveToast({
-      id: `toast-${Date.now()}`,
-      orderNumber,
-      status: status.replace(/_/g, ' '),
-      headline,
-      messageText: notificationBody,
-      timestamp: 'Just now'
-    });
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const activityMessage: MessageItem = {
+          id: `msg-dispatch-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          sender: 'ajw',
+          senderName: 'Anthony (Workshop Postal Dispatch)',
+          text: `📦 [${headline}]\n${notificationBody}`,
+          timestamp: `Today at ${timeStr}`
+        };
+
+        // 3. Automatically push to the client's job portal activity feed
+        setJobs(prevJobs => {
+          // Find matching job for this order's client
+          const matchingJob = existingOrder ? prevJobs.find(j =>
+            j.clientEmail.toLowerCase() === existingOrder.customerEmail.toLowerCase() ||
+            j.clientName.toLowerCase() === existingOrder.customerName.toLowerCase()
+          ) : null;
+
+          return prevJobs.map(job => {
+            if (matchingJob ? (job.id === matchingJob.id || job.id === 'job-101') : (job.id === 'job-101' || job === prevJobs[0])) {
+              return {
+                ...job,
+                messages: [...job.messages, activityMessage]
+              };
+            }
+            return job;
+          });
+        });
+
+        // 4. Trigger simulated real-time notification toast
+        setActiveToast({
+          id: `toast-${Date.now()}`,
+          orderNumber,
+          status: status.replace(/_/g, ' '),
+          headline,
+          messageText: notificationBody,
+          timestamp: 'Just now'
+        });
+      },
+      (denial) => setActionDenial(denial)
+    );
   };
 
   const handleUpdateVesselSpec = (newSpec: VesselSpec) => {
-    setVesselSpec(newSpec);
-    syncVesselSpecToFirestore(newSpec);
+    enforceAction(
+      currentUserRole,
+      'edit_vessel_spec',
+      () => {
+        setVesselSpec(newSpec);
+        syncVesselSpecToFirestore(newSpec);
+      },
+      (denial) => setActionDenial(denial)
+    );
   };
 
   return (
@@ -759,120 +910,131 @@ export default function App() {
         onRetrySync={handleRetryConnection}
         isCheckingSync={connectionState.isChecking}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
         currentUserProfile={currentUserProfile}
+        onOpenSignInModal={() => setIsSignInModalOpen(true)}
+        onOpenSignOffModal={() => setIsSignOffModalOpen(true)}
+        onOpenAccountModal={() => setIsAccountModalOpen(true)}
       />
 
-      {/* Main Container */}
+      {/* Main Container with Centralized RBAC Route Middleware Guard */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        {/* Tab 1: Home Landing Page */}
-        {currentTab === 'home' && (
-          <div className="space-y-16">
-            <LandingHero
-              onOpenDesigner={() => setCurrentTab('designer')}
-              onOpenQuote={() => {
+        <RBACRouteGuard
+          route={currentTab as AppRoute}
+          userRole={currentUserRole}
+          onRedirect={(targetRoute) => setCurrentTab(targetRoute)}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
+        >
+          {/* Tab 1: Home Landing Page */}
+          {currentTab === 'home' && (
+            <div className="space-y-16">
+              <LandingHero
+                onOpenDesigner={() => setCurrentTab('designer')}
+                onOpenQuote={() => {
+                  setSelectedInitialService('diagnostic');
+                  setIsBookingModalOpen(true);
+                }}
+                onOpenReplica={() => setCurrentTab('replica')}
+                onOpenStore={() => setCurrentTab('store')}
+                onOpenTracker={() => setCurrentTab('tracker')}
+              />
+
+              <ServicesSection
+                onSelectService={serviceKey => {
+                  if (serviceKey === 'panels') {
+                    setCurrentTab('designer');
+                  } else if (serviceKey === 'store') {
+                    setCurrentTab('store');
+                  } else {
+                    setSelectedInitialService(serviceKey as ServiceType);
+                    setIsBookingModalOpen(true);
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Tab 2: Online Parts Store Front & Postal Dispatch */}
+          {currentTab === 'store' && (
+            <StoreFront
+              catalog={catalog}
+              cart={cart}
+              onAddToCart={handleAddToCart}
+              onUpdateCartQuantity={handleUpdateCartQuantity}
+              onRemoveFromCart={handleRemoveFromCart}
+              onClearCart={handleClearCart}
+              onSubmitPostalOrder={handleSubmitPostalOrder}
+              isCartOpen={isCartOpen}
+              setIsCartOpen={setIsCartOpen}
+              onNavigateToPortal={() => {
+                setCurrentUserRole('client');
+                setCurrentTab('portal');
+              }}
+              onNavigateToTracker={(orderId) => {
+                setTrackedOrderId(orderId);
+                setCurrentTab('tracker');
+              }}
+            />
+          )}
+
+          {/* Tab 3: Postal Order Tracker */}
+          {currentTab === 'tracker' && (
+            <PostalOrderTracker
+              orders={postalOrders}
+              selectedOrderId={trackedOrderId}
+              onSelectOrder={setTrackedOrderId}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
+              onNavigateToStore={() => setCurrentTab('store')}
+            />
+          )}
+
+          {/* Tab 4: Replica/Custom Switch Panel Designer */}
+          {currentTab === 'designer' && (
+            <SwitchPanelDesigner
+              onOrderPanel={cfg => {
+                setPendingPanelConfig(cfg);
+                setSelectedInitialService('custom_panel');
+                setIsBookingModalOpen(true);
+              }}
+            />
+          )}
+
+          {/* Tab 5: Replica Switch Panel Upload */}
+          {currentTab === 'replica' && (
+            <div className="max-w-4xl mx-auto">
+              <ReplicaPanelUploader onSubmitReplicaQuote={handleReplicaQuote} />
+            </div>
+          )}
+
+          {/* Tab 6: Signed-in Boat Owner Vessel Portal */}
+          {currentTab === 'portal' && (
+            <ClientVesselPortal
+              jobs={jobs}
+              clientEmail={currentUserProfile.email}
+              vesselSpec={vesselSpec}
+              postalOrders={postalOrders}
+              activeSubTab={portalSubTab}
+              onSubTabChange={setPortalSubTab}
+              onUpdateVesselSpec={handleUpdateVesselSpec}
+              onSendMessage={handleSendMessage}
+              onApproveQuote={handleApproveQuote}
+              onPayDeposit={handlePayDeposit}
+              onRequestNewService={() => {
                 setSelectedInitialService('diagnostic');
                 setIsBookingModalOpen(true);
               }}
-              onOpenReplica={() => setCurrentTab('replica')}
-              onOpenStore={() => setCurrentTab('store')}
-              onOpenTracker={() => setCurrentTab('tracker')}
-            />
-
-            <ServicesSection
-              onSelectService={serviceKey => {
-                if (serviceKey === 'panels') {
-                  setCurrentTab('designer');
-                } else if (serviceKey === 'store') {
-                  setCurrentTab('store');
-                } else {
-                  setSelectedInitialService(serviceKey as ServiceType);
-                  setIsBookingModalOpen(true);
-                }
+              onNavigateToStore={() => setCurrentTab('store')}
+              onNavigateToTracker={(orderId) => {
+                setTrackedOrderId(orderId);
+                setCurrentTab('tracker');
               }}
+              onOpenAccountModal={() => setIsAccountModalOpen(true)}
             />
-          </div>
-        )}
+          )}
 
-        {/* Tab 2: Online Parts Store Front & Postal Dispatch */}
-        {currentTab === 'store' && (
-          <StoreFront
-            catalog={catalog}
-            cart={cart}
-            onAddToCart={handleAddToCart}
-            onUpdateCartQuantity={handleUpdateCartQuantity}
-            onRemoveFromCart={handleRemoveFromCart}
-            onClearCart={handleClearCart}
-            onSubmitPostalOrder={handleSubmitPostalOrder}
-            isCartOpen={isCartOpen}
-            setIsCartOpen={setIsCartOpen}
-            onNavigateToPortal={() => {
-              setCurrentUserRole('client');
-              setCurrentTab('portal');
-            }}
-            onNavigateToTracker={(orderId) => {
-              setTrackedOrderId(orderId);
-              setCurrentTab('tracker');
-            }}
-          />
-        )}
-
-        {/* Tab 3: Postal Order Tracker */}
-        {currentTab === 'tracker' && (
-          <PostalOrderTracker
-            orders={postalOrders}
-            selectedOrderId={trackedOrderId}
-            onSelectOrder={setTrackedOrderId}
-            onUpdateOrderStatus={handleUpdateOrderStatus}
-            onNavigateToStore={() => setCurrentTab('store')}
-          />
-        )}
-
-        {/* Tab 3: Replica/Custom Switch Panel Designer */}
-        {currentTab === 'designer' && (
-          <SwitchPanelDesigner
-            onOrderPanel={cfg => {
-              setPendingPanelConfig(cfg);
-              setSelectedInitialService('custom_panel');
-              setIsBookingModalOpen(true);
-            }}
-          />
-        )}
-
-        {/* Tab 4: Replica Switch Panel Upload */}
-        {currentTab === 'replica' && (
-          <div className="max-w-4xl mx-auto">
-            <ReplicaPanelUploader onSubmitReplicaQuote={handleReplicaQuote} />
-          </div>
-        )}
-
-        {/* Tab 5: Signed-in Boat Owner Vessel Portal */}
-        {currentTab === 'portal' && (
-          <ClientVesselPortal
-            jobs={jobs}
-            clientEmail="d.mercer@solent-sail.co.uk"
-            vesselSpec={vesselSpec}
-            postalOrders={postalOrders}
-            activeSubTab={portalSubTab}
-            onSubTabChange={setPortalSubTab}
-            onUpdateVesselSpec={handleUpdateVesselSpec}
-            onSendMessage={handleSendMessage}
-            onApproveQuote={handleApproveQuote}
-            onPayDeposit={handlePayDeposit}
-            onRequestNewService={() => {
-              setSelectedInitialService('diagnostic');
-              setIsBookingModalOpen(true);
-            }}
-            onNavigateToStore={() => setCurrentTab('store')}
-            onNavigateToTracker={(orderId) => {
-              setTrackedOrderId(orderId);
-              setCurrentTab('tracker');
-            }}
-          />
-        )}
-
-        {/* Tab 6: Anthony's Admin & Workshop Dashboard */}
-        {currentTab === 'admin' && (
-          currentUserRole === 'admin' ? (
+          {/* Tab 7: Anthony's Master Workshop Dashboard (Admin only) */}
+          {currentTab === 'admin' && (
             <AdminDashboard
               jobs={jobs}
               catalog={catalog}
@@ -888,64 +1050,64 @@ export default function App() {
               onOpenSupplierReorder={setSupplierReorderItem}
               onViewAlertEmail={setViewingAlertEmail}
             />
-          ) : (
-            <div className="max-w-2xl mx-auto p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white">
-                Admin Workshop Access Restricted
-              </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Your current active role is <strong className="text-white capitalize">{currentUserRole}</strong>. The Master Workshop includes catalog pricing, laser printing, and global administration reserved for Anthony Wrather.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                {currentUserRole === 'technician' && (
-                  <button
-                    onClick={() => setCurrentTab('technician')}
-                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Go to Technician Jobs Station
-                  </button>
-                )}
-                {currentUserRole === 'postal' && (
-                  <button
-                    onClick={() => setCurrentTab('postal')}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Go to Postal Dispatch Station
-                  </button>
-                )}
-                <button
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Switch Role / Authenticate
-                </button>
-              </div>
-            </div>
-          )
-        )}
+          )}
 
-        {/* Tab 7: Solent Marine Technician Workstation */}
-        {currentTab === 'technician' && (
-          <TechnicianWorkspace
-            jobs={jobs}
-            catalog={catalog}
-            onSendMessage={handleSendMessage}
-            onSaveJobSheet={handleSaveJobSheet}
-            onUpdateJobStatus={handleUpdateJobStatus}
-          />
-        )}
+          {/* Tab 8: Solent Marine Technician Workstation (Technician or Admin) */}
+          {currentTab === 'technician' && (
+            <TechnicianWorkspace
+              jobs={jobs}
+              catalog={catalog}
+              onSendMessage={handleSendMessage}
+              onSaveJobSheet={handleSaveJobSheet}
+              onUpdateJobStatus={handleUpdateJobStatus}
+            />
+          )}
 
-        {/* Tab 8: Workshop Postal Dispatch Station */}
-        {currentTab === 'postal' && (
-          <PostalWorkspace
-            orders={postalOrders}
-            onUpdateOrderStatus={handleUpdateOrderStatus}
-          />
-        )}
+          {/* Tab 9: Workshop Postal Dispatch Station (Postal or Admin) */}
+          {currentTab === 'postal' && (
+            <PostalWorkspace
+              orders={postalOrders}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
+            />
+          )}
+        </RBACRouteGuard>
       </main>
+
+      {/* Dedicated Sign In & Vessel Registration Modal */}
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+        currentUserRole={currentUserRole}
+        onSuccessSignIn={handleSuccessSignIn}
+      />
+
+      {/* Reassuring Sign Off Confirmation Modal */}
+      <SignOffModal
+        isOpen={isSignOffModalOpen}
+        onClose={() => setIsSignOffModalOpen(false)}
+        currentUserProfile={currentUserProfile}
+        currentUserRole={currentUserRole}
+        onConfirmSignOff={handleConfirmSignOff}
+      />
+
+      {/* Comprehensive Account Management & Vessel Specs Modal */}
+      <AccountManagementModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        currentUserProfile={currentUserProfile}
+        currentUserRole={currentUserRole}
+        onUpdateUserProfile={setCurrentUserProfile}
+        onSelectRole={handleRoleChange}
+        onRequestSignOff={() => {
+          setIsAccountModalOpen(false);
+          setIsSignOffModalOpen(true);
+        }}
+        onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
+        onNavigateToPortal={() => setCurrentTab('portal')}
+        onNavigateToTracker={() => setCurrentTab('tracker')}
+        jobs={jobs}
+        postalOrders={postalOrders}
+      />
 
       {/* Firebase Authentication & 5-Role Governance Modal */}
       <AuthModal
@@ -955,6 +1117,7 @@ export default function App() {
         onSelectRole={handleRoleChange}
         currentUserProfile={currentUserProfile}
         onUpdateUserProfile={setCurrentUserProfile}
+        onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
       />
 
       {/* Booking & Quote Modal */}
@@ -981,6 +1144,26 @@ export default function App() {
         item={supplierReorderItem}
         onClose={() => setSupplierReorderItem(null)}
         onConfirmRestock={handleRestockItem}
+      />
+
+      {/* 5-Role Centralized RBAC Permissions Matrix Modal */}
+      <RBACPermissionsModal
+        isOpen={isPermissionsMatrixOpen}
+        onClose={() => setIsPermissionsMatrixOpen(false)}
+        currentUserRole={currentUserRole}
+        onSelectRole={handleRoleChange}
+        onNavigateToRoute={(route) => {
+          setCurrentTab(route);
+          setIsPermissionsMatrixOpen(false);
+        }}
+      />
+
+      {/* RBAC Action Denied Real-time Toast */}
+      <RBACActionDeniedToast
+        denial={actionDenial}
+        onDismiss={() => setActionDenial(null)}
+        onSwitchRole={handleRoleChange}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* Automated Stock Depletion Email Alert Modal */}
@@ -1114,6 +1297,35 @@ export default function App() {
               onClick={() => setActiveToast(null)}
               className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0"
               title="Dismiss Notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Authentication / Sign Off Status Toast */}
+      {authToast && (
+        <div className="fixed bottom-6 left-6 z-50 max-w-sm w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="flex items-start justify-between gap-3">
+            <div className={`p-2.5 rounded-xl border shrink-0 ${
+              authToast.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-400' : 'bg-sky-950/90 border-sky-500/40 text-sky-400'
+            }`}>
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+
+            <div className="flex-1 space-y-1">
+              <h4 className="text-xs font-bold text-white">
+                {authToast.title}
+              </h4>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                {authToast.message}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setAuthToast(null)}
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0"
             >
               <X className="w-4 h-4" />
             </button>

@@ -22,7 +22,8 @@ import {
   Sparkles, 
   AlertCircle,
   FileCode2,
-  Database
+  Database,
+  ShieldCheck
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -32,6 +33,7 @@ interface AuthModalProps {
   onSelectRole: (role: UserRole) => void;
   currentUserProfile: UserProfile;
   onUpdateUserProfile: (profile: UserProfile) => void;
+  onOpenPermissionsMatrix?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -40,7 +42,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUserRole,
   onSelectRole,
   currentUserProfile,
-  onUpdateUserProfile
+  onUpdateUserProfile,
+  onOpenPermissionsMatrix
 }) => {
   const [activeTab, setActiveTab] = useState<'roles' | 'google' | 'blueprint'>('roles');
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -151,6 +154,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <Database className="w-3.5 h-3.5" />
             <span>Auth Architecture &amp; Prepared Schema</span>
           </button>
+          {onOpenPermissionsMatrix && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenPermissionsMatrix();
+              }}
+              className="ml-auto px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 border border-emerald-500/30 font-bold"
+              title="Open full 5-role Route and Action Matrix"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Full RBAC Matrix</span>
+            </button>
+          )}
         </div>
 
         {/* Feedback Alert */}

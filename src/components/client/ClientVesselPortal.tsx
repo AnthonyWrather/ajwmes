@@ -5,7 +5,7 @@ import { VesselSpecManager } from './VesselSpecManager';
 import { PostalOrderTracker } from '../orders/PostalOrderTracker';
 import { OrderTrackingProgress } from './OrderTrackingProgress';
 import { VesselPdfSummaryModal } from './VesselPdfSummaryModal';
-import { Anchor, Clock, Wrench, ShieldCheck, ChevronRight, Plus, AlertCircle, FileText, MessageSquare, ShoppingBag, Truck, Package, CheckCircle2, Printer, Download } from 'lucide-react';
+import { Anchor, Clock, Wrench, ShieldCheck, ChevronRight, Plus, AlertCircle, FileText, MessageSquare, ShoppingBag, Truck, Package, CheckCircle2, Printer, Download, User } from 'lucide-react';
 
 interface ClientVesselPortalProps {
   jobs: JobRecord[];
@@ -21,6 +21,7 @@ interface ClientVesselPortalProps {
   onRequestNewService: () => void;
   onNavigateToStore?: () => void;
   onNavigateToTracker?: (orderId?: string) => void;
+  onOpenAccountModal?: () => void;
 }
 
 export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
@@ -36,7 +37,8 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
   onPayDeposit,
   onRequestNewService,
   onNavigateToStore,
-  onNavigateToTracker
+  onNavigateToTracker,
+  onOpenAccountModal
 }) => {
   const [internalTab, setInternalTab] = useState<'specs' | 'jobs' | 'orders'>('specs');
   const [showPdfSummaryModal, setShowPdfSummaryModal] = useState(false);
@@ -128,12 +130,23 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
           {/* Direct Option to Generate Visual On-Board Spec Summary PDF */}
           <button
             onClick={() => setShowPdfSummaryModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 hover:border-sky-400 rounded-xl text-xs font-semibold shadow-sm transition-all whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 hover:border-sky-400 rounded-xl text-xs font-semibold shadow-sm transition-all whitespace-nowrap cursor-pointer"
             title="Generate a visual PDF summary of vessel electrical specifications suitable for on-board printing"
           >
             <Printer className="w-3.5 h-3.5 text-sky-400" />
             <span>Print On-Board Spec (PDF)</span>
           </button>
+
+          {onOpenAccountModal && (
+            <button
+              onClick={onOpenAccountModal}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-all whitespace-nowrap cursor-pointer"
+              title="Edit captain contact info, phone, and vessel preferences"
+            >
+              <User className="w-3.5 h-3.5 text-sky-400" />
+              <span>Owner Account</span>
+            </button>
+          )}
 
           <button
             onClick={onRequestNewService}

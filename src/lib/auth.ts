@@ -234,6 +234,91 @@ export function saveUserProfile(profile: UserProfile) {
 }
 
 /**
+ * Save user profile locally and sync to Firestore `users/{uid}`.
+ */
+export async function saveAndSyncUserProfile(profile: UserProfile): Promise<{ success: boolean; error?: string }> {
+  try {
+    saveUserProfile(profile);
+    if (profile.id) {
+      const userDocRef = doc(db, 'users', profile.id);
+      await setDoc(userDocRef, {
+        uid: profile.id,
+        displayName: profile.name,
+        email: profile.email,
+        phone: profile.phone || '',
+        role: profile.role,
+        avatarUrl: profile.avatarUrl || '',
+        vesselName: profile.vesselName || '',
+        vesselType: profile.vesselType || '',
+        marinaBerth: profile.marinaBerth || '',
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Could not sync user profile to Firestore:', err);
+    return { success: false, error: err?.message || 'Failed to update remote profile' };
+  }
+}
+
+/**
+ * Register a new vessel owner account and sync to Firestore.
+ */
+export async function registerVesselAccount(details: {
+  name: string;
+  email: string;
+  phone?: string;
+  vesselName?: string;
+  vesselType?: string;
+  marinaBerth?: string;
+}): Promise<UserProfile> {
+  const assignedRole: UserRole = details.email.toLowerCase() === 'anthonywrather@gmail.com' ? 'admin' : 'client';
+  const id = `user-${Date.now()}`;
+  const profile: UserProfile = {
+    id,
+    name: details.name.trim() || 'Vessel Owner',
+    email: details.email.trim(),
+    phone: details.phone?.trim() || '',
+    role: assignedRole,
+    vesselName: details.vesselName?.trim() || '',
+    vesselType: details.vesselType?.trim() || 'Sailing Yacht',
+    marinaBerth: details.marinaBerth?.trim() || 'Solent Marina'
+  };
+
+  await saveAndSyncUserProfile(profile);
+  return profile;
+}
+
+/**
+ * Direct email sign-in or demo account retrieval.
+ */
+export async function signInWithEmailOrAccount(email: string, password?: string): Promise<{ success: boolean; profile?: UserProfile; error?: string }> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) {
+    return { success: false, error: 'Please enter a valid email address.' };
+  }
+
+  // Check demo profiles first
+  const demoMatch = DEMO_PROFILES.find(p => p.email.toLowerCase() === cleanEmail);
+  if (demoMatch) {
+    saveUserProfile(demoMatch);
+    return { success: true, profile: demoMatch };
+  }
+
+  // Auto grant admin to Anthony Wrather's email
+  const assignedRole: UserRole = cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client';
+  const newProfile: UserProfile = {
+    id: `user-${Date.now()}`,
+    name: cleanEmail.split('@')[0].replace(/[\._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    email: cleanEmail,
+    role: assignedRole
+  };
+
+  await saveAndSyncUserProfile(newProfile);
+  return { success: true, profile: newProfile };
+}
+
+/**
  * Sign in with Google using Firebase Authentication.
  * Handles popups safely, syncs or provisions user profile in Firestore `users/{uid}`.
  */
