@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, PostalOrder, StockAlert } from '../../types';
+import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, PostalOrder, StockAlert, UserProfile, UserRole } from '../../types';
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { DiagnosticTimerModal } from './DiagnosticTimerModal';
 import { InventoryManager } from './InventoryManager';
 import { PrintLaserAssetStudio } from './PrintLaserAssetStudio';
 import { PostalOrdersManager } from './PostalOrdersManager';
+import { UserAccountsManager } from './UserAccountsManager';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
 import { 
   Wrench, 
@@ -26,7 +27,8 @@ import {
   Eye, 
   Download, 
   ExternalLink, 
-  Loader2 
+  Loader2,
+  Users
 } from 'lucide-react';
 import { uploadSwitchPanelImage, isFirebaseStorageUrl, formatFileSize } from '../../lib/storage';
 
@@ -36,6 +38,7 @@ interface AdminDashboardProps {
   snapshots: CatalogSnapshot[];
   postalOrders: PostalOrder[];
   stockAlerts?: StockAlert[];
+  users?: UserProfile[];
   onSendMessage: (jobId: string, message: MessageItem) => void;
   onSaveJobSheet: (jobId: string, hours: number, materials: MaterialLineItem[]) => void;
   onUpdateCatalog: (newCatalog: CatalogItem[]) => void;
@@ -44,6 +47,10 @@ interface AdminDashboardProps {
   onUpdateOrderStatus: (orderId: string, status: PostalOrder['orderStatus'], trackingNumber?: string, carrier?: string) => void;
   onOpenSupplierReorder?: (item: CatalogItem) => void;
   onViewAlertEmail?: (alert: StockAlert) => void;
+  onSaveUser?: (user: UserProfile) => Promise<void> | void;
+  onUpdateUserRole?: (userId: string, newRole: UserRole) => Promise<void> | void;
+  onDeleteUser?: (userId: string) => Promise<void> | void;
+  onRefreshUsers?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -52,6 +59,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   snapshots,
   postalOrders,
   stockAlerts = [],
+  users = [],
   onSendMessage,
   onSaveJobSheet,
   onUpdateCatalog,
@@ -59,9 +67,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onRestoreSnapshot,
   onUpdateOrderStatus,
   onOpenSupplierReorder,
-  onViewAlertEmail
+  onViewAlertEmail,
+  onSaveUser,
+  onUpdateUserRole,
+  onDeleteUser,
+  onRefreshUsers
 }) => {
-  const [activeAdminTab, setActiveAdminTab] = useState<'jobs' | 'catalog' | 'orders' | 'print' | 'panels'>('jobs');
+  const [activeAdminTab, setActiveAdminTab] = useState<'jobs' | 'catalog' | 'orders' | 'accounts' | 'print' | 'panels'>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string>(jobs[0]?.id || '');
   const [activeTimerJob, setActiveTimerJob] = useState<JobRecord | null>(null);
 
@@ -233,6 +245,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span>{lowStockCount} Low</span>
               </span>
             ) : null}
+          </button>
+
+          <button
+            onClick={() => setActiveAdminTab('accounts')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeAdminTab === 'accounts' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>User Accounts ({users.length})</span>
           </button>
 
           <button
@@ -554,6 +576,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Tab: Print & Laser Asset Studio */}
       {activeAdminTab === 'print' && (
         <PrintLaserAssetStudio />
+      )}
+
+      {/* Tab: User Accounts & Database RBAC */}
+      {activeAdminTab === 'accounts' && (
+        <UserAccountsManager
+          users={users}
+          onSaveUser={onSaveUser || (() => {})}
+          onUpdateUserRole={onUpdateUserRole || (() => {})}
+          onDeleteUser={onDeleteUser}
+          onRefreshUsers={onRefreshUsers}
+        />
       )}
 
       {/* Diagnostic Stopwatch & Materials Logger Modal */}

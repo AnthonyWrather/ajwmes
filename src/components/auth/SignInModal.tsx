@@ -5,7 +5,8 @@ import {
   DEMO_PROFILES, 
   signInWithGoogle, 
   signInWithEmailOrAccount, 
-  registerVesselAccount 
+  registerVesselAccount,
+  saveAndSyncUserProfile 
 } from '../../lib/auth';
 import { 
   X, 
@@ -149,8 +150,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     }
   };
 
-  const handleSelectQuickPersona = (profile: UserProfile) => {
-    setSuccessMessage(`Switched to ${profile.name} (${profile.role.toUpperCase()})`);
+  const handleSelectQuickPersona = async (profile: UserProfile) => {
+    try {
+      await saveAndSyncUserProfile(profile);
+    } catch (e) {
+      console.warn('Sync notice:', e);
+    }
+    setSuccessMessage(`Switched to ${profile.name} (${profile.role.toUpperCase()}) · Stored in database`);
     setTimeout(() => {
       onSuccessSignIn(profile);
       onClose();

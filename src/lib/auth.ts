@@ -8,10 +8,14 @@ import {
 import { 
   doc, 
   getDoc, 
+  getDocs,
+  collection,
   setDoc, 
+  query,
+  where,
   onSnapshot 
 } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, OperationType } from './firebase';
+import { auth, db, handleFirestoreError, OperationType, syncUserToFirestore } from './firebase';
 import { UserRole, UserProfile } from '../types';
 
 export interface RoleConfig {
@@ -153,21 +157,47 @@ export const DEMO_PROFILES: UserProfile[] = [
     email: 'anthonywrather@gmail.com',
     role: 'admin',
     phone: '07700 900551',
-    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg'
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'AJW Solent Response',
+    vesselType: 'Workboat / Fast Tender',
+    marinaBerth: 'Gosport Marina (HQ Workshop)',
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: true,
+    createdAt: '2026-01-15T09:00:00Z',
+    lastLoginAt: '2026-10-10T16:45:00Z'
   },
   {
     id: 'demo-tech',
     name: 'Jack Henderson',
     email: 'jack.tech@ajwmarine.co.uk',
     role: 'technician',
-    phone: '07700 900882'
+    phone: '07700 900882',
+    avatarUrl: '/assets/images/marine_helm_navigation_1791400844235.jpg',
+    vesselName: 'Solent Diagnostic Van 1',
+    vesselType: 'Mobile Marine Unit',
+    marinaBerth: 'Portsmouth & Gosport',
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: false,
+    createdAt: '2026-02-01T10:00:00Z',
+    lastLoginAt: '2026-10-10T14:30:00Z'
   },
   {
     id: 'demo-postal',
     name: 'Sarah Miller',
     email: 'sarah.postal@ajwmarine.co.uk',
     role: 'postal',
-    phone: '07700 900663'
+    phone: '07700 900663',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'Workshop Packing Station',
+    vesselType: 'Dispatch Facility',
+    marinaBerth: 'Gosport Workshop E-Bay',
+    systemVoltage: '12V',
+    notifyJobUpdates: false,
+    notifyDispatchSms: true,
+    createdAt: '2026-02-15T11:00:00Z',
+    lastLoginAt: '2026-10-10T15:20:00Z'
   },
   {
     id: 'demo-client',
@@ -175,15 +205,30 @@ export const DEMO_PROFILES: UserProfile[] = [
     email: 'd.mercer@solent-sail.co.uk',
     role: 'client',
     phone: '07700 900114',
+    avatarUrl: '/assets/images/budget_small_cruiser_boat_1791420135992.jpg',
     vesselName: 'Westerly Discus 33',
     vesselType: 'Sailing Yacht',
-    marinaBerth: 'Haslar Marina (Berth E-14)'
+    marinaBerth: 'Haslar Marina (Berth E-14)',
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: true,
+    createdAt: '2026-03-10T14:15:00Z',
+    lastLoginAt: '2026-10-10T12:00:00Z'
   },
   {
     id: 'demo-guest',
     name: 'Guest Browser',
     email: 'guest@solent-visitor.co.uk',
-    role: 'guest'
+    role: 'guest',
+    phone: '',
+    vesselName: 'Unregistered Vessel',
+    vesselType: 'Cruiser',
+    marinaBerth: 'Solent Waters',
+    systemVoltage: '12V',
+    notifyJobUpdates: false,
+    notifyDispatchSms: false,
+    createdAt: '2026-10-01T08:00:00Z',
+    lastLoginAt: '2026-10-10T16:00:00Z'
   }
 ];
 
@@ -240,19 +285,7 @@ export async function saveAndSyncUserProfile(profile: UserProfile): Promise<{ su
   try {
     saveUserProfile(profile);
     if (profile.id) {
-      const userDocRef = doc(db, 'users', profile.id);
-      await setDoc(userDocRef, {
-        uid: profile.id,
-        displayName: profile.name,
-        email: profile.email,
-        phone: profile.phone || '',
-        role: profile.role,
-        avatarUrl: profile.avatarUrl || '',
-        vesselName: profile.vesselName || '',
-        vesselType: profile.vesselType || '',
-        marinaBerth: profile.marinaBerth || '',
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+      await syncUserToFirestore(profile);
     }
     return { success: true };
   } catch (err: any) {
@@ -272,17 +305,25 @@ export async function registerVesselAccount(details: {
   vesselType?: string;
   marinaBerth?: string;
 }): Promise<UserProfile> {
-  const assignedRole: UserRole = details.email.toLowerCase() === 'anthonywrather@gmail.com' ? 'admin' : 'client';
+  const cleanEmail = details.email.trim().toLowerCase();
+  const assignedRole: UserRole = cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client';
   const id = `user-${Date.now()}`;
+  const now = new Date().toISOString();
   const profile: UserProfile = {
     id,
     name: details.name.trim() || 'Vessel Owner',
-    email: details.email.trim(),
+    email: cleanEmail,
     phone: details.phone?.trim() || '',
     role: assignedRole,
     vesselName: details.vesselName?.trim() || '',
     vesselType: details.vesselType?.trim() || 'Sailing Yacht',
-    marinaBerth: details.marinaBerth?.trim() || 'Solent Marina'
+    marinaBerth: details.marinaBerth?.trim() || 'Solent Marina',
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: true,
+    createdAt: now,
+    lastLoginAt: now,
+    updatedAt: now
   };
 
   await saveAndSyncUserProfile(profile);
@@ -290,7 +331,7 @@ export async function registerVesselAccount(details: {
 }
 
 /**
- * Direct email sign-in or demo account retrieval.
+ * Direct email sign-in or demo account retrieval with live Firestore lookup.
  */
 export async function signInWithEmailOrAccount(email: string, password?: string): Promise<{ success: boolean; profile?: UserProfile; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
@@ -298,20 +339,71 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
     return { success: false, error: 'Please enter a valid email address.' };
   }
 
-  // Check demo profiles first
-  const demoMatch = DEMO_PROFILES.find(p => p.email.toLowerCase() === cleanEmail);
-  if (demoMatch) {
-    saveUserProfile(demoMatch);
-    return { success: true, profile: demoMatch };
+  // 1. Look up existing user in Firestore 'users' collection first
+  try {
+    const usersCol = collection(db, 'users');
+    const q = query(usersCol, where('email', '==', cleanEmail));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const docSnap = snap.docs[0];
+      const data = docSnap.data();
+      const existingProfile: UserProfile = {
+        id: data.uid || data.id || docSnap.id,
+        name: data.displayName || data.name || cleanEmail.split('@')[0],
+        email: data.email || cleanEmail,
+        phone: data.phone || '',
+        role: data.role || (cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client'),
+        avatarUrl: data.avatarUrl || data.photoURL || '',
+        photoURL: data.photoURL || data.avatarUrl || '',
+        vesselName: data.vesselName || '',
+        vesselType: data.vesselType || '',
+        marinaBerth: data.marinaBerth || '',
+        systemVoltage: data.systemVoltage || '12V',
+        notifyJobUpdates: data.notifyJobUpdates ?? true,
+        notifyDispatchSms: data.notifyDispatchSms ?? true,
+        createdAt: data.createdAt || new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      // Update last login in database
+      await setDoc(doc(db, 'users', existingProfile.id), {
+        lastLoginAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      saveUserProfile(existingProfile);
+      return { success: true, profile: existingProfile };
+    }
+  } catch (fsErr) {
+    console.warn('Notice: Firestore user query error during email login:', fsErr);
   }
 
-  // Auto grant admin to Anthony Wrather's email
+  // 2. Check demo profiles and sync into Firestore database
+  const demoMatch = DEMO_PROFILES.find(p => p.email.toLowerCase() === cleanEmail);
+  if (demoMatch) {
+    const updatedDemo: UserProfile = {
+      ...demoMatch,
+      lastLoginAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await saveAndSyncUserProfile(updatedDemo);
+    return { success: true, profile: updatedDemo };
+  }
+
+  // 3. Auto grant admin to Anthony Wrather's email
   const assignedRole: UserRole = cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client';
+  const now = new Date().toISOString();
   const newProfile: UserProfile = {
     id: `user-${Date.now()}`,
     name: cleanEmail.split('@')[0].replace(/[\._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     email: cleanEmail,
-    role: assignedRole
+    role: assignedRole,
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: true,
+    createdAt: now,
+    lastLoginAt: now,
+    updatedAt: now
   };
 
   await saveAndSyncUserProfile(newProfile);
@@ -329,7 +421,6 @@ export async function signInWithGoogle(): Promise<{ success: boolean; user?: Fir
     const result = await signInWithPopup(auth, provider);
     const fbUser = result.user;
 
-    // Check if user already exists in Firestore users collection
     const userDocRef = doc(db, 'users', fbUser.uid);
     let assignedRole: UserRole = 'client';
 
@@ -338,38 +429,43 @@ export async function signInWithGoogle(): Promise<{ success: boolean; user?: Fir
       assignedRole = 'admin';
     }
 
+    let existingData: any = {};
     try {
       const snap = await getDoc(userDocRef);
       if (snap.exists()) {
-        const data = snap.data();
-        if (data.role) {
-          assignedRole = data.role as UserRole;
+        existingData = snap.data();
+        if (existingData.role) {
+          assignedRole = existingData.role as UserRole;
         }
-      } else {
-        // Create initial user document in Firestore
-        await setDoc(userDocRef, {
-          uid: fbUser.uid,
-          email: fbUser.email || '',
-          displayName: fbUser.displayName || 'Google User',
-          photoURL: fbUser.photoURL || '',
-          role: assignedRole,
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString()
-        }, { merge: true });
       }
     } catch (fsErr) {
-      console.warn('Notice: Firestore user sync during login (local fallback active):', fsErr);
+      console.warn('Notice: Firestore user read during Google login:', fsErr);
     }
 
+    const now = new Date().toISOString();
     const profile: UserProfile = {
       id: fbUser.uid,
-      name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Marine User'),
-      email: fbUser.email || '',
+      name: fbUser.displayName || existingData.displayName || existingData.name || (fbUser.email ? fbUser.email.split('@')[0] : 'Marine User'),
+      email: fbUser.email || existingData.email || '',
+      phone: existingData.phone || '',
       role: assignedRole,
-      avatarUrl: fbUser.photoURL || undefined
+      avatarUrl: fbUser.photoURL || existingData.avatarUrl || undefined,
+      photoURL: fbUser.photoURL || existingData.photoURL || undefined,
+      vesselName: existingData.vesselName || '',
+      vesselType: existingData.vesselType || '',
+      marinaBerth: existingData.marinaBerth || '',
+      systemVoltage: existingData.systemVoltage || '12V',
+      notifyJobUpdates: existingData.notifyJobUpdates ?? true,
+      notifyDispatchSms: existingData.notifyDispatchSms ?? true,
+      createdAt: existingData.createdAt || now,
+      lastLoginAt: now,
+      updatedAt: now
     };
 
+    // Explicitly persist full user record in Firestore database
+    await syncUserToFirestore(profile);
     saveUserProfile(profile);
+
     return { success: true, user: fbUser, profile };
   } catch (error: any) {
     console.warn('Firebase signInWithGoogle notice:', error);
@@ -407,13 +503,16 @@ export function subscribeAuthState(callback: (user: FirebaseUser | null) => void
 }
 
 /**
- * Sync user role update to Firestore users collection.
+ * Sync user role update to Firestore users collection for any user.
  */
 export async function syncUserRoleToFirestore(userId: string, newRole: UserRole) {
-  if (!userId || userId.startsWith('demo-')) return;
+  if (!userId) return;
   const userDocRef = doc(db, 'users', userId);
   try {
-    await setDoc(userDocRef, { role: newRole, updatedAt: new Date().toISOString() }, { merge: true });
+    await setDoc(userDocRef, { 
+      role: newRole, 
+      updatedAt: new Date().toISOString() 
+    }, { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, `users/${userId}`);
   }

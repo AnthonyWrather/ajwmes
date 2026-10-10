@@ -23,6 +23,8 @@ import {
   saveCurrentRole, 
   getSavedUserProfile, 
   saveUserProfile, 
+  saveAndSyncUserProfile,
+  syncUserRoleToFirestore,
   DEMO_PROFILES, 
   ROLE_CONFIGS 
 } from './lib/auth';
@@ -55,6 +57,10 @@ import {
   syncPostalOrderToFirestore, 
   subscribeVesselSpec, 
   syncVesselSpecToFirestore,
+  subscribeUsers,
+  syncUserToFirestore,
+  seedUsersToFirestore,
+  deleteUserFromFirestore,
   subscribeConnectionState,
   retryFirestoreConnection,
   toggleSimulatedOffline,
@@ -160,6 +166,14 @@ export default function App() {
 
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>(() => getSavedRole());
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>(() => getSavedUserProfile());
+  const [usersList, setUsersList] = useState<UserProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem('ajwmes_users_list');
+      return saved ? JSON.parse(saved) : DEMO_PROFILES;
+    } catch {
+      return DEMO_PROFILES;
+    }
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isSignOffModalOpen, setIsSignOffModalOpen] = useState(false);
@@ -179,6 +193,11 @@ export default function App() {
     if (demoProfile) {
       setCurrentUserProfile(demoProfile);
       saveUserProfile(demoProfile);
+      syncUserRoleToFirestore(demoProfile.id, newRole);
+    } else if (currentUserProfile) {
+      const updated = { ...currentUserProfile, role: newRole, updatedAt: new Date().toISOString() };
+      setCurrentUserProfile(updated);
+      saveAndSyncUserProfile(updated);
     }
     // Strict RBAC: Automatically redirect if current tab is not authorized for the new role
     if (!canAccessRoute(newRole, currentTab as AppRoute)) {
@@ -190,9 +209,10 @@ export default function App() {
     setCurrentUserProfile(profile);
     setCurrentUserRole(profile.role);
     saveUserProfile(profile);
+    saveAndSyncUserProfile(profile);
     setAuthToast({
       title: `Welcome, ${profile.name}`,
-      message: `Signed in successfully with ${ROLE_CONFIGS[profile.role].label} permissions.`,
+      message: `Signed in successfully with ${ROLE_CONFIGS[profile.role].label} permissions. Stored in Firestore database.`,
       type: 'success'
     });
     // If not allowed on current route, redirect to role's primary view
@@ -262,8 +282,9 @@ export default function App() {
 
   // Firestore Real-time Synchronization
   useEffect(() => {
-    // Seed default baseline catalog if remote catalog collection is empty
+    // Seed default baseline catalog & initial user accounts if remote collections are empty
     seedCatalogToFirestore(DEFAULT_CATALOG);
+    seedUsersToFirestore(DEMO_PROFILES);
 
     const unsubJobs = subscribeJobs((remoteJobs) => {
       if (remoteJobs && remoteJobs.length > 0) {
@@ -293,13 +314,68 @@ export default function App() {
       setIsFirebaseConnected(true);
     });
 
+    const unsubUsers = subscribeUsers((remoteUsers) => {
+      if (remoteUsers && remoteUsers.length > 0) {
+        setUsersList(remoteUsers);
+        setCurrentUserProfile((prev) => {
+          const match = remoteUsers.find((u) => u.id === prev.id || u.email.toLowerCase() === prev.email.toLowerCase());
+          if (match) {
+            return { ...prev, ...match };
+          }
+          return prev;
+        });
+      }
+      setIsFirebaseConnected(true);
+    });
+
     return () => {
       unsubJobs();
       unsubCatalog();
       unsubOrders();
       unsubSpec();
+      unsubUsers();
     };
   }, []);
+
+  // Sync usersList to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('ajwmes_users_list', JSON.stringify(usersList));
+    } catch (e) {
+      console.warn('Failed to save usersList to localStorage', e);
+    }
+  }, [usersList]);
+
+  const handleSaveUserToDatabase = async (user: UserProfile) => {
+    await syncUserToFirestore(user);
+    setUsersList(prev => {
+      const idx = prev.findIndex(u => u.id === user.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = user;
+        return copy;
+      }
+      return [user, ...prev];
+    });
+    if (currentUserProfile.id === user.id || currentUserProfile.email.toLowerCase() === user.email.toLowerCase()) {
+      setCurrentUserProfile(user);
+      setCurrentUserRole(user.role);
+    }
+  };
+
+  const handleUpdateUserRoleInDatabase = async (userId: string, newRole: UserRole) => {
+    await syncUserRoleToFirestore(userId, newRole);
+    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    if (currentUserProfile.id === userId) {
+      setCurrentUserRole(newRole);
+      setCurrentUserProfile(prev => ({ ...prev, role: newRole }));
+    }
+  };
+
+  const handleDeleteUserFromDatabase = async (userId: string) => {
+    await deleteUserFromFirestore(userId);
+    setUsersList(prev => prev.filter(u => u.id !== userId));
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -1072,6 +1148,7 @@ export default function App() {
               snapshots={snapshots}
               postalOrders={postalOrders}
               stockAlerts={stockAlerts}
+              users={usersList}
               onSendMessage={handleSendMessage}
               onSaveJobSheet={handleSaveJobSheet}
               onUpdateCatalog={handleUpdateCatalog}
@@ -1080,6 +1157,10 @@ export default function App() {
               onUpdateOrderStatus={handleUpdateOrderStatus}
               onOpenSupplierReorder={setSupplierReorderItem}
               onViewAlertEmail={setViewingAlertEmail}
+              onSaveUser={handleSaveUserToDatabase}
+              onUpdateUserRole={handleUpdateUserRoleInDatabase}
+              onDeleteUser={handleDeleteUserFromDatabase}
+              onRefreshUsers={() => seedUsersToFirestore(DEMO_PROFILES)}
             />
           )}
 
@@ -1127,7 +1208,10 @@ export default function App() {
         onClose={() => setIsAccountModalOpen(false)}
         currentUserProfile={currentUserProfile}
         currentUserRole={currentUserRole}
-        onUpdateUserProfile={setCurrentUserProfile}
+        onUpdateUserProfile={(profile) => {
+          setCurrentUserProfile(profile);
+          saveAndSyncUserProfile(profile);
+        }}
         onSelectRole={handleRoleChange}
         onRequestSignOff={() => {
           setIsAccountModalOpen(false);
@@ -1147,7 +1231,10 @@ export default function App() {
         currentUserRole={currentUserRole}
         onSelectRole={handleRoleChange}
         currentUserProfile={currentUserProfile}
-        onUpdateUserProfile={setCurrentUserProfile}
+        onUpdateUserProfile={(profile) => {
+          setCurrentUserProfile(profile);
+          saveAndSyncUserProfile(profile);
+        }}
         onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
       />
 

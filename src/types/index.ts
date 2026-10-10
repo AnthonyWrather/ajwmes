@@ -17,9 +17,16 @@ export interface UserProfile {
   phone?: string;
   role: UserRole;
   avatarUrl?: string;
+  photoURL?: string;
   vesselName?: string;
   vesselType?: string;
   marinaBerth?: string;
+  systemVoltage?: '12V' | '24V';
+  notifyJobUpdates?: boolean;
+  notifyDispatchSms?: boolean;
+  createdAt?: string;
+  lastLoginAt?: string;
+  updatedAt?: string;
 }
 
 export type ServiceType = 

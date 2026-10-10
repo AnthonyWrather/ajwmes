@@ -14,7 +14,7 @@ import {
   disableNetwork
 } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
-import { JobRecord, CatalogItem, PostalOrder, VesselSpec, FirestoreConnectionState } from '../types';
+import { JobRecord, CatalogItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState } from '../types';
 
 export enum OperationType {
   CREATE = 'create',
@@ -379,4 +379,175 @@ export async function syncVesselSpecToFirestore(spec: VesselSpec) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
 }
+
+// ==========================================
+// User Account Database Operations (Firestore)
+// ==========================================
+
+export function subscribeUsers(onUpdate: (users: UserProfile[]) => void) {
+  const colPath = 'users';
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const users = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: data.uid || data.id || docSnap.id,
+            name: data.displayName || data.name || 'User',
+            email: data.email || '',
+            phone: data.phone || '',
+            role: data.role || 'client',
+            avatarUrl: data.avatarUrl || data.photoURL || '',
+            photoURL: data.photoURL || data.avatarUrl || '',
+            vesselName: data.vesselName || '',
+            vesselType: data.vesselType || '',
+            marinaBerth: data.marinaBerth || '',
+            systemVoltage: data.systemVoltage || '12V',
+            notifyJobUpdates: data.notifyJobUpdates ?? true,
+            notifyDispatchSms: data.notifyDispatchSms ?? true,
+            createdAt: data.createdAt || '',
+            lastLoginAt: data.lastLoginAt || '',
+            updatedAt: data.updatedAt || ''
+          } as UserProfile;
+        });
+        onUpdate(users);
+      }
+      if (!snapshot.metadata.fromCache) {
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        updateConnectionState({ isConnected: true, lastConnectedAt: nowStr });
+      }
+    },
+    (error) => {
+      if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
+        updateConnectionState({ isConnected: false, errorMessage: error.message });
+      }
+      handleFirestoreError(error, OperationType.GET, colPath);
+    }
+  );
+}
+
+export function subscribeUserProfile(userId: string, onUpdate: (user: UserProfile | null) => void) {
+  if (!userId) return () => {};
+  const docPath = `users/${userId}`;
+  return onSnapshot(
+    doc(db, 'users', userId),
+    (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const profile: UserProfile = {
+          id: data.uid || data.id || snap.id,
+          name: data.displayName || data.name || 'User',
+          email: data.email || '',
+          phone: data.phone || '',
+          role: data.role || 'client',
+          avatarUrl: data.avatarUrl || data.photoURL || '',
+          photoURL: data.photoURL || data.avatarUrl || '',
+          vesselName: data.vesselName || '',
+          vesselType: data.vesselType || '',
+          marinaBerth: data.marinaBerth || '',
+          systemVoltage: data.systemVoltage || '12V',
+          notifyJobUpdates: data.notifyJobUpdates ?? true,
+          notifyDispatchSms: data.notifyDispatchSms ?? true,
+          createdAt: data.createdAt || '',
+          lastLoginAt: data.lastLoginAt || '',
+          updatedAt: data.updatedAt || ''
+        };
+        onUpdate(profile);
+      } else {
+        onUpdate(null);
+      }
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.GET, docPath);
+    }
+  );
+}
+
+export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
+  const docId = profile.id;
+  const docPath = `users/${docId}`;
+  try {
+    const payload = {
+      uid: docId,
+      id: docId,
+      displayName: profile.name,
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone || '',
+      role: profile.role,
+      avatarUrl: profile.avatarUrl || profile.photoURL || '',
+      photoURL: profile.photoURL || profile.avatarUrl || '',
+      vesselName: profile.vesselName || '',
+      vesselType: profile.vesselType || '',
+      marinaBerth: profile.marinaBerth || '',
+      systemVoltage: profile.systemVoltage || '12V',
+      notifyJobUpdates: profile.notifyJobUpdates ?? true,
+      notifyDispatchSms: profile.notifyDispatchSms ?? true,
+      createdAt: profile.createdAt || new Date().toISOString(),
+      lastLoginAt: profile.lastLoginAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await setDoc(doc(db, 'users', docId), cleanForFirestore(payload), { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ lastConnectedAt: nowStr });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+export async function seedUsersToFirestore(defaultProfiles: UserProfile[]): Promise<void> {
+  const colPath = 'users';
+  try {
+    const existing = await getDocs(collection(db, colPath));
+    const existingIds = new Set(existing.docs.map(d => d.id));
+    const batch = writeBatch(db);
+    let countToSeed = 0;
+
+    for (const p of defaultProfiles) {
+      if (!existingIds.has(p.id)) {
+        const payload = {
+          uid: p.id,
+          id: p.id,
+          displayName: p.name,
+          name: p.name,
+          email: p.email,
+          phone: p.phone || '',
+          role: p.role,
+          avatarUrl: p.avatarUrl || '',
+          photoURL: p.photoURL || p.avatarUrl || '',
+          vesselName: p.vesselName || '',
+          vesselType: p.vesselType || '',
+          marinaBerth: p.marinaBerth || '',
+          systemVoltage: p.systemVoltage || '12V',
+          notifyJobUpdates: p.notifyJobUpdates ?? true,
+          notifyDispatchSms: p.notifyDispatchSms ?? true,
+          createdAt: p.createdAt || '2026-10-01T08:00:00Z',
+          lastLoginAt: p.lastLoginAt || '2026-10-10T10:00:00Z',
+          updatedAt: new Date().toISOString()
+        };
+        batch.set(doc(db, colPath, p.id), cleanForFirestore(payload));
+        countToSeed++;
+      }
+    }
+
+    if (countToSeed > 0) {
+      await batch.commit();
+      console.log(`Seeded ${countToSeed} user accounts to Firestore database.`);
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, colPath);
+  }
+}
+
+export async function deleteUserFromFirestore(userId: string): Promise<void> {
+  const docPath = `users/${userId}`;
+  try {
+    const { deleteDoc } = await import('firebase/firestore');
+    await deleteDoc(doc(db, 'users', userId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, docPath);
+  }
+}
+
 
