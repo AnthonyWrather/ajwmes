@@ -60,6 +60,7 @@ import {
   toggleSimulatedOffline,
   getConnectionState
 } from './lib/firebase';
+import { trackPageView, trackAddToCart, trackPurchase, trackQuoteRequest } from './lib/analytics';
 
 
 export default function App() {
@@ -384,6 +385,22 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [actionDenial]);
 
+  // Google Analytics 4 (GA4): Track SPA navigation page views on tab changes
+  useEffect(() => {
+    const tabTitles: Record<string, string> = {
+      home: 'Home | AJW Marine Electrical Services',
+      store: 'Workshop Store & Cables | AJW Marine',
+      designer: 'Laser Switch Panel Designer | AJW Marine',
+      replica: 'Replica Boat Switch Panels | AJW Marine',
+      portal: 'Vessel Portal & Diagnostics | AJW Marine',
+      tracker: 'Track Postal Orders | AJW Marine',
+      admin: 'Workshop Admin Dashboard | AJW Marine',
+      technician: 'Field Technician Workspace | AJW Marine',
+      postal: 'Postal Dispatch Desk | AJW Marine',
+    };
+    trackPageView(currentTab, tabTitles[currentTab] || `AJW Marine - ${currentTab}`);
+  }, [currentTab]);
+
   // Automated Zero-Stock Alert Trigger (Fires when stockCount hits 0)
   const triggerZeroStockAlert = (item: CatalogItem, triggerSource: StockAlert['triggerSource'] = 'manual_adjustment') => {
     const { subject, body } = generateStockAlertEmail(item, triggerSource);
@@ -616,6 +633,12 @@ export default function App() {
 
     setJobs([fullJob, ...jobs]);
     syncJobToFirestore(fullJob);
+    trackQuoteRequest({
+      serviceCategory: fullJob.serviceCategory,
+      vesselName: fullJob.vesselName,
+      reference: fullJob.reference,
+      estimatedValue: fullJob.totalEstimated
+    });
     setCurrentUserRole('client');
     setCurrentTab('portal');
   };
@@ -666,6 +689,12 @@ export default function App() {
 
     setJobs([fullJob, ...jobs]);
     syncJobToFirestore(fullJob);
+    trackQuoteRequest({
+      serviceCategory: 'replica_panel',
+      vesselName: fullJob.vesselName,
+      reference: fullJob.reference,
+      estimatedValue: fullJob.totalEstimated
+    });
     setCurrentUserRole('client');
     setCurrentTab('portal');
   };
@@ -703,6 +732,7 @@ export default function App() {
 
   // Cart & Store Front Handlers
   const handleAddToCart = (item: CatalogItem, quantity: number) => {
+    trackAddToCart(item, quantity);
     setCart(prev => {
       const existingIndex = prev.findIndex(c => c.item.id === item.id);
       if (existingIndex > -1) {
@@ -738,6 +768,7 @@ export default function App() {
   const handleSubmitPostalOrder = (order: PostalOrder) => {
     setPostalOrders(prev => [order, ...prev]);
     syncPostalOrderToFirestore(order);
+    trackPurchase(order);
     // Decrement stock from catalog and trigger alert if hits 0
     setCatalog(prev =>
       prev.map(catItem => {

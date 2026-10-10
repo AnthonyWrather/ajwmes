@@ -23,6 +23,7 @@ import {
   UploadedPanelImage 
 } from '../../lib/storage';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
+import { trackPanelDesignCustomized } from '../../lib/analytics';
 
 interface SwitchPanelDesignerProps {
   onOrderPanel?: (config: SwitchPanelConfig) => void;
@@ -449,6 +450,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
             <button
               onClick={() => {
+                trackPanelDesignCustomized(config.gangCount, config.material, config.estimatedPrice);
                 if (onOrderPanel) onOrderPanel(config);
                 setOrderModalOpen(true);
               }}
