@@ -9,7 +9,7 @@ import {
   UploadTaskSnapshot,
   StorageReference
 } from 'firebase/storage';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { firebaseConfig } from './firebaseConfig';
 
 // Safely obtain Firebase app without circular dependency
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);

@@ -20,6 +20,8 @@ jobs:
         run: npm install
 
       - name: Build Production Assets
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
         run: npm run build
 
       - name: Deploy to Firebase Hosting
@@ -28,4 +30,4 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           channelId: live
-          projectId: gen-lang-client-0618772940
+          projectId: prime-sign-454323-a1

@@ -81,3 +81,36 @@ If you'd like client quotes, diagnostic hours, custom switch panel designs, and 
 2. Click **Create database** -> Start in **Production mode** (or Test mode while testing).
 3. Choose the closest region (e.g. `europe-west2` for London/UK).
 4. In Project Settings, under **Your apps**, click the web icon (`</>`), register your web app, and copy the config credentials into `.env`.
+
+---
+
+## Resolving GitHub Secret Scanning Error (Publicly Leaked Secret)
+
+If you encountered GitHub Push Protection or Secret Scanning error:
+> `Publicly leaked secret (Google API Key) in firebase-applet-config.json`
+
+This has now been completely resolved in the codebase:
+1. **Secret Removed from Tracked Files:** The raw `apiKey` has been stripped from `firebase-applet-config.json` (`"apiKey": ""`).
+2. **Environment Variable Security:** The real Firebase API Key is now safely stored in your local `.env` file (`VITE_FIREBASE_API_KEY=your_firebase_api_key`), which is listed in `.gitignore` and never committed to GitHub.
+3. **Automatic Fallback:** `src/lib/firebaseConfig.ts` automatically merges `import.meta.env.VITE_FIREBASE_API_KEY` into your Firebase app instance.
+
+### To Push Your Code to GitHub Without Error:
+If GitHub blocked an existing commit on your local machine:
+```bash
+# 1. Stage the updated files
+git add firebase-applet-config.json src/lib/firebaseConfig.ts src/lib/firebase.ts src/lib/storage.ts .env.example .github/workflows/firebase-hosting-merge.yml FIREBASE_GITHUB_DEPLOYMENT_GUIDE.md
+
+# 2. Amend your previous commit (replaces the commit that contained the key)
+git commit --amend --no-edit
+
+# 3. Push to GitHub cleanly
+git push origin main --force-with-lease
+```
+
+### For GitHub Actions CI/CD (Firebase Hosting):
+In your GitHub repository:
+1. Go to **Settings** > **Secrets and variables** > **Actions**.
+2. Click **New repository secret**.
+3. Name: `VITE_FIREBASE_API_KEY`.
+4. Value: Paste your Firebase API Key from `.env`.
+5. Save. The automated workflow `.github/workflows/firebase-hosting-merge.yml` will automatically inject it during production builds!
