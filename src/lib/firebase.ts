@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { 
   getFirestore, 
+  initializeFirestore,
   doc, 
   getDocFromServer, 
   collection, 
@@ -44,8 +45,21 @@ export interface FirestoreErrorInfo {
 // Initialize Firebase App
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// CRITICAL: The app will break without specifying firestoreDatabaseId
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// CRITICAL: Initialize Firestore with database ID and experimentalAutoDetectLongPolling
+// This ensures iframe preview proxies and cloud environments maintain a rock-solid connection without stream drops
+export const db = (() => {
+  try {
+    return initializeFirestore(
+      app,
+      {
+        experimentalAutoDetectLongPolling: true,
+      },
+      firebaseConfig.firestoreDatabaseId
+    );
+  } catch {
+    return getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  }
+})();
 export const auth = getAuth(app);
 export { storage, uploadSwitchPanelImage, uploadMultiplePanelImages, deleteSwitchPanelImage, isFirebaseStorageUrl } from './storage';
 export type { UploadedPanelImage, UploadProgressInfo } from './storage';
