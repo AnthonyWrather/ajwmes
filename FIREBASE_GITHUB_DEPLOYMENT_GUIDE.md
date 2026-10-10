@@ -114,3 +114,15 @@ In your GitHub repository:
 3. Name: `VITE_FIREBASE_API_KEY`.
 4. Value: Paste your Firebase API Key from `.env`.
 5. Save. The automated workflow `.github/workflows/firebase-hosting-merge.yml` will automatically inject it during production builds!
+
+---
+
+## Project Configuration: gen-lang-client-0618772940
+
+Your project is configured to use **`gen-lang-client-0618772940`**:
+- **Firebase Project ID:** `gen-lang-client-0618772940`
+- **Hosting URL:** `https://gen-lang-client-0618772940.web.app`
+- **Service Account Secret in GitHub:** `FIREBASE_SERVICE_ACCOUNT` (for `gen-lang-client-0618772940`)
+- **API Key Secret in GitHub:** `VITE_FIREBASE_API_KEY`
+
+All workflow configurations and client SDKs are fully aligned with `gen-lang-client-0618772940`. Push cleanly to GitHub without mismatch or permission errors.
