@@ -26,7 +26,7 @@ firebase login
 
 # 3. Check your project ID and connect to it
 firebase projects:list
-firebase use ajw-marine-electrical-services
+firebase use gen-lang-client-0618772940
 
 # 4. Build and deploy live
 npm run build

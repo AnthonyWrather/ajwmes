@@ -15,12 +15,12 @@ export default defineConfig(() => {
   return {
     define: {
       'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(localEnv.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || ''),
-      'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(localEnv.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'prime-sign-454323-a1'),
-      'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(localEnv.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID || '1:586239323703:web:a059280dbd46b59fe419b2'),
-      'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(localEnv.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || 'prime-sign-454323-a1.firebaseapp.com'),
+      'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(localEnv.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'gen-lang-client-0618772940'),
+      'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(localEnv.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID || '1:310512231306:web:35ac83e7f7f56d49a39e73'),
+      'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(localEnv.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || 'gen-lang-client-0618772940.firebaseapp.com'),
       'import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID': JSON.stringify(localEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID || process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a'),
-      'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(localEnv.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || 'prime-sign-454323-a1.firebasestorage.app'),
-      'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(localEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '586239323703'),
+      'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(localEnv.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || 'gen-lang-client-0618772940.firebasestorage.app'),
+      'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(localEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '310512231306'),
     },
     plugins: [
       react(),

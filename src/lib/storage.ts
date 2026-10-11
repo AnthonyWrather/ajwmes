@@ -14,11 +14,14 @@ import { firebaseConfig } from './firebaseConfig';
 // Safely obtain Firebase app without circular dependency
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
+// Safely resolve the storage bucket URL for gen-lang-client-0618772940
+const resolvedBucket = firebaseConfig.storageBucket?.trim();
+const storageBucketUrl = resolvedBucket
+  ? (resolvedBucket.startsWith('gs://') ? resolvedBucket : `gs://${resolvedBucket}`)
+  : undefined;
+
 // Initialize Firebase Storage with the configured storage bucket
-export const storage = getStorage(
-  firebaseApp, 
-  firebaseConfig.storageBucket ? `gs://${firebaseConfig.storageBucket}` : undefined
-);
+export const storage = getStorage(firebaseApp, storageBucketUrl);
 
 export interface UploadedPanelImage {
   id: string;
@@ -278,7 +281,7 @@ export async function uploadSvgAsStorageImage(
  */
 export function isFirebaseStorageUrl(url: string): boolean {
   if (!url) return false;
-  return url.includes('firebasestorage.googleapis.com') || url.includes('.appspot.com');
+  return url.includes('firebasestorage.googleapis.com') || url.includes('.appspot.com') || url.includes('firebasestorage.app');
 }
 
 export interface UploadedCatalogImage {
