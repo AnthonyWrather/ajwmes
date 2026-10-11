@@ -1,0 +1,645 @@
+{
+  "jobs": [
+    {
+      "id": "job-1791566711604",
+      "depositPaid": false,
+      "berthLocation": "Gosport Marina",
+      "vesselType": "Westerly Yacht",
+      "replicaImages": [
+        "/src/assets/images/marine_switch_panel_laser_1791400808406.jpg",
+        "blob:https://gen-lang-client-0618772940.firebaseapp.com/9f2ad4ab-bcb7-4d3c-8431-677db4522485",
+        "blob:https://gen-lang-client-0618772940.firebaseapp.com/a538e8d2-a654-41c8-a402-35d79476c02b"
+      ],
+      "status": "quote_requested",
+      "messages": [
+        {
+          "timestamp": "Just now",
+          "sender": "client",
+          "senderName": "Boat Owner",
+          "id": "msg-1791566711604",
+          "text": "Uploaded photos and measurements for a Westerly Konsort 29 replacement switch panel."
+        }
+      ],
+      "clientEmail": "owner@westerly-owners.co.uk",
+      "depositAmount": 0,
+      "notes": "Replica switch panel quote request for Westerly Konsort 29. Dimensions approx: 195mm x 140mm, 8 switches. Notes: Current plastic panel has cracked screw lugs and faded rocker labels.",
+      "serviceCategory": "replica_panel",
+      "hourlyRate": 25,
+      "createdAt": "2026-10-09 17:25",
+      "clientName": "Replica Inquirer",
+      "materialsUsed": [],
+      "diagnosticHours": 0,
+      "reference": "AJW-REP-888",
+      "totalLabor": 25,
+      "vesselName": "Westerly Konsort 29",
+      "totalMaterials": 65,
+      "totalEstimated": 90,
+      "clientPhone": "07700 900331"
+    },
+    {
+      "id": "job-1791576995501",
+      "createdAt": "2026-10-09 20:16",
+      "materialsUsed": [],
+      "clientEmail": "owner@westerly-owners.co.uk",
+      "depositPaid": false,
+      "vesselType": "Westerly Yacht",
+      "reference": "AJW-REP-118",
+      "totalEstimated": 90,
+      "totalLabor": 25,
+      "totalMaterials": 65,
+      "depositAmount": 0,
+      "vesselName": "Westerly Konsort 29",
+      "diagnosticHours": 0,
+      "clientPhone": "07700 900331",
+      "hourlyRate": 25,
+      "berthLocation": "Gosport Marina",
+      "messages": [
+        {
+          "id": "msg-1791576995501",
+          "senderName": "Boat Owner",
+          "sender": "client",
+          "text": "Uploaded photos and measurements for a Westerly Konsort 29 replacement switch panel.",
+          "timestamp": "Just now"
+        }
+      ],
+      "clientName": "Replica Inquirer",
+      "notes": "Replica switch panel quote request for Westerly Konsort 29. Dimensions approx: 195mm x 140mm, 8 switches. Notes: Current plastic panel has cracked screw lugs and faded rocker labels.",
+      "status": "quote_requested",
+      "replicaImages": [
+        "/assets/images/marine_switch_panel_laser_1791400808406.jpg",
+        "blob:https://ajwmes.co.uk/738df08a-81c5-439a-af15-6311434b4718"
+      ],
+      "serviceCategory": "replica_panel"
+    }
+  ],
+  "catalog": [
+    {
+      "id": "bus-150",
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "specification": "Tinned copper bar, stainless steel M6 studs & flame retardant base",
+      "inStock": true,
+      "unitPrice": 32,
+      "unit": "each",
+      "stockCount": 14,
+      "name": "Dual 150A 4-Stud Marine Busbar with Cover",
+      "category": "busbars"
+    },
+    {
+      "id": "bus-250",
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "specification": "4x M8 studs, 3x M4 screws, rated up to 48V DC, insulated base",
+      "stockCount": 9,
+      "inStock": true,
+      "unitPrice": 42,
+      "unit": "each",
+      "name": "Heavy Duty 250A Power Distribution Busbar",
+      "category": "busbars"
+    },
+    {
+      "id": "cab-15",
+      "category": "cable",
+      "badge": "Popular for Nav Lights",
+      "name": "Tinned Single Core Marine Cable 1.5mm²",
+      "inStock": true,
+      "specification": "Oceanflex tinned copper, 21A rated, ISO 6722, red/black",
+      "unit": "per meter",
+      "stockCount": 150,
+      "imageUrl": "/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg",
+      "unitPrice": 1.4
+    },
+    {
+      "id": "cab-16",
+      "category": "cable",
+      "name": "Tinned Battery & Inverter Cable 16mm²",
+      "unit": "per meter",
+      "inStock": true,
+      "imageUrl": "/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg",
+      "specification": "Class 6 ultra flexible tinned copper, 110A rated",
+      "stockCount": 45,
+      "unitPrice": 7.2
+    },
+    {
+      "id": "cab-25",
+      "category": "cable",
+      "unit": "per meter",
+      "name": "Tinned Twin Flat Marine Cable 2.5mm²",
+      "stockCount": 100,
+      "badge": "Bestseller",
+      "inStock": true,
+      "unitPrice": 2.8,
+      "specification": "Oceanflex tinned copper, Red/Black sheath, 29A rated, ideal for pumps & instruments",
+      "imageUrl": "/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg"
+    },
+    {
+      "id": "cab-35",
+      "unitPrice": 13.5,
+      "name": "Tinned Battery Bank Cable 35mm²",
+      "badge": "Battery Banks",
+      "specification": "Class 6 ultra flexible tinned copper, 240A rated, heavy duty",
+      "unit": "per meter",
+      "imageUrl": "/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg",
+      "stockCount": 12,
+      "category": "cable",
+      "inStock": true
+    },
+    {
+      "id": "cab-50",
+      "unitPrice": 18.9,
+      "stockCount": 20,
+      "imageUrl": "/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg",
+      "category": "cable",
+      "unit": "per meter",
+      "specification": "High capacity tinned marine cable, 345A rated",
+      "inStock": true,
+      "name": "Heavy Duty Starter/Inverter Cable 50mm²"
+    },
+    {
+      "id": "fus-12w",
+      "unitPrice": 44,
+      "category": "fuses",
+      "unit": "each",
+      "name": "Marine 12-Way ST-Blade Fuse Block with Cover",
+      "badge": "Full Refits",
+      "specification": "With ground bus & write-on label slots, 100A max block",
+      "stockCount": 6,
+      "inStock": true,
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg"
+    },
+    {
+      "id": "fus-6w",
+      "unit": "each",
+      "specification": "Clear insulating cover, LED blown indicator, negative busbar, IP56",
+      "category": "fuses",
+      "name": "Marine 6-Way ST-Blade Fuse Block with Cover",
+      "unitPrice": 28,
+      "inStock": true,
+      "stockCount": 8,
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "badge": "Most Popular"
+    },
+    {
+      "id": "fus-anl",
+      "unit": "kit",
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "unitPrice": 22,
+      "inStock": true,
+      "name": "ANL High-Current Marine Fuse Holder & 150A Fuse",
+      "specification": "Heavy duty transparent cover, tin-plated copper terminals",
+      "category": "fuses",
+      "stockCount": 10
+    },
+    {
+      "id": "fus-mrbf",
+      "inStock": true,
+      "category": "fuses",
+      "badge": "ABYC Essential",
+      "unit": "each",
+      "name": "MRBF Single Battery Terminal Fuse Holder",
+      "unitPrice": 26.5,
+      "specification": "Direct post-clamp mount, IP66 rated, 30A-300A compatible, ABYC compliant",
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "stockCount": 12
+    },
+    {
+      "id": "item-mv457mh2-577",
+      "name": "Test Item",
+      "imageUrl": "/assets/images/budget_small_cruiser_boat_1791420135992.jpg",
+      "unit": "each",
+      "unitPrice": 10.99,
+      "category": "test_cat",
+      "inStock": true,
+      "specification": "Its a  Widget...",
+      "stockCount": 40
+    },
+    {
+      "id": "pan-face-6",
+      "name": "Replica/Custom 6-Gang Marine Faceplate (Faceplate Only)",
+      "badge": "Custom Engraved",
+      "unit": "each",
+      "stockCount": 99,
+      "imageUrl": "/src/assets/images/marine_switch_panel_laser_1791400808406.jpg",
+      "unitPrice": 45,
+      "inStock": true,
+      "category": "panels",
+      "specification": "3mm Matte Black Marine Acrylic, custom etched labels & border"
+    },
+    {
+      "id": "pan-kit-6",
+      "category": "panels",
+      "specification": "Replica/custom faceplate + 6x Carling rockers + marine terminals + fuses",
+      "name": "6-Gang Replica/Custom Switch Panel DIY Kit",
+      "unit": "kit",
+      "stockCount": 99,
+      "imageUrl": "/src/assets/images/marine_switch_panel_laser_1791400808406.jpg",
+      "badge": "Complete DIY Kit",
+      "inStock": true,
+      "unitPrice": 88
+    },
+    {
+      "id": "pan-wired-6",
+      "specification": "Drop-in ready, tinned marine bus wiring, heatshrink labeled jumpers",
+      "stockCount": 99,
+      "badge": "Ready to Fit",
+      "inStock": true,
+      "category": "panels",
+      "unit": "assembled",
+      "imageUrl": "/src/assets/images/marine_switch_panel_laser_1791400808406.jpg",
+      "unitPrice": 135,
+      "name": "6-Gang Switch Panel Fully Assembled & Bench-Tested"
+    },
+    {
+      "id": "sw-carl",
+      "name": "Carling-Style IP66 Sealed Rocker Switch (12V 20A)",
+      "stockCount": 40,
+      "unitPrice": 8.5,
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "unit": "each",
+      "specification": "Dual blue LED illuminated, moisture sealed, laser etched actuator",
+      "inStock": true,
+      "category": "switches",
+      "badge": "Marine Standard"
+    },
+    {
+      "id": "sw-isolator-300",
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "stockCount": 11,
+      "inStock": true,
+      "badge": "Safety Essential",
+      "specification": "Ignition protected, removable key/knob, 48V rated, surface or rear mount",
+      "unit": "each",
+      "category": "switches",
+      "name": "Heavy-Duty Marine Battery Master Isolator Switch (300A)",
+      "unitPrice": 24.5
+    },
+    {
+      "id": "sw-push",
+      "stockCount": 25,
+      "category": "switches",
+      "specification": "IP67 waterproof 316 stainless, cyan LED ring, latching/momentary",
+      "inStock": true,
+      "name": "Stainless Steel LED Ring Pushbutton (19mm)",
+      "unitPrice": 11,
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg",
+      "unit": "each"
+    },
+    {
+      "id": "term-heatshrink-pack",
+      "badge": "Workshop Grade",
+      "unitPrice": 18.5,
+      "category": "switches",
+      "name": "Marine Adhesive Heat-Shrink Crimp Terminal Pack (50pcs)",
+      "inStock": true,
+      "stockCount": 18,
+      "imageUrl": "/src/assets/images/marine_cable_spool_crimping_1791421463275.jpg",
+      "unit": "pack",
+      "specification": "Tinned copper barrels with dual-wall adhesive glue lining, rings, spades & butt connectors"
+    },
+    {
+      "id": "usb-fast-charger",
+      "name": "IP66 Waterproof Dual USB-C PD & QC 3.0 Marine Socket",
+      "stockCount": 22,
+      "category": "switches",
+      "inStock": true,
+      "unit": "each",
+      "unitPrice": 16.5,
+      "specification": "Rubber splash cap, blue voltmeter display, fast charges phones & tablets",
+      "badge": "Budget Boater Pick",
+      "imageUrl": "/src/assets/images/marine_fuse_block_hardware_1791421472296.jpg"
+    },
+    {
+      "id": "vic-dcdc",
+      "unitPrice": 195,
+      "unit": "each",
+      "imageUrl": "/src/assets/images/marine_lithium_battery_bank_1791400821608.jpg",
+      "name": "Victron Orion-Tr Smart 12/12-30A Non-Isolated DC-DC Charger",
+      "category": "victron",
+      "stockCount": 5,
+      "inStock": true,
+      "specification": "Smart alternator to lithium safe charging, engine shutdown detect",
+      "badge": "Lithium Protection"
+    },
+    {
+      "id": "vic-mppt",
+      "badge": "Official Victron",
+      "imageUrl": "/src/assets/images/marine_solar_array_yacht_1791400831647.jpg",
+      "category": "victron",
+      "specification": "Ultra-fast tracking, up to 220W (12V) solar, Bluetooth built-in",
+      "name": "Victron SmartSolar MPPT 75/15 Charge Controller",
+      "unitPrice": 65,
+      "inStock": true,
+      "unit": "each",
+      "stockCount": 5
+    },
+    {
+      "id": "vic-shunt",
+      "name": "Victron SmartShunt 500A/50mV Bluetooth Battery Monitor",
+      "unit": "each",
+      "stockCount": 5,
+      "category": "victron",
+      "imageUrl": "/src/assets/images/marine_lithium_battery_bank_1791400821608.jpg",
+      "inStock": true,
+      "unitPrice": 128,
+      "specification": "All-in-one battery monitor, Bluetooth readout to phone VictronConnect app",
+      "badge": "Official Victron"
+    }
+  ],
+  "categories": [
+    {
+      "id": "busbars",
+      "description": "Heavy duty tin-plated copper power distribution busbars & dual common studs",
+      "label": "Busbars & Terminals"
+    },
+    {
+      "id": "cable",
+      "label": "Tinned Marine Cables",
+      "description": "Oceanflex single & multi-core tinned marine wire, high-amperage battery & inverter cables"
+    },
+    {
+      "id": "fuses",
+      "label": "Fuses & Fuse Blocks",
+      "description": "Marine ST blade fuse blocks, MRBF battery terminal fuses, mega fuses & holders"
+    },
+    {
+      "id": "panels",
+      "description": "Custom laser engraved matte acrylic and teak boat switchboard replacement faceplates",
+      "label": "Replica/Custom Panel Kits"
+    },
+    {
+      "id": "switches",
+      "description": "Contura waterproof rocker switches, circuit breakers, voltmeters & dual USB chargers",
+      "label": "Marine Switches & USB"
+    },
+    {
+      "id": "test_cat",
+      "description": "Just testing it.",
+      "label": "Test Cat"
+    },
+    {
+      "id": "victron",
+      "description": "SmartShunts, SmartSolar MPPT controllers, Orion DC-DC chargers & Phoenix inverters",
+      "label": "Victron Power Hardware"
+    }
+  ],
+  "postal_orders": [
+    {
+      "id": "ord-101",
+      "trackingNumber": "GB790538957RM",
+      "trackingCarrier": "Royal Mail Tracked 24",
+      "customerEmail": "m.bennett@solentsailor.co.uk",
+      "subtotal": 78.6,
+      "paymentMethod": "card",
+      "customerPhone": "07700 900412",
+      "deliveredAt": "2026-10-09 16:30",
+      "shippingCost": 4.5,
+      "paymentStatus": "paid",
+      "shippingAddress": {
+        "email": "m.bennett@solentsailor.co.uk",
+        "postcode": "SO31 4NB",
+        "isMarinaDelivery": true,
+        "addressLine1": "Hamble Point Marina, School Lane",
+        "addressLine2": "Berth F-12 (Yacht \"Sea Rover\")",
+        "deliveryNotes": "Leave in marina office if not on board.",
+        "phone": "07700 900412",
+        "fullName": "Marcus Bennett",
+        "marinaName": "Hamble Point Marina",
+        "berthNumber": "Pontoon F-12",
+        "city": "Southampton"
+      },
+      "shippingMethod": "royal_mail_tracked",
+      "notes": "Wiring in a new automatic bilge pump and dashboard switch.",
+      "items": [
+        {
+          "unit": "per meter",
+          "lineTotal": 33.6,
+          "quantity": 12,
+          "itemId": "cab-25",
+          "unitPrice": 2.8,
+          "name": "Tinned Twin Flat Marine Cable 2.5mm²"
+        },
+        {
+          "unitPrice": 28,
+          "itemId": "fus-6w",
+          "name": "Marine 6-Way ST-Blade Fuse Block with Cover",
+          "quantity": 1,
+          "lineTotal": 28,
+          "unit": "each"
+        },
+        {
+          "lineTotal": 17,
+          "itemId": "sw-carl",
+          "name": "Carling-Style IP66 Sealed Rocker Switch (12V 20A)",
+          "quantity": 2,
+          "unit": "each",
+          "unitPrice": 8.5
+        }
+      ],
+      "customerName": "Marcus Bennett",
+      "dispatchedAt": "2026-10-09 16:30",
+      "orderNumber": "AJW-POST-2841",
+      "orderStatus": "delivered",
+      "createdAt": "2026-10-07 14:15",
+      "total": 83.1
+    }
+  ],
+  "vessel_specs": [
+    {
+      "id": "vessel-windbird-3",
+      "chartplotterModel": "Raymarine Axiom 9+ Touch MFD with Navionics UK+Ireland",
+      "shorePowerRating": "230V 16A Shore Connection with 30mA RCD Consumer Unit",
+      "bilgePumpConfig": "Rule 1100 GPH Automatic Submersible with SuperSwitch Float & Cockpit Audio Alarm",
+      "alternatorRating": "Hitachi 55A Engine Alternator with Belt Upgrade",
+      "navigationNetwork": "NMEA 2000 Micro-C Powered Backbone with Dual Terminators",
+      "starterCca": 800,
+      "solarController": "Victron SmartSolar MPPT 100/30 (Bluetooth)",
+      "inverterModel": "Victron Phoenix 12/800VA Pure Sine Wave",
+      "vhfAisDetails": "Standard Horizon Matrix GX2400GPS with NMEA 2000 AIS (MMSI: 235084129)",
+      "hasGalvanicIsolator": true,
+      "batteryMonitor": "Victron SmartShunt 500A/50mV on House Negative Bus",
+      "houseBankInstalled": "October 2026",
+      "homeMarina": "Haslar Marina, Gosport",
+      "houseBatteryType": "Flooded Lead-Acid",
+      "sailNumber": "GBR-4019K",
+      "solarWatts": 350,
+      "starterBatteryType": "Varta Silver Dynamic 85Ah Heavy Duty Lead-Acid",
+      "switchPanelModel": "AJWMES 6-Gang Custom Laser-Engraved Matte Black Marine Acrylic with Push Breakers",
+      "generalNotes": "Full DC negative distribution bus upgrade completed. Tinned 35mm² battery interconnects with MRBF terminal fuse protection.",
+      "starterCapacityAh": 85,
+      "vesselName": "Windbird III",
+      "historyLog": [
+        {
+          "contractor": "AJW Marine Electrical Services",
+          "category": "battery_upgrade",
+          "jobReference": "AJW-2026-088",
+          "partsReplaced": [
+            "200Ah LiFePO4 Battery Bank",
+            "Victron Orion-Tr Smart 12/12-30A",
+            "35mm² Tinned Battery Cable & Heavy Duty Busbar",
+            "MRBF 200A Terminal Fuse"
+          ],
+          "id": "log-1",
+          "title": "Lithium (LiFePO4) 200Ah Bank Conversion & DC-DC Protection",
+          "description": "Replaced failing dual 110Ah lead-acid domestic bank with 200Ah LiFePO4 bank. Installed Victron Orion-Tr Smart 30A DC-DC charger to safeguard engine alternator from overheating/diode burnout, plus MRBF fuse on positive terminal.",
+          "date": "2026-10-06"
+        },
+        {
+          "title": "Solar Stern Arch Array & SmartSolar MPPT Installation",
+          "jobReference": "AJW-2026-041",
+          "category": "solar",
+          "partsReplaced": [
+            "2x 175W Rigid Solar Panels",
+            "Victron SmartSolar MPPT 100/30",
+            "Scanstrut Double Cable Seal"
+          ],
+          "description": "Mounted two 175W rigid monocrystalline solar panels onto existing stainless stern arch. Routed UV-resistant twin 6mm² marine solar cable through deck gland to Victron SmartSolar MPPT 100/30.",
+          "date": "2026-06-12",
+          "id": "log-2",
+          "contractor": "AJW Marine Electrical Services"
+        },
+        {
+          "date": "2025-09-18",
+          "category": "inspection",
+          "jobReference": "AJW-2025-119",
+          "title": "Galvanic Isolator & 230V AC Shore Power Safety Audit",
+          "id": "log-3",
+          "contractor": "AJW Marine Electrical Services",
+          "partsReplaced": [
+            "Sterling Power 16A Waterproof Galvanic Isolator",
+            "Hager 16A 30mA Type A RCD"
+          ],
+          "description": "Annual Solent marina shore power inspection. Installed 16A Zinc Saver galvanic isolator in green/yellow earth conductor to prevent underwater galvanic anode wasting in Haslar marina slip."
+        },
+        {
+          "date": "2024-04-05",
+          "description": "Rewired automatic bilge pump feed directly to domestic bus with 15A continuous fuse bypass. Added dash override 3-way toggle switch (Auto / Off / Manual) with 85dB piezo warning buzzer.",
+          "title": "Primary Bilge Pump Rewire & Cockpit High-Water Alarm",
+          "category": "maintenance",
+          "partsReplaced": [
+            "Rule 1100 GPH Submersible Pump",
+            "Rule-A-Matic Plus Float Switch",
+            "Tinned 2.5mm² Twin Cable"
+          ],
+          "id": "log-4",
+          "contractor": "Owner & AJW Marine"
+        }
+      ],
+      "berthPontoon": "Pontoon C, Berth 14",
+      "houseCapacityAh": 200,
+      "solarType": "2x 175W Rigid Monocrystalline Panels on Stainless Stern Arch",
+      "lastInspectionDate": "2026-10-06",
+      "systemVoltage": "12V",
+      "dcDcCharger": "Victron Orion-Tr Smart 12/12-30A Non-Isolated (Bluetooth)",
+      "hinNumber": "MDY-33-0412-1979",
+      "makeModel": "Moody 33 Centre Cockpit",
+      "year": 1979
+    }
+  ],
+  "users": [
+    {
+      "id": "demo-admin",
+      "name": "Anthony Wrather",
+      "email": "anthonywrather@gmail.com",
+      "marinaBerth": "Gosport Marina (HQ Workshop)",
+      "lastLoginAt": "2026-10-10T16:45:00Z",
+      "vesselName": "AJW Solent Response",
+      "createdAt": "2026-01-15T09:00:00Z",
+      "updatedAt": "2026-10-11T17:24:13.215Z",
+      "systemVoltage": "12V",
+      "photoURL": "/assets/images/avatar_designer_sarah_1791400201276.jpg",
+      "notifyDispatchSms": true,
+      "displayName": "Anthony Wrather",
+      "role": "admin",
+      "avatarUrl": "/assets/images/avatar_designer_sarah_1791400201276.jpg",
+      "phone": "07700 900551",
+      "vesselType": "Workboat / Fast Tender",
+      "uid": "demo-admin",
+      "notifyJobUpdates": true
+    },
+    {
+      "id": "demo-client",
+      "systemVoltage": "12V",
+      "avatarUrl": "/assets/images/budget_small_cruiser_boat_1791420135992.jpg",
+      "photoURL": "/assets/images/budget_small_cruiser_boat_1791420135992.jpg",
+      "displayName": "David Mercer",
+      "vesselName": "Westerly Discus 33",
+      "notifyJobUpdates": true,
+      "uid": "demo-client",
+      "email": "d.mercer@solent-sail.co.uk",
+      "role": "client",
+      "notifyDispatchSms": true,
+      "updatedAt": "2026-10-11T17:56:16.887Z",
+      "phone": "07700 900114",
+      "name": "David Mercer",
+      "lastLoginAt": "2026-10-10T12:00:00Z",
+      "marinaBerth": "Haslar Marina (Berth E-14)",
+      "vesselType": "Sailing Yacht",
+      "createdAt": "2026-03-10T14:15:00Z"
+    },
+    {
+      "id": "demo-guest",
+      "notifyJobUpdates": false,
+      "displayName": "Guest Browser",
+      "uid": "demo-guest",
+      "notifyDispatchSms": false,
+      "phone": "",
+      "vesselName": "Unregistered Vessel",
+      "photoURL": "",
+      "role": "guest",
+      "avatarUrl": "",
+      "createdAt": "2026-10-01T08:00:00Z",
+      "marinaBerth": "Solent Waters",
+      "lastLoginAt": "2026-10-10T16:00:00Z",
+      "email": "guest@solent-visitor.co.uk",
+      "name": "Guest Browser",
+      "vesselType": "Cruiser",
+      "systemVoltage": "12V",
+      "updatedAt": "2026-10-11T17:16:48.478Z"
+    },
+    {
+      "id": "demo-postal",
+      "uid": "demo-postal",
+      "email": "sarah.postal@ajwmarine.co.uk",
+      "notifyJobUpdates": false,
+      "displayName": "Sarah Miller",
+      "vesselType": "Dispatch Facility",
+      "createdAt": "2026-02-15T11:00:00Z",
+      "photoURL": "/assets/images/avatar_designer_sarah_1791400201276.jpg",
+      "updatedAt": "2026-10-11T17:56:16.887Z",
+      "role": "postal",
+      "marinaBerth": "Gosport Workshop E-Bay",
+      "lastLoginAt": "2026-10-10T15:20:00Z",
+      "systemVoltage": "12V",
+      "notifyDispatchSms": true,
+      "name": "Sarah Miller",
+      "avatarUrl": "/assets/images/avatar_designer_sarah_1791400201276.jpg",
+      "phone": "07700 900663",
+      "vesselName": "Workshop Packing Station"
+    },
+    {
+      "id": "demo-tech",
+      "lastLoginAt": "2026-10-10T14:30:00Z",
+      "marinaBerth": "Portsmouth & Gosport",
+      "notifyDispatchSms": false,
+      "uid": "demo-tech",
+      "avatarUrl": "/assets/images/marine_helm_navigation_1791400844235.jpg",
+      "name": "Jack Henderson",
+      "phone": "07700 900882",
+      "vesselName": "Solent Diagnostic Van 1",
+      "systemVoltage": "12V",
+      "notifyJobUpdates": true,
+      "vesselType": "Mobile Marine Unit",
+      "displayName": "Jack Henderson",
+      "updatedAt": "2026-10-11T17:56:16.886Z",
+      "role": "technician",
+      "photoURL": "/assets/images/marine_helm_navigation_1791400844235.jpg",
+      "email": "jack.tech@ajwmarine.co.uk",
+      "createdAt": "2026-02-01T10:00:00Z"
+    }
+  ],
+  "test": [
+    {
+      "id": "connection",
+      "status": "ok",
+      "lastChecked": "2026-10-10T23:13:15.004Z"
+    }
+  ]
+}
