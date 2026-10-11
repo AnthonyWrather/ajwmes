@@ -15,7 +15,9 @@ import {
   where,
   onSnapshot 
 } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, OperationType, syncUserToFirestore } from './firebase';
+import { auth, db, handleFirestoreError, OperationType, syncUserToFirestore, getScopedCollection } from './firebase';
+import { firebaseConfig } from './firebaseConfig';
+import { getEnvStorageItem, setEnvStorageItem } from './envStorage';
 import { UserRole, UserProfile } from '../types';
 
 export interface RoleConfig {
@@ -232,12 +234,9 @@ export const DEMO_PROFILES: UserProfile[] = [
   }
 ];
 
-const LOCAL_STORAGE_USER_KEY = 'ajwmes_current_user_profile';
-const LOCAL_STORAGE_ROLE_KEY = 'ajwmes_current_role';
-
 export function getSavedRole(): UserRole {
   try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_ROLE_KEY) as UserRole | null;
+    const saved = getEnvStorageItem<UserRole | null>('current_role', null);
     if (saved && (saved in ROLE_CONFIGS)) {
       return saved;
     }
@@ -249,29 +248,29 @@ export function getSavedRole(): UserRole {
 
 export function saveCurrentRole(role: UserRole) {
   try {
-    localStorage.setItem(LOCAL_STORAGE_ROLE_KEY, role);
+    setEnvStorageItem('current_role', role);
   } catch (e) {
     console.warn('Could not save role', e);
   }
 }
 
 export function getSavedUserProfile(): UserProfile {
+  const defaultRole = getSavedRole();
+  const demoMatch = DEMO_PROFILES.find(p => p.role === defaultRole) || DEMO_PROFILES[4];
   try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
+    const saved = getEnvStorageItem<UserProfile | null>('current_user_profile', null);
     if (saved) {
-      return JSON.parse(saved);
+      return saved;
     }
   } catch (e) {
     console.warn('Could not read saved user profile', e);
   }
-  const defaultRole = getSavedRole();
-  const demoMatch = DEMO_PROFILES.find(p => p.role === defaultRole) || DEMO_PROFILES[4];
   return demoMatch;
 }
 
 export function saveUserProfile(profile: UserProfile) {
   try {
-    localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(profile));
+    setEnvStorageItem('current_user_profile', profile);
     saveCurrentRole(profile.role);
   } catch (e) {
     console.warn('Could not save user profile', e);
@@ -339,43 +338,45 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
     return { success: false, error: 'Please enter a valid email address.' };
   }
 
-  // 1. Look up existing user in Firestore 'users' collection first
-  try {
-    const usersCol = collection(db, 'users');
-    const q = query(usersCol, where('email', '==', cleanEmail));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      const docSnap = snap.docs[0];
-      const data = docSnap.data();
-      const existingProfile: UserProfile = {
-        id: data.uid || data.id || docSnap.id,
-        name: data.displayName || data.name || cleanEmail.split('@')[0],
-        email: data.email || cleanEmail,
-        phone: data.phone || '',
-        role: data.role || (cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client'),
-        avatarUrl: data.avatarUrl || data.photoURL || '',
-        photoURL: data.photoURL || data.avatarUrl || '',
-        vesselName: data.vesselName || '',
-        vesselType: data.vesselType || '',
-        marinaBerth: data.marinaBerth || '',
-        systemVoltage: data.systemVoltage || '12V',
-        notifyJobUpdates: data.notifyJobUpdates ?? true,
-        notifyDispatchSms: data.notifyDispatchSms ?? true,
-        createdAt: data.createdAt || new Date().toISOString(),
-        lastLoginAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      // Update last login in database
-      await setDoc(doc(db, 'users', existingProfile.id), {
-        lastLoginAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+  // 1. Look up existing user in Firestore 'users' collection first if API key is present
+  if (firebaseConfig.apiKey) {
+    try {
+      const usersCol = collection(db, getScopedCollection('users'));
+      const q = query(usersCol, where('email', '==', cleanEmail));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        const data = docSnap.data();
+        const existingProfile: UserProfile = {
+          id: data.uid || data.id || docSnap.id,
+          name: data.displayName || data.name || cleanEmail.split('@')[0],
+          email: data.email || cleanEmail,
+          phone: data.phone || '',
+          role: data.role || (cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client'),
+          avatarUrl: data.avatarUrl || data.photoURL || '',
+          photoURL: data.photoURL || data.avatarUrl || '',
+          vesselName: data.vesselName || '',
+          vesselType: data.vesselType || '',
+          marinaBerth: data.marinaBerth || '',
+          systemVoltage: data.systemVoltage || '12V',
+          notifyJobUpdates: data.notifyJobUpdates ?? true,
+          notifyDispatchSms: data.notifyDispatchSms ?? true,
+          createdAt: data.createdAt || new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        // Update last login in database
+        await setDoc(doc(db, getScopedCollection('users'), existingProfile.id), {
+          lastLoginAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
 
-      saveUserProfile(existingProfile);
-      return { success: true, profile: existingProfile };
+        saveUserProfile(existingProfile);
+        return { success: true, profile: existingProfile };
+      }
+    } catch (fsErr) {
+      console.warn('Notice: Firestore user query error during email login:', fsErr);
     }
-  } catch (fsErr) {
-    console.warn('Notice: Firestore user query error during email login:', fsErr);
   }
 
   // 2. Check demo profiles and sync into Firestore database
@@ -421,7 +422,8 @@ export async function signInWithGoogle(): Promise<{ success: boolean; user?: Fir
     const result = await signInWithPopup(auth, provider);
     const fbUser = result.user;
 
-    const userDocRef = doc(db, 'users', fbUser.uid);
+    const colPath = getScopedCollection('users');
+    const userDocRef = doc(db, colPath, fbUser.uid);
     let assignedRole: UserRole = 'client';
 
     // Auto-grant admin to Anthony Wrather's email
@@ -506,14 +508,15 @@ export function subscribeAuthState(callback: (user: FirebaseUser | null) => void
  * Sync user role update to Firestore users collection for any user.
  */
 export async function syncUserRoleToFirestore(userId: string, newRole: UserRole) {
-  if (!userId) return;
-  const userDocRef = doc(db, 'users', userId);
+  if (!userId || !firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('users');
+  const userDocRef = doc(db, colPath, userId);
   try {
     await setDoc(userDocRef, { 
       role: newRole, 
       updatedAt: new Date().toISOString() 
     }, { merge: true });
   } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, `users/${userId}`);
+    handleFirestoreError(err, OperationType.WRITE, `${colPath}/${userId}`);
   }
 }

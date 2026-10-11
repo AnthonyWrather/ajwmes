@@ -283,4 +283,8 @@ export interface FirestoreConnectionState {
   pendingSyncCount: number;
   errorMessage?: string;
   isSimulatedOffline?: boolean;
+  isIsolatedMode?: boolean;
+  environment?: string;
+  environmentName?: string;
+  hasApiKey?: boolean;
 }

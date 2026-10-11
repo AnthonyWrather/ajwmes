@@ -14,6 +14,7 @@ import {
   disableNetwork
 } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
+import { detectEnvironment } from './environment';
 import { JobRecord, CatalogItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState } from '../types';
 
 export enum OperationType {
@@ -23,6 +24,15 @@ export enum OperationType {
   LIST = 'list',
   GET = 'get',
   WRITE = 'write',
+}
+
+/**
+ * Returns environment-scoped Firestore collection name
+ * e.g., 'ais_dev_jobs' vs 'jobs' (for GitHub production)
+ */
+export function getScopedCollection(baseCollection: string): string {
+  const env = detectEnvironment();
+  return `${env.firestoreCollectionPrefix}${baseCollection}`;
 }
 
 export interface FirestoreErrorInfo {
@@ -65,13 +75,20 @@ export { storage, uploadSwitchPanelImage, uploadMultiplePanelImages, deleteSwitc
 export type { UploadedPanelImage, UploadProgressInfo } from './storage';
 
 // Connection state manager
+const currentEnv = detectEnvironment();
+const hasApiKey = Boolean(firebaseConfig.apiKey && firebaseConfig.apiKey.trim().length > 0);
+
 let connectionState: FirestoreConnectionState = {
-  isConnected: typeof navigator !== 'undefined' ? navigator.onLine : true,
+  isConnected: hasApiKey ? (typeof navigator !== 'undefined' ? navigator.onLine : true) : false,
   isChecking: false,
   lastConnectedAt: null,
   pendingSyncCount: 0,
-  errorMessage: undefined,
+  errorMessage: hasApiKey ? undefined : 'AI Studio Isolated Test Storage Active (No Cloud API Key in Local Dev)',
   isSimulatedOffline: false,
+  isIsolatedMode: !hasApiKey,
+  environment: currentEnv.envCode,
+  environmentName: currentEnv.envName,
+  hasApiKey
 };
 
 const connectionListeners: Set<(state: FirestoreConnectionState) => void> = new Set();
@@ -101,6 +118,22 @@ export function subscribeConnectionState(listener: (state: FirestoreConnectionSt
 
 // Active connection verification
 export async function checkFirestoreConnection(): Promise<boolean> {
+  const env = detectEnvironment();
+  const validKey = Boolean(firebaseConfig.apiKey && firebaseConfig.apiKey.trim().length > 0);
+
+  if (!validKey) {
+    updateConnectionState({
+      isConnected: false,
+      isChecking: false,
+      isIsolatedMode: true,
+      environment: env.envCode,
+      environmentName: env.envName,
+      hasApiKey: false,
+      errorMessage: 'AI Studio Isolated Test Storage Active'
+    });
+    return false;
+  }
+
   if (connectionState.isSimulatedOffline) {
     updateConnectionState({ isConnected: false, isChecking: false, errorMessage: 'Simulated offline mode' });
     return false;
@@ -113,6 +146,10 @@ export async function checkFirestoreConnection(): Promise<boolean> {
     updateConnectionState({
       isConnected: true,
       isChecking: false,
+      isIsolatedMode: false,
+      environment: env.envCode,
+      environmentName: env.envName,
+      hasApiKey: true,
       lastConnectedAt: nowStr,
       errorMessage: undefined,
     });
@@ -127,6 +164,9 @@ export async function checkFirestoreConnection(): Promise<boolean> {
     updateConnectionState({
       isConnected: !isOffline,
       isChecking: false,
+      environment: env.envCode,
+      environmentName: env.envName,
+      hasApiKey: true,
       errorMessage: isOffline ? 'The client is currently offline or disconnected from Firestore.' : undefined,
     });
     return !isOffline;
@@ -135,6 +175,11 @@ export async function checkFirestoreConnection(): Promise<boolean> {
 
 // Retry / Reconnect
 export async function retryFirestoreConnection(): Promise<boolean> {
+  const validKey = Boolean(firebaseConfig.apiKey && firebaseConfig.apiKey.trim().length > 0);
+  if (!validKey) {
+    return false;
+  }
+
   updateConnectionState({ isChecking: true });
   try {
     if (connectionState.isSimulatedOffline) {
@@ -216,14 +261,44 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
 // Connection test as mandated by the Firebase Integration Skill
 async function testConnection() {
+  const env = detectEnvironment();
+  const validKey = Boolean(firebaseConfig.apiKey && firebaseConfig.apiKey.trim().length > 0);
+
+  if (!validKey) {
+    updateConnectionState({
+      isConnected: false,
+      isIsolatedMode: true,
+      environment: env.envCode,
+      environmentName: env.envName,
+      hasApiKey: false,
+      errorMessage: 'AI Studio Isolated Test Storage Active'
+    });
+    return;
+  }
+
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+    updateConnectionState({ 
+      isConnected: true, 
+      isIsolatedMode: false,
+      environment: env.envCode,
+      environmentName: env.envName,
+      hasApiKey: true,
+      lastConnectedAt: nowStr, 
+      errorMessage: undefined 
+    });
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
       console.warn('Firebase Firestore is offline. Local state fallback will be active.');
-      updateConnectionState({ isConnected: false, errorMessage: 'Firebase client is offline' });
+      updateConnectionState({ 
+        isConnected: false, 
+        isIsolatedMode: false,
+        environment: env.envCode,
+        environmentName: env.envName,
+        hasApiKey: true,
+        errorMessage: 'Firebase client is offline' 
+      });
     }
   }
 }
@@ -231,7 +306,10 @@ testConnection();
 
 // Realtime listeners & persistence helpers
 export function subscribeJobs(onUpdate: (jobs: JobRecord[]) => void) {
-  const colPath = 'jobs';
+  if (!firebaseConfig.apiKey) {
+    return () => {};
+  }
+  const colPath = getScopedCollection('jobs');
   return onSnapshot(
     collection(db, colPath),
     (snapshot) => {
@@ -258,9 +336,11 @@ function cleanForFirestore<T>(obj: T): any {
 }
 
 export async function syncJobToFirestore(job: JobRecord) {
-  const docPath = `jobs/${job.id}`;
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('jobs');
+  const docPath = `${colPath}/${job.id}`;
   try {
-    await setDoc(doc(db, 'jobs', job.id), cleanForFirestore(job), { merge: true });
+    await setDoc(doc(db, colPath, job.id), cleanForFirestore(job), { merge: true });
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     updateConnectionState({ lastConnectedAt: nowStr });
   } catch (error) {
@@ -269,7 +349,10 @@ export async function syncJobToFirestore(job: JobRecord) {
 }
 
 export function subscribeCatalog(onUpdate: (catalog: CatalogItem[]) => void) {
-  const colPath = 'catalog';
+  if (!firebaseConfig.apiKey) {
+    return () => {};
+  }
+  const colPath = getScopedCollection('catalog');
   return onSnapshot(
     collection(db, colPath),
     (snapshot) => {
@@ -292,16 +375,19 @@ export function subscribeCatalog(onUpdate: (catalog: CatalogItem[]) => void) {
 }
 
 export async function syncCatalogItemToFirestore(item: CatalogItem) {
-  const docPath = `catalog/${item.id}`;
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('catalog');
+  const docPath = `${colPath}/${item.id}`;
   try {
-    await setDoc(doc(db, 'catalog', item.id), cleanForFirestore(item), { merge: true });
+    await setDoc(doc(db, colPath, item.id), cleanForFirestore(item), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
 }
 
 export async function seedCatalogToFirestore(items: CatalogItem[]) {
-  const colPath = 'catalog';
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('catalog');
   try {
     const existing = await getDocs(collection(db, colPath));
     if (existing.empty) {
@@ -317,7 +403,10 @@ export async function seedCatalogToFirestore(items: CatalogItem[]) {
 }
 
 export function subscribePostalOrders(onUpdate: (orders: PostalOrder[]) => void) {
-  const colPath = 'postal_orders';
+  if (!firebaseConfig.apiKey) {
+    return () => {};
+  }
+  const colPath = getScopedCollection('postal_orders');
   return onSnapshot(
     collection(db, colPath),
     (snapshot) => {
@@ -340,16 +429,21 @@ export function subscribePostalOrders(onUpdate: (orders: PostalOrder[]) => void)
 }
 
 export async function syncPostalOrderToFirestore(order: PostalOrder) {
-  const docPath = `postal_orders/${order.id}`;
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('postal_orders');
+  const docPath = `${colPath}/${order.id}`;
   try {
-    await setDoc(doc(db, 'postal_orders', order.id), cleanForFirestore(order), { merge: true });
+    await setDoc(doc(db, colPath, order.id), cleanForFirestore(order), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
 }
 
 export function subscribeVesselSpec(onUpdate: (spec: VesselSpec) => void) {
-  const colPath = 'vessel_specs';
+  if (!firebaseConfig.apiKey) {
+    return () => {};
+  }
+  const colPath = getScopedCollection('vessel_specs');
   return onSnapshot(
     collection(db, colPath),
     (snapshot) => {
@@ -372,9 +466,11 @@ export function subscribeVesselSpec(onUpdate: (spec: VesselSpec) => void) {
 }
 
 export async function syncVesselSpecToFirestore(spec: VesselSpec) {
-  const docPath = `vessel_specs/${spec.id}`;
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('vessel_specs');
+  const docPath = `${colPath}/${spec.id}`;
   try {
-    await setDoc(doc(db, 'vessel_specs', spec.id), cleanForFirestore(spec), { merge: true });
+    await setDoc(doc(db, colPath, spec.id), cleanForFirestore(spec), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -385,7 +481,10 @@ export async function syncVesselSpecToFirestore(spec: VesselSpec) {
 // ==========================================
 
 export function subscribeUsers(onUpdate: (users: UserProfile[]) => void) {
-  const colPath = 'users';
+  if (!firebaseConfig.apiKey) {
+    return () => {};
+  }
+  const colPath = getScopedCollection('users');
   return onSnapshot(
     collection(db, colPath),
     (snapshot) => {
@@ -428,10 +527,11 @@ export function subscribeUsers(onUpdate: (users: UserProfile[]) => void) {
 }
 
 export function subscribeUserProfile(userId: string, onUpdate: (user: UserProfile | null) => void) {
-  if (!userId) return () => {};
-  const docPath = `users/${userId}`;
+  if (!userId || !firebaseConfig.apiKey) return () => {};
+  const colPath = getScopedCollection('users');
+  const docPath = `${colPath}/${userId}`;
   return onSnapshot(
-    doc(db, 'users', userId),
+    doc(db, colPath, userId),
     (snap) => {
       if (snap.exists()) {
         const data = snap.data();
@@ -465,8 +565,10 @@ export function subscribeUserProfile(userId: string, onUpdate: (user: UserProfil
 }
 
 export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('users');
   const docId = profile.id;
-  const docPath = `users/${docId}`;
+  const docPath = `${colPath}/${docId}`;
   try {
     const payload = {
       uid: docId,
@@ -488,7 +590,7 @@ export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
       lastLoginAt: profile.lastLoginAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    await setDoc(doc(db, 'users', docId), cleanForFirestore(payload), { merge: true });
+    await setDoc(doc(db, colPath, docId), cleanForFirestore(payload), { merge: true });
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     updateConnectionState({ lastConnectedAt: nowStr });
   } catch (error) {
@@ -497,7 +599,8 @@ export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
 }
 
 export async function seedUsersToFirestore(defaultProfiles: UserProfile[]): Promise<void> {
-  const colPath = 'users';
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('users');
   try {
     const existing = await getDocs(collection(db, colPath));
     const existingIds = new Set(existing.docs.map(d => d.id));
@@ -541,10 +644,12 @@ export async function seedUsersToFirestore(defaultProfiles: UserProfile[]): Prom
 }
 
 export async function deleteUserFromFirestore(userId: string): Promise<void> {
-  const docPath = `users/${userId}`;
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('users');
+  const docPath = `${colPath}/${userId}`;
   try {
     const { deleteDoc } = await import('firebase/firestore');
-    await deleteDoc(doc(db, 'users', userId));
+    await deleteDoc(doc(db, colPath, userId));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, docPath);
   }

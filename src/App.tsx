@@ -67,72 +67,53 @@ import {
   getConnectionState
 } from './lib/firebase';
 import { trackPageView, trackAddToCart, trackPurchase, trackQuoteRequest } from './lib/analytics';
+import { 
+  getEnvStorageItem, 
+  setEnvStorageItem, 
+  getEnvironmentSeedData, 
+  resetEnvironmentToTestData 
+} from './lib/envStorage';
+import { detectEnvironment } from './lib/environment';
+import { EnvironmentSettingsModal } from './components/modals/EnvironmentSettingsModal';
 
 
 export default function App() {
-  // Persistence with localStorage fallback
+  // Persistence with environment-scoped localStorage partitioning
+  const envSeed = getEnvironmentSeedData();
+
   const [jobs, setJobs] = useState<JobRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem('ajwmes_jobs');
-      return saved ? JSON.parse(saved) : INITIAL_JOBS;
-    } catch {
-      return INITIAL_JOBS;
-    }
+    return getEnvStorageItem('jobs', envSeed.jobs);
   });
 
   const [catalog, setCatalog] = useState<CatalogItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('ajwmes_catalog');
-      return saved ? JSON.parse(saved) : DEFAULT_CATALOG;
-    } catch {
-      return DEFAULT_CATALOG;
-    }
+    return getEnvStorageItem('catalog', envSeed.catalog);
   });
 
   const [postalOrders, setPostalOrders] = useState<PostalOrder[]>(() => {
-    try {
-      const saved = localStorage.getItem('ajwmes_postal_orders');
-      return saved ? JSON.parse(saved) : INITIAL_POSTAL_ORDERS;
-    } catch {
-      return INITIAL_POSTAL_ORDERS;
-    }
+    return getEnvStorageItem('postal_orders', envSeed.postalOrders);
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('ajwmes_cart');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+    return getEnvStorageItem('cart', []);
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isEnvironmentModalOpen, setIsEnvironmentModalOpen] = useState(false);
 
   const [vesselSpec, setVesselSpec] = useState<VesselSpec>(() => {
-    try {
-      const saved = localStorage.getItem('ajwmes_vessel_spec');
-      return saved ? JSON.parse(saved) : INITIAL_VESSEL_SPEC;
-    } catch {
-      return INITIAL_VESSEL_SPEC;
-    }
+    return getEnvStorageItem('vessel_spec', envSeed.vesselSpec);
   });
 
   const [snapshots, setSnapshots] = useState<CatalogSnapshot[]>(() => {
-    try {
-      const saved = localStorage.getItem('ajwmes_snapshots');
-      return saved ? JSON.parse(saved) : [
-        {
-          id: 'snap-init',
-          timestamp: '2026-10-07 10:00',
-          label: 'Default 2026 Solent Baseline Catalog',
-          itemsCount: DEFAULT_CATALOG.length,
-          items: DEFAULT_CATALOG
-        }
-      ];
-    } catch {
-      return [];
-    }
+    return getEnvStorageItem('snapshots', [
+      {
+        id: 'snap-init',
+        timestamp: '2026-10-07 10:00',
+        label: 'Default 2026 Solent Baseline Catalog',
+        itemsCount: envSeed.catalog.length,
+        items: envSeed.catalog
+      }
+    ]);
   });
 
   const [currentTab, setCurrentTab] = useState<string>('home');
@@ -167,12 +148,7 @@ export default function App() {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>(() => getSavedRole());
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile>(() => getSavedUserProfile());
   const [usersList, setUsersList] = useState<UserProfile[]>(() => {
-    try {
-      const saved = localStorage.getItem('ajwmes_users_list');
-      return saved ? JSON.parse(saved) : DEMO_PROFILES;
-    } catch {
-      return DEMO_PROFILES;
-    }
+    return getEnvStorageItem('users_list', envSeed.users);
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -337,13 +313,20 @@ export default function App() {
     };
   }, []);
 
-  // Sync usersList to localStorage
+  // Helper: Reload state when environment or test dataset is changed from modal
+  const handleEnvironmentDataReload = () => {
+    const seed = getEnvironmentSeedData();
+    setJobs(getEnvStorageItem('jobs', seed.jobs));
+    setCatalog(getEnvStorageItem('catalog', seed.catalog));
+    setPostalOrders(getEnvStorageItem('postal_orders', seed.postalOrders));
+    setVesselSpec(getEnvStorageItem('vessel_spec', seed.vesselSpec));
+    setUsersList(getEnvStorageItem('users_list', seed.users));
+    setCart(getEnvStorageItem('cart', []));
+  };
+
+  // Sync usersList to environment-scoped storage
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_users_list', JSON.stringify(usersList));
-    } catch (e) {
-      console.warn('Failed to save usersList to localStorage', e);
-    }
+    setEnvStorageItem('users_list', usersList);
   }, [usersList]);
 
   const handleSaveUserToDatabase = async (user: UserProfile) => {
@@ -377,61 +360,33 @@ export default function App() {
     setUsersList(prev => prev.filter(u => u.id !== userId));
   };
 
-  // Sync to localStorage
+  // Sync state to environment-scoped storage
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_jobs', JSON.stringify(jobs));
-    } catch (e) {
-      console.warn('Failed to save jobs to localStorage', e);
-    }
+    setEnvStorageItem('jobs', jobs);
   }, [jobs]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_catalog', JSON.stringify(catalog));
-    } catch (e) {
-      console.warn('Failed to save catalog to localStorage', e);
-    }
+    setEnvStorageItem('catalog', catalog);
   }, [catalog]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_stock_alerts', JSON.stringify(stockAlerts));
-    } catch (e) {
-      console.warn('Failed to save stockAlerts to localStorage', e);
-    }
+    setEnvStorageItem('stock_alerts', stockAlerts);
   }, [stockAlerts]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_postal_orders', JSON.stringify(postalOrders));
-    } catch (e) {
-      console.warn('Failed to save postalOrders to localStorage', e);
-    }
+    setEnvStorageItem('postal_orders', postalOrders);
   }, [postalOrders]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_cart', JSON.stringify(cart));
-    } catch (e) {
-      console.warn('Failed to save cart to localStorage', e);
-    }
+    setEnvStorageItem('cart', cart);
   }, [cart]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_vessel_spec', JSON.stringify(vesselSpec));
-    } catch (e) {
-      console.warn('Failed to save vesselSpec to localStorage', e);
-    }
+    setEnvStorageItem('vessel_spec', vesselSpec);
   }, [vesselSpec]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('ajwmes_snapshots', JSON.stringify(snapshots));
-    } catch (e) {
-      console.warn('Failed to save snapshots to localStorage', e);
-    }
+    setEnvStorageItem('snapshots', snapshots);
   }, [snapshots]);
 
   // Auto-dismiss toast after 7 seconds
@@ -996,6 +951,7 @@ export default function App() {
         connectionState={connectionState}
         onRetry={handleRetryConnection}
         onToggleSimulatedOffline={handleToggleSimulatedOffline}
+        onOpenEnvironmentSettings={() => setIsEnvironmentModalOpen(true)}
       />
 
       {/* Top Bar Navigation */}
@@ -1022,6 +978,7 @@ export default function App() {
         onOpenSignInModal={() => setIsSignInModalOpen(true)}
         onOpenSignOffModal={() => setIsSignOffModalOpen(true)}
         onOpenAccountModal={() => setIsAccountModalOpen(true)}
+        onOpenEnvironmentSettings={() => setIsEnvironmentModalOpen(true)}
       />
 
       {/* Main Container with Centralized RBAC Route Middleware Guard */}
@@ -1254,6 +1211,15 @@ export default function App() {
       <FreeHostingGuideModal
         isOpen={isHostingGuideOpen}
         onClose={() => setIsHostingGuideOpen(false)}
+      />
+
+      {/* Multi-Environment & Test Data Partitioning Manager Modal */}
+      <EnvironmentSettingsModal
+        isOpen={isEnvironmentModalOpen}
+        onClose={() => setIsEnvironmentModalOpen(false)}
+        connectionState={connectionState}
+        onDataResetOrImported={handleEnvironmentDataReload}
+        onRetryConnection={handleRetryConnection}
       />
 
       {/* Supplier Purchase Order Reorder Drafting Modal */}

@@ -9,7 +9,9 @@ import {
   CheckCircle2, 
   Database,
   Radio,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { FirestoreConnectionState } from '../../types';
 
@@ -17,18 +19,20 @@ interface FirestoreSyncBannerProps {
   connectionState: FirestoreConnectionState;
   onRetry: () => Promise<boolean | void>;
   onToggleSimulatedOffline?: (forceOffline: boolean) => Promise<boolean | void>;
+  onOpenEnvironmentSettings?: () => void;
 }
 
 export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
   connectionState,
   onRetry,
   onToggleSimulatedOffline,
+  onOpenEnvironmentSettings,
 }) => {
   const [isDismissed, setIsDismissed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [reconnectSuccessNotice, setReconnectSuccessNotice] = useState(false);
 
-  const { isConnected, isChecking, lastConnectedAt, isSimulatedOffline } = connectionState;
+  const { isConnected, isChecking, lastConnectedAt, isSimulatedOffline, isIsolatedMode, environmentName } = connectionState;
 
   // Handle manual retry with feedback
   const handleManualRetry = async () => {
@@ -65,7 +69,7 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
               Firestore Reconnected:
             </span>
             <span className="text-emerald-300/90 text-[11px] sm:text-xs">
-              Live sync active. Local changes have been synchronized with Anthony's Solent workshop database.
+              Live sync active. Local changes have been synchronized with the Solent workshop database.
             </span>
           </div>
           <button
@@ -80,7 +84,110 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
     );
   }
 
-  // Minimized state when user chooses to minimize
+  // AI Studio / Preview Isolated Mode Banner
+  if (isIsolatedMode) {
+    if (isDismissed) {
+      return (
+        <aside 
+          aria-label="AI Studio isolated mode ribbon"
+          className="w-full bg-slate-950/95 border-b border-sky-500/30 px-3 py-1 text-[11px] text-sky-300 flex items-center justify-between shadow-sm transition-all"
+        >
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+            <button
+              onClick={() => setIsDismissed(false)}
+              className="flex items-center gap-2 hover:text-sky-100 transition-colors cursor-pointer group text-left"
+            >
+              <span className="w-2 h-2 rounded-full bg-sky-400" />
+              <span className="font-semibold text-sky-200 group-hover:underline">
+                🧪 {environmentName || 'AI Studio'}: Isolated Test Data Mode Active
+              </span>
+              <span className="text-sky-400/70 text-[10px] hidden sm:inline">
+                (Click to expand environment info)
+              </span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              {onOpenEnvironmentSettings && (
+                <button
+                  onClick={onOpenEnvironmentSettings}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 text-[10px] font-semibold transition-all cursor-pointer"
+                >
+                  <Layers className="w-3 h-3 text-sky-400" />
+                  <span>Manage Test Data</span>
+                </button>
+              )}
+              <button
+                onClick={() => setIsDismissed(false)}
+                className="p-0.5 text-sky-400/80 hover:text-sky-100 transition-colors"
+                title="Expand environment banner"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </aside>
+      );
+    }
+
+    return (
+      <aside 
+        aria-label="AI Studio isolated mode banner"
+        className="w-full bg-gradient-to-r from-slate-950 via-sky-950/60 to-slate-950 border-b border-sky-500/30 text-sky-100 shadow-md backdrop-blur-md transition-all animate-in slide-in-from-top-1 duration-200 relative z-40"
+      >
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+              <div className="p-1.5 rounded-lg bg-sky-500/15 border border-sky-500/40 text-sky-400 shrink-0 mt-0.5 sm:mt-0 shadow-inner">
+                <Layers className="w-4 h-4" />
+              </div>
+
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-[10px] font-mono font-bold uppercase tracking-wider text-sky-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                    {environmentName || 'AI Studio Dev'}
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-200">
+                    Isolated Test Storage Active
+                  </span>
+                  <span className="text-[10px] text-sky-300/70 font-mono hidden lg:inline">
+                    · Safe sandbox mode
+                  </span>
+                </div>
+
+                <p className="text-[11px] sm:text-xs text-slate-300 leading-normal">
+                  Operating in AI Studio with dedicated test records. Your bookings, switch panel designs, and diagnostic logs are stored independently and will not alter GitHub or production datasets.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+              {onOpenEnvironmentSettings && (
+                <button
+                  onClick={onOpenEnvironmentSettings}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-bold transition-all shadow-sm shadow-sky-600/30 cursor-pointer"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Storage &amp; Previews</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setIsDismissed(true)}
+                className="p-1.5 text-sky-400/80 hover:text-sky-100 hover:bg-sky-500/20 rounded-md transition-colors"
+                title="Minimize banner"
+                aria-label="Minimize banner"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  // Minimized state when user chooses to minimize real offline warning
   if (isDismissed) {
     return (
       <aside 
@@ -179,6 +286,16 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
               {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </button>
 
+            {onOpenEnvironmentSettings && (
+              <button
+                onClick={onOpenEnvironmentSettings}
+                className="text-[11px] font-medium text-sky-300 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-sky-500/10 transition-colors cursor-pointer"
+              >
+                <Layers className="w-3.5 h-3.5 text-sky-400" />
+                <span className="hidden sm:inline">Environments</span>
+              </button>
+            )}
+
             {/* Manual Retry Reconnection button */}
             <button
               onClick={handleManualRetry}
@@ -252,3 +369,4 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
     </aside>
   );
 };
+

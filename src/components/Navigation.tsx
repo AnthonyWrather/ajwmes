@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../lib/auth';
 import { canAccessRoute } from '../lib/rbac';
+import { detectEnvironment } from '../lib/environment';
+import { Layers } from 'lucide-react';
 
 interface NavigationProps {
   currentTab: string;
@@ -38,6 +40,7 @@ interface NavigationProps {
   onOpenSignInModal?: () => void;
   onOpenSignOffModal?: () => void;
   onOpenAccountModal?: () => void;
+  onOpenEnvironmentSettings?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -56,7 +59,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   currentUserProfile,
   onOpenSignInModal,
   onOpenSignOffModal,
-  onOpenAccountModal
+  onOpenAccountModal,
+  onOpenEnvironmentSettings
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -301,32 +305,29 @@ export const Navigation: React.FC<NavigationProps> = ({
               </div>
             )}
 
-          {/* Real-time Firestore Cloud Sync Status */}
+          {/* Real-time Environment / Firestore Cloud Sync Status */}
           {isFirebaseConnected ? (
-            <div 
-              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-950/70 border border-emerald-500/30 rounded-lg text-[10px] font-mono text-emerald-300"
-              title="Connected to live Firebase Firestore database"
+            <button 
+              onClick={onOpenEnvironmentSettings}
+              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-950/70 hover:bg-emerald-900/60 border border-emerald-500/30 rounded-lg text-[10px] font-mono text-emerald-300 transition-colors cursor-pointer"
+              title="Connected to live Firebase Firestore database · Click to inspect environments"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Live Firestore</span>
-            </div>
+            </button>
           ) : (
             <button
-              onClick={onRetrySync}
-              disabled={isCheckingSync}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-amber-950/80 hover:bg-amber-900/80 border border-amber-500/40 rounded-lg text-[10px] font-mono text-amber-300 transition-colors cursor-pointer group"
-              title="Firestore disconnected · Click to retry connection."
+              onClick={onOpenEnvironmentSettings || onRetrySync}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-sky-950/80 hover:bg-sky-900/80 border border-sky-500/40 rounded-lg text-[10px] font-mono text-sky-300 transition-colors cursor-pointer group"
+              title="Operating in isolated test storage · Click to open Environment & Data Manager"
             >
-              {isCheckingSync ? (
-                <RefreshCw className="w-3 h-3 text-amber-400 animate-spin" />
-              ) : (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                </span>
-              )}
+              <Layers className="w-3 h-3 text-sky-400 shrink-0" />
               <span className="group-hover:underline">
-                {isCheckingSync ? 'Connecting...' : 'Sync Delayed'}
+                {detectEnvironment().envCode === 'aistudio-dev'
+                  ? 'AI Studio Test Data'
+                  : detectEnvironment().envCode === 'aistudio-preview'
+                  ? 'Preview Sandbox'
+                  : 'Isolated Storage'}
               </span>
             </button>
           )}

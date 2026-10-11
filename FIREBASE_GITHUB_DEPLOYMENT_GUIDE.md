@@ -126,3 +126,23 @@ Your project is configured to use **`gen-lang-client-0618772940`**:
 - **API Key Secret in GitHub:** `VITE_FIREBASE_API_KEY`
 
 All workflow configurations and client SDKs are fully aligned with `gen-lang-client-0618772940`. Push cleanly to GitHub without mismatch or permission errors.
+
+---
+
+## Multi-Environment Data Isolation & Preview Mechanism
+
+The codebase now includes automatic **Environment Detection & Storage Scoping**:
+
+| Environment | Hostname Pattern | Storage Namespace | Firestore Scope | Behavior |
+| :--- | :--- | :--- | :--- | :--- |
+| **AI Studio Dev** | `ais-dev-*.run.app`, `localhost` | `ajwmes_aistudio_dev_*` | `ais_dev_*` | Runs in **Isolated Test Sandbox**. No scary disconnect alerts. Test records are independent. |
+| **AI Studio Preview** | `ais-pre-*.run.app` | `ajwmes_aistudio_pre_*` | `ais_pre_*` | Dedicated preview demo sandbox. Safe for client demos without mutating dev drafts. |
+| **GitHub PR Preview** | `*--*.web.app` | `ajwmes_github_pre_*` | `gh_pre_*` | GitHub preview channels for PR verification with dedicated preview dataset. |
+| **GitHub Production** | `*.web.app`, custom domain | `ajwmes_github_live_*` | Root collections (`jobs`, `catalog`, `users`) | Full live bidirectional sync with secret `VITE_FIREBASE_API_KEY` injected by GitHub Actions. |
+
+### In-App Environment Tools:
+- Click the **Environment badge** in the header or top banner to open the **Multi-Environment & Storage Manager**.
+- **Seed Clean Test Data**: Instantly populates realistic marine wiring jobs, Carling switch panels, and postal tracking numbers.
+- **Export / Import JSON**: Easily clone test datasets between AI Studio and GitHub.
+- **Preview Channel Readiness**: Automatically adapts when deploying branch preview channels via `firebase hosting:channel:deploy <channel-name>`.
+
