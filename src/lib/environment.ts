@@ -8,6 +8,8 @@
  * - GitHub Live Deployed / Production: 'github-deployed'
  */
 
+import { firebaseConfig } from './firebaseConfig';
+
 export type AppEnvironment = 'aistudio-dev' | 'aistudio-preview' | 'github-preview' | 'github-deployed';
 
 export interface EnvironmentInfo {
@@ -32,7 +34,7 @@ const STORAGE_OVERRIDE_KEY = 'ajwmes_env_override';
  */
 export function detectEnvironment(): EnvironmentInfo {
   const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  const apiKey = (import.meta.env.VITE_FIREBASE_API_KEY as string) || '';
+  const apiKey = (import.meta.env.VITE_FIREBASE_API_KEY as string) || firebaseConfig.apiKey || '';
   const hasApiKey = Boolean(apiKey && apiKey.trim().length > 0);
 
   // Check for session simulation override (for developer testing)

@@ -55,14 +55,16 @@ export interface FirestoreErrorInfo {
 // Initialize Firebase App
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// CRITICAL: Initialize Firestore with database ID and experimentalAutoDetectLongPolling
-// This ensures iframe preview proxies and cloud environments maintain a rock-solid connection without stream drops
+// CRITICAL: Initialize Firestore with database ID and experimentalForceLongPolling
+// This ensures iframe preview proxies, Cloud Run gateways, and AI Studio environments
+// maintain a rock-solid, uninterrupted connection without stream drops or disconnects
 export const db = (() => {
   try {
     return initializeFirestore(
       app,
       {
-        experimentalAutoDetectLongPolling: true,
+        experimentalForceLongPolling: true,
+        useFetchStreams: false,
       },
       firebaseConfig.firestoreDatabaseId
     );
