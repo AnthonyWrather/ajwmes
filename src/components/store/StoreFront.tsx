@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CatalogItem, CartItem, PostalOrder, PostalOrderShippingAddress } from '../../types';
+import { CatalogItem, CategoryItem, CartItem, PostalOrder, PostalOrderShippingAddress } from '../../types';
 import { normalizeImageUrl } from '../../utils/imageUrl';
 import { 
   ShoppingBag, 
@@ -27,6 +27,7 @@ import {
 
 interface StoreFrontProps {
   catalog: CatalogItem[];
+  categories?: CategoryItem[];
   cart: CartItem[];
   onAddToCart: (item: CatalogItem, quantity: number) => void;
   onUpdateCartQuantity: (itemId: string, newQuantity: number) => void;
@@ -41,6 +42,7 @@ interface StoreFrontProps {
 
 export const StoreFront: React.FC<StoreFrontProps> = ({
   catalog,
+  categories: propCategories,
   cart,
   onAddToCart,
   onUpdateCartQuantity,
@@ -193,15 +195,23 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
     }, 900);
   };
 
-  const categories = [
-    { id: 'all', label: 'All Stock Items' },
-    { id: 'cable', label: 'Tinned Marine Cables' },
-    { id: 'fuses', label: 'Fuses & Fuse Blocks' },
-    { id: 'busbars', label: 'Busbars & Terminals' },
-    { id: 'switches', label: 'Switches, Breakers & USB' },
-    { id: 'victron', label: 'Victron Power Hardware' },
-    { id: 'panels', label: 'Replica/Custom Panel Kits' }
-  ];
+  const categories = useMemo(() => {
+    if (propCategories && propCategories.length > 0) {
+      return [
+        { id: 'all', label: 'All Stock Items' },
+        ...propCategories.map(c => ({ id: c.id, label: c.label }))
+      ];
+    }
+    return [
+      { id: 'all', label: 'All Stock Items' },
+      { id: 'cable', label: 'Tinned Marine Cables' },
+      { id: 'fuses', label: 'Fuses & Fuse Blocks' },
+      { id: 'busbars', label: 'Busbars & Terminals' },
+      { id: 'switches', label: 'Switches, Breakers & USB' },
+      { id: 'victron', label: 'Victron Power Hardware' },
+      { id: 'panels', label: 'Replica/Custom Panel Kits' }
+    ];
+  }, [propCategories]);
 
   return (
     <div className="space-y-10">

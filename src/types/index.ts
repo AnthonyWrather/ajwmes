@@ -105,9 +105,17 @@ export interface JobRecord {
   messages: MessageItem[];
 }
 
+export interface CategoryItem {
+  id: string;
+  label: string;
+  description?: string;
+  icon?: string;
+  displayOrder?: number;
+}
+
 export interface CatalogItem {
   id: string;
-  category: 'cable' | 'fuses' | 'busbars' | 'panels' | 'victron' | 'switches';
+  category: string;
   name: string;
   specification: string;
   unit: string;

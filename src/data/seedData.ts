@@ -1,4 +1,37 @@
-import { CatalogItem, JobRecord, SwitchPanelConfig, VesselSpec, PostalOrder } from '../types';
+import { CatalogItem, CategoryItem, JobRecord, SwitchPanelConfig, VesselSpec, PostalOrder } from '../types';
+
+export const DEFAULT_CATEGORIES: CategoryItem[] = [
+  {
+    id: 'cable',
+    label: 'Tinned Marine Cables',
+    description: 'Oceanflex single & multi-core tinned marine wire, high-amperage battery & inverter cables'
+  },
+  {
+    id: 'fuses',
+    label: 'Fuses & Fuse Blocks',
+    description: 'Marine ST blade fuse blocks, MRBF battery terminal fuses, mega fuses & holders'
+  },
+  {
+    id: 'busbars',
+    label: 'Busbars & Terminals',
+    description: 'Heavy duty tin-plated copper power distribution busbars & dual common studs'
+  },
+  {
+    id: 'switches',
+    label: 'Marine Switches & USB',
+    description: 'Contura waterproof rocker switches, circuit breakers, voltmeters & dual USB chargers'
+  },
+  {
+    id: 'victron',
+    label: 'Victron Power Hardware',
+    description: 'SmartShunts, SmartSolar MPPT controllers, Orion DC-DC chargers & Phoenix inverters'
+  },
+  {
+    id: 'panels',
+    label: 'Replica/Custom Panel Kits',
+    description: 'Custom laser engraved matte acrylic and teak boat switchboard replacement faceplates'
+  }
+];
 
 export const DEFAULT_CATALOG: CatalogItem[] = [
   // Tinned Marine Cables

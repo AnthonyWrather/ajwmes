@@ -40,6 +40,18 @@ service cloud.firestore {
       allow create, update, delete: if colPrefix_catalog.matches('^(ais_dev_|ais_pre_|gh_pre_)catalog$') && isValidId(itemId);
     }
 
+    // Hardware product categories (Public browse, Admin & app update)
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(categoryId);
+    }
+    match /{colPrefix_categories}/{categoryId} {
+      allow get: if colPrefix_categories.matches('^(ais_dev_|ais_pre_|gh_pre_)categories$') && isValidId(categoryId);
+      allow list: if colPrefix_categories.matches('^(ais_dev_|ais_pre_|gh_pre_)categories$');
+      allow create, update, delete: if colPrefix_categories.matches('^(ais_dev_|ais_pre_|gh_pre_)categories$') && isValidId(categoryId);
+    }
+
     // Client diagnostics, quotes, and installation jobs
     match /jobs/{jobId} {
       allow get: if isValidId(jobId);

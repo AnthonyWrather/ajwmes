@@ -1,32 +1,112 @@
 import React, { useState } from 'react';
-import { CatalogItem, CatalogSnapshot } from '../../types';
-import { Plus, Download, Upload, RotateCcw, Check, Clock, Save, Search, AlertCircle, AlertTriangle, Trash2, Truck, Mail, Bell, RefreshCw, Zap } from 'lucide-react';
+import { CatalogItem, CatalogSnapshot, CategoryItem } from '../../types';
+import { 
+  Plus, 
+  Download, 
+  Upload, 
+  RotateCcw, 
+  Check, 
+  Clock, 
+  Save, 
+  Search, 
+  AlertTriangle, 
+  Trash2, 
+  Truck, 
+  Edit3, 
+  FolderPlus, 
+  Layers, 
+  X, 
+  ImageIcon, 
+  Tag, 
+  ArrowRight,
+  Sparkles,
+  PackageCheck,
+  AlertCircle
+} from 'lucide-react';
+import { DEFAULT_CATEGORIES } from '../../data/seedData';
 
 interface InventoryManagerProps {
   catalog: CatalogItem[];
   snapshots: CatalogSnapshot[];
+  categories?: CategoryItem[];
   onUpdateCatalog: (newCatalog: CatalogItem[]) => void;
   onCreateSnapshot: (label: string) => void;
   onRestoreSnapshot: (snapshot: CatalogSnapshot) => void;
   onOpenSupplierReorder?: (item: CatalogItem) => void;
   onTriggerZeroStockTest?: (item: CatalogItem) => void;
+  onAddCatalogItem?: (item: CatalogItem) => void;
+  onEditCatalogItem?: (item: CatalogItem) => void;
+  onDeleteCatalogItem?: (itemId: string) => void;
+  onAddCategory?: (category: CategoryItem) => void;
+  onEditCategory?: (oldId: string, updatedCategory: CategoryItem) => void;
+  onDeleteCategory?: (categoryId: string, reassignToCategoryId?: string) => void;
 }
+
+const PRESET_IMAGE_OPTIONS = [
+  { label: 'Tinned Cable Spool', url: '/assets/images/marine_cable_spool_crimping_1791421463275.jpg' },
+  { label: 'Fuse Block Hardware', url: '/assets/images/marine_fuse_block_hardware_1791421472296.jpg' },
+  { label: 'Lithium Battery Bank', url: '/assets/images/marine_lithium_battery_bank_1791400821608.jpg' },
+  { label: 'Solar Array Yacht', url: '/assets/images/marine_solar_array_yacht_1791400831647.jpg' },
+  { label: 'Laser Switch Panel', url: '/assets/images/marine_switch_panel_laser_1791400808406.jpg' },
+  { label: 'Helm Navigation', url: '/assets/images/marine_helm_navigation_1791400844235.jpg' },
+  { label: 'Clean Boat Wiring', url: '/assets/images/budget_boat_wiring_clean_1791420126772.jpg' },
+  { label: 'Cruiser Vessel', url: '/assets/images/budget_small_cruiser_boat_1791420135992.jpg' },
+];
+
+const PRESET_UNITS = ['per meter', 'each', 'pack', 'pair', 'kit', 'roll'];
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
   catalog,
   snapshots,
+  categories = DEFAULT_CATEGORIES,
   onUpdateCatalog,
   onCreateSnapshot,
   onRestoreSnapshot,
   onOpenSupplierReorder,
-  onTriggerZeroStockTest
+  onAddCatalogItem,
+  onEditCatalogItem,
+  onDeleteCatalogItem,
+  onAddCategory,
+  onEditCategory,
+  onDeleteCategory
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [snapshotLabel, setSnapshotLabel] = useState('');
-  const [isEditingItem, setIsEditingItem] = useState<CatalogItem | null>(null);
   const [showSnapshotDrawer, setShowSnapshotDrawer] = useState(false);
-  const [backupSuccessMsg, setBackupSuccessMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Item Modal State (Add or Edit)
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
+  const [itemFormData, setItemFormData] = useState({
+    id: '',
+    name: '',
+    category: categories[0]?.id || 'cable',
+    specification: '',
+    unit: 'each',
+    unitPrice: 10,
+    stockCount: 15,
+    inStock: true,
+    imageUrl: PRESET_IMAGE_OPTIONS[0].url,
+    badge: ''
+  });
+
+  // Item Delete Confirmation Modal State
+  const [itemToDelete, setItemToDelete] = useState<CatalogItem | null>(null);
+
+  // Category Manager Modal State
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState({
+    id: '',
+    label: '',
+    description: ''
+  });
+
+  // Category Delete Confirmation Modal State
+  const [categoryToDelete, setCategoryToDelete] = useState<CategoryItem | null>(null);
+  const [reassignCategoryTarget, setReassignCategoryTarget] = useState<string>('');
 
   // Identify out of stock (0) and low stock (<5)
   const zeroStockItems = catalog.filter(item => (item.stockCount ?? 0) === 0 || !item.inStock);
@@ -35,16 +115,18 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const lowStockItems = catalog.filter(item => (item.stockCount ?? 0) > 0 && (item.stockCount ?? 0) < 5);
   const lowStockCount = lowStockItems.length;
 
-  const categories = [
+  // Build filter tabs including dynamic categories
+  const filterPills = [
     { id: 'all', label: 'All Items' },
     { id: 'zero_stock', label: `🚨 Depleted (0)${zeroStockCount > 0 ? ` (${zeroStockCount})` : ''}` },
     { id: 'low_stock', label: `⚠️ Low Stock (<5)${lowStockCount > 0 ? ` (${lowStockCount})` : ''}` },
-    { id: 'cable', label: 'Tinned Cables' },
-    { id: 'fuses', label: 'Fuse Blocks' },
-    { id: 'busbars', label: 'Busbars & Dist' },
-    { id: 'switches', label: 'Marine Switches' },
-    { id: 'victron', label: 'Victron Power' },
-    { id: 'panels', label: 'Replica/Custom Panels' },
+    ...categories.map(c => {
+      const count = catalog.filter(i => i.category === c.id).length;
+      return {
+        id: c.id,
+        label: `${c.label} (${count})`
+      };
+    })
   ];
 
   const filteredItems = catalog.filter(item => {
@@ -57,31 +139,38 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
         ? (item.stockCount ?? 0) > 0 && (item.stockCount ?? 0) < 5
         : item.category === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.specification.toLowerCase().includes(searchQuery.toLowerCase());
+                          item.specification.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          item.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesSearch;
   });
 
+  const showNotification = (msg: string) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(''), 3500);
+  };
+
+  // Inline Quick Adjusters
   const handlePriceChange = (id: string, newPrice: number) => {
-    onUpdateCatalog(catalog.map(item => item.id === id ? { ...item, unitPrice: newPrice } : item));
+    const updated = catalog.map(item => item.id === id ? { ...item, unitPrice: Math.max(0, newPrice) } : item);
+    onUpdateCatalog(updated);
   };
 
   const handleStockCountChange = (id: string, newCount: number) => {
     const validCount = Math.max(0, Math.floor(newCount));
-    onUpdateCatalog(
-      catalog.map(item =>
-        item.id === id
-          ? {
-              ...item,
-              stockCount: validCount,
-              inStock: validCount > 0
-            }
-          : item
-      )
+    const updated = catalog.map(item =>
+      item.id === id
+        ? {
+            ...item,
+            stockCount: validCount,
+            inStock: validCount > 0
+          }
+        : item
     );
+    onUpdateCatalog(updated);
   };
 
   const handleToggleStock = (id: string) => {
-    onUpdateCatalog(catalog.map(item => {
+    const updated = catalog.map(item => {
       if (item.id === id) {
         const nextInStock = !item.inStock;
         return {
@@ -91,23 +180,24 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
         };
       }
       return item;
-    }));
+    });
+    onUpdateCatalog(updated);
   };
 
-
+  // Snapshot Handlers
   const handleSaveSnapshot = (e: React.FormEvent) => {
     e.preventDefault();
     if (!snapshotLabel.trim()) return;
     onCreateSnapshot(snapshotLabel.trim());
     setSnapshotLabel('');
-    setBackupSuccessMsg('New save point created!');
-    setTimeout(() => setBackupSuccessMsg(''), 3000);
+    showNotification('New catalog snapshot save point created!');
   };
 
   const handleDownloadBackupJSON = () => {
     const backupData = {
       exportedAt: new Date().toISOString(),
       company: 'AJW Marine Electrical Services',
+      categories,
       catalog,
       snapshots
     };
@@ -132,8 +222,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           const parsed = JSON.parse(event.target?.result as string);
           if (Array.isArray(parsed.catalog)) {
             onUpdateCatalog(parsed.catalog);
-            setBackupSuccessMsg(`Restored ${parsed.catalog.length} items from ${file.name}`);
-            setTimeout(() => setBackupSuccessMsg(''), 4000);
+            showNotification(`Restored ${parsed.catalog.length} items from ${file.name}`);
           }
         } catch (err) {
           alert('Invalid backup file. Please select a valid AJWMES catalog JSON.');
@@ -143,41 +232,259 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     }
   };
 
+  // -------------------------------------------------------------
+  // Item Modal Handlers (Add / Edit)
+  // -------------------------------------------------------------
+  const openAddItemModal = () => {
+    setEditingItem(null);
+    const newId = `item-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`;
+    setItemFormData({
+      id: newId,
+      name: '',
+      category: categories[0]?.id || 'cable',
+      specification: '',
+      unit: 'each',
+      unitPrice: 12.50,
+      stockCount: 20,
+      inStock: true,
+      imageUrl: PRESET_IMAGE_OPTIONS[0].url,
+      badge: ''
+    });
+    setIsItemModalOpen(true);
+  };
+
+  const openEditItemModal = (item: CatalogItem) => {
+    setEditingItem(item);
+    setItemFormData({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      specification: item.specification,
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      stockCount: item.stockCount ?? 0,
+      inStock: item.inStock,
+      imageUrl: item.imageUrl || PRESET_IMAGE_OPTIONS[0].url,
+      badge: item.badge || ''
+    });
+    setIsItemModalOpen(true);
+  };
+
+  const handleSaveItemForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!itemFormData.name.trim()) {
+      alert('Please provide an item name.');
+      return;
+    }
+
+    const cleanedItem: CatalogItem = {
+      id: itemFormData.id.trim() || `item-${Date.now()}`,
+      name: itemFormData.name.trim(),
+      category: itemFormData.category || categories[0]?.id || 'cable',
+      specification: itemFormData.specification.trim(),
+      unit: itemFormData.unit.trim() || 'each',
+      unitPrice: Number(itemFormData.unitPrice) || 0,
+      stockCount: Number(itemFormData.stockCount) || 0,
+      inStock: itemFormData.inStock && Number(itemFormData.stockCount) > 0,
+      imageUrl: itemFormData.imageUrl.trim() || undefined,
+      badge: itemFormData.badge.trim() || undefined
+    };
+
+    if (editingItem) {
+      if (onEditCatalogItem) {
+        onEditCatalogItem(cleanedItem);
+      } else {
+        const nextCatalog = catalog.map(item => item.id === cleanedItem.id ? cleanedItem : item);
+        onUpdateCatalog(nextCatalog);
+      }
+      showNotification(`Item "${cleanedItem.name}" updated successfully.`);
+    } else {
+      if (onAddCatalogItem) {
+        onAddCatalogItem(cleanedItem);
+      } else {
+        onUpdateCatalog([cleanedItem, ...catalog]);
+      }
+      showNotification(`New item "${cleanedItem.name}" added to catalog.`);
+    }
+
+    setIsItemModalOpen(false);
+  };
+
+  // -------------------------------------------------------------
+  // Item Delete Handlers
+  // -------------------------------------------------------------
+  const handleConfirmDeleteItem = () => {
+    if (!itemToDelete) return;
+    const targetId = itemToDelete.id;
+    const targetName = itemToDelete.name;
+
+    if (onDeleteCatalogItem) {
+      onDeleteCatalogItem(targetId);
+    } else {
+      const nextCatalog = catalog.filter(i => i.id !== targetId);
+      onUpdateCatalog(nextCatalog);
+    }
+
+    setItemToDelete(null);
+    showNotification(`Item "${targetName}" removed from catalog.`);
+  };
+
+  // -------------------------------------------------------------
+  // Category Manager Handlers (Add / Edit / Delete)
+  // -------------------------------------------------------------
+  const openAddCategoryMode = () => {
+    setEditingCategory(null);
+    setCategoryFormData({
+      id: '',
+      label: '',
+      description: ''
+    });
+  };
+
+  const startEditCategory = (cat: CategoryItem) => {
+    setEditingCategory(cat);
+    setCategoryFormData({
+      id: cat.id,
+      label: cat.label,
+      description: cat.description || ''
+    });
+  };
+
+  const handleSaveCategoryForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryFormData.label.trim()) {
+      alert('Please enter a category title.');
+      return;
+    }
+
+    // Auto slugify id if empty
+    const rawId = categoryFormData.id.trim() || categoryFormData.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const cleanId = rawId || `cat_${Date.now()}`;
+
+    const newCategory: CategoryItem = {
+      id: cleanId,
+      label: categoryFormData.label.trim(),
+      description: categoryFormData.description.trim() || undefined
+    };
+
+    if (editingCategory) {
+      const oldId = editingCategory.id;
+      if (onEditCategory) {
+        onEditCategory(oldId, newCategory);
+      }
+      // If category id changed, update items
+      if (oldId !== cleanId) {
+        const nextCatalog = catalog.map(item => item.category === oldId ? { ...item, category: cleanId } : item);
+        onUpdateCatalog(nextCatalog);
+      }
+      showNotification(`Category "${newCategory.label}" updated.`);
+    } else {
+      // Check for duplicate id
+      if (categories.some(c => c.id === cleanId)) {
+        alert(`A category with ID "${cleanId}" already exists. Please choose a different slug.`);
+        return;
+      }
+      if (onAddCategory) {
+        onAddCategory(newCategory);
+      }
+      showNotification(`Category "${newCategory.label}" created.`);
+    }
+
+    setEditingCategory(null);
+    setCategoryFormData({ id: '', label: '', description: '' });
+  };
+
+  const handleStartDeleteCategory = (cat: CategoryItem) => {
+    const itemsInCat = catalog.filter(i => i.category === cat.id);
+    setCategoryToDelete(cat);
+    // Find default reassign target
+    const fallback = categories.find(c => c.id !== cat.id)?.id || '';
+    setReassignCategoryTarget(fallback);
+  };
+
+  const handleConfirmDeleteCategory = () => {
+    if (!categoryToDelete) return;
+    const catId = categoryToDelete.id;
+    const catLabel = categoryToDelete.label;
+
+    if (onDeleteCategory) {
+      onDeleteCategory(catId, reassignCategoryTarget);
+    } else {
+      // Reassign items locally
+      if (reassignCategoryTarget) {
+        const nextCatalog = catalog.map(i => i.category === catId ? { ...i, category: reassignCategoryTarget } : i);
+        onUpdateCatalog(nextCatalog);
+      }
+    }
+
+    if (selectedCategory === catId) {
+      setSelectedCategory('all');
+    }
+
+    setCategoryToDelete(null);
+    showNotification(`Category "${catLabel}" deleted.`);
+  };
+
   return (
     <div className="w-full space-y-6">
-      {/* Header with Save Point & Backup Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      {/* Header with Add Item & Categories Buttons */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">Materials & Hardware</span>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5">
-            Pricing, Stock & Backup Snapshots
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">Workshop Catalog</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800/50">
+              {catalog.length} Items · {categories.length} Categories
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-1">
+            Hardware Catalog &amp; Category Manager
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Manage your hardware catalog, update cable & fuse prices, create rollback save points, and download backups.
+          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+            Add new parts, modify specifications and prices, delete obsolete inventory, and organize marine supply categories.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Add New Hardware Item Button */}
+          <button
+            onClick={openAddItemModal}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-950 transition-all active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Item</span>
+          </button>
+
+          {/* Manage Categories Button */}
+          <button
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-200 transition-colors"
+          >
+            <Layers className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Categories ({categories.length})</span>
+          </button>
+
+          {/* Save Points Drawer Toggle */}
           <button
             onClick={() => setShowSnapshotDrawer(!showSnapshotDrawer)}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 transition-colors"
           >
             <Clock className="w-3.5 h-3.5 text-sky-400" />
-            <span>Save Points ({snapshots.length})</span>
+            <span>Snapshots ({snapshots.length})</span>
           </button>
 
+          {/* Export / Import JSON */}
           <button
             onClick={handleDownloadBackupJSON}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 transition-colors"
+            className="flex items-center gap-1 px-2.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 transition-colors"
             title="Download full catalog backup JSON file"
           >
-            <Download className="w-3.5 h-3.5 text-sky-400" />
-            <span>Export JSON</span>
+            <Download className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden sm:inline">Export</span>
           </button>
 
-          <label className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 transition-colors cursor-pointer">
-            <Upload className="w-3.5 h-3.5 text-sky-400" />
-            <span>Import JSON</span>
+          <label className="flex items-center gap-1 px-2.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden sm:inline">Import</span>
             <input
               type="file"
               accept=".json"
@@ -188,10 +495,16 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
         </div>
       </div>
 
-      {backupSuccessMsg && (
-        <div className="p-3 bg-emerald-950/60 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
-          <Check className="w-4 h-4 text-emerald-400" />
-          <span>{backupSuccessMsg}</span>
+      {/* Success Banner */}
+      {successMsg && (
+        <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 flex items-center justify-between gap-2 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg('')} className="text-emerald-400 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
@@ -205,7 +518,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <span>Catalog Save Points (Rollback Snapshots)</span>
               </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Create a point-in-time snapshot before doing major price changes. Roll back anytime.
+                Create a point-in-time snapshot before major updates. Roll back anytime.
               </p>
             </div>
 
@@ -229,7 +542,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
             {snapshots.length === 0 ? (
-              <p className="text-xs text-slate-500 italic col-span-full">No save points recorded yet. Create one above!</p>
+              <p className="text-xs text-slate-500 italic col-span-full">No save points recorded yet.</p>
             ) : (
               snapshots.map(snap => (
                 <div key={snap.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
@@ -254,7 +567,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
       {/* Critical Zero Inventory Depleted Banner */}
       {zeroStockCount > 0 && (
-        <div className="bg-rose-950/40 border border-rose-500/40 rounded-2xl p-4 space-y-3 shadow-lg shadow-rose-950/30 animate-in fade-in duration-200">
+        <div className="bg-rose-950/40 border border-rose-500/40 rounded-2xl p-4 space-y-3 shadow-lg shadow-rose-950/30">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-rose-500/20 rounded-lg text-rose-400 border border-rose-500/30">
@@ -265,7 +578,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   <span>🚨 Urgent Stock Depletion Alert — {zeroStockCount} {zeroStockCount === 1 ? 'item is' : 'items are'} at 0 units</span>
                 </h3>
                 <p className="text-[11px] text-rose-300/80 mt-0.5">
-                  Automated notification alerts active (sent to anthonywrather@gmail.com). Immediate supplier reorder recommended.
+                  Automated notification alert active. Quick restock or supplier reorder recommended.
                 </p>
               </div>
             </div>
@@ -357,10 +670,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             )}
           </div>
 
-          <p className="text-xs text-slate-300 leading-relaxed">
-            The items listed below have dipped below the 5-unit workshop reserve. Keep replacement inventory ready to ensure rapid turnaround times for marine diagnostics and refits:
-          </p>
-
           <div className="flex flex-wrap gap-2 pt-1">
             {lowStockItems.map(item => (
               <div
@@ -371,22 +680,10 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded border bg-amber-950 text-amber-300 border-amber-500/40">
                   {item.stockCount ?? 0} {item.unit} left
                 </span>
-                {onOpenSupplierReorder && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenSupplierReorder(item)}
-                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-white rounded text-[11px] font-semibold transition-colors flex items-center gap-1"
-                    title="Draft supplier purchase order"
-                  >
-                    <Truck className="w-2.5 h-2.5" />
-                    <span>Reorder</span>
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => handleStockCountChange(item.id, (item.stockCount ?? 0) + 10)}
                   className="px-2 py-0.5 bg-sky-950 hover:bg-sky-900 text-sky-400 hover:text-sky-300 border border-sky-800/50 rounded text-[11px] font-semibold transition-colors"
-                  title="Restock +10 units"
                 >
                   +10 Restock
                 </button>
@@ -397,34 +694,48 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       )}
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Category Pills */}
-        <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto scrollbar-none">
-          {categories.map(cat => (
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Category Filter Pills */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-xl overflow-x-auto scrollbar-none max-w-full">
+          {filterPills.map(pill => (
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
+              key={pill.id}
+              onClick={() => setSelectedCategory(pill.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${
-                selectedCategory === cat.id
-                  ? cat.id === 'low_stock'
-                    ? 'bg-amber-600 text-white shadow-xs font-bold'
-                    : 'bg-sky-600 text-white shadow-xs font-bold'
-                  : cat.id === 'low_stock'
+                selectedCategory === pill.id
+                  ? pill.id === 'low_stock'
+                    ? 'bg-amber-600 text-white font-bold shadow-xs'
+                    : pill.id === 'zero_stock'
+                    ? 'bg-rose-600 text-white font-bold shadow-xs'
+                    : 'bg-sky-600 text-white font-bold shadow-xs'
+                  : pill.id === 'low_stock'
                   ? 'text-amber-400 hover:text-amber-300 font-semibold'
+                  : pill.id === 'zero_stock'
+                  ? 'text-rose-400 hover:text-rose-300 font-semibold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {cat.label}
+              {pill.label}
             </button>
           ))}
+
+          {/* Quick Categories Manage Pill */}
+          <button
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="px-2.5 py-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 hover:bg-indigo-950/70 border border-indigo-500/30 rounded-lg whitespace-nowrap flex items-center gap-1 transition-colors"
+            title="Add, rename or delete categories"
+          >
+            <FolderPlus className="w-3.5 h-3.5" />
+            <span>Manage Categories</span>
+          </button>
         </div>
 
         {/* Search Input */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
           <input
             type="text"
-            placeholder="Search parts, specs..."
+            placeholder="Search parts, specs, categories..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full sm:w-64 bg-slate-900 border border-slate-800 text-xs pl-8 pr-3 py-2 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
@@ -440,183 +751,709 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               <tr>
                 <th className="p-3.5 pl-5">Hardware Item &amp; Specs</th>
                 <th className="p-3.5">Category</th>
-                <th className="p-3.5 text-center">Stock Level (&lt;5 Warning)</th>
+                <th className="p-3.5 text-center">Stock Level</th>
                 <th className="p-3.5 text-right">Unit Price</th>
                 <th className="p-3.5 text-center">Availability</th>
-                <th className="p-3.5 pr-5 text-right">Quick Edit</th>
+                <th className="p-3.5 pr-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {filteredItems.map(item => {
-                const isLowStock = (item.stockCount ?? 0) < 5;
-                const isOutOfStock = (item.stockCount ?? 0) <= 0 || !item.inStock;
+              {filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-500">
+                    <p className="text-sm font-semibold text-slate-400">No hardware items match your filter.</p>
+                    <p className="text-xs mt-1">Try clearing your search query or add a new item using the button above.</p>
+                    <button
+                      onClick={openAddItemModal}
+                      className="mt-3 inline-flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add New Item</span>
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                filteredItems.map(item => {
+                  const isLowStock = (item.stockCount ?? 0) < 5;
+                  const isOutOfStock = (item.stockCount ?? 0) <= 0 || !item.inStock;
+                  const categoryInfo = categories.find(c => c.id === item.category);
 
-                return (
-                  <tr
-                    key={item.id}
-                    className={`transition-colors ${
-                      isLowStock ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-slate-900/80'
-                    }`}
-                  >
-                    <td className="p-3.5 pl-5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-white">{item.name}</span>
-                        {isLowStock && (
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wide uppercase border ${
-                              isOutOfStock
-                                ? 'bg-rose-950/90 text-rose-300 border-rose-500/50 shadow-xs'
-                                : 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-xs animate-pulse'
-                            }`}
-                            title={`Stock count is ${item.stockCount ?? 0} units (below 5 units threshold). Proactive restock recommended.`}
-                          >
-                            <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
-                            <span>{isOutOfStock ? 'Out of Stock (0)' : `Low Stock: ${item.stockCount ?? 0} left`}</span>
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">{item.specification}</div>
-                    </td>
-                    <td className="p-3.5">
-                      <span className="capitalize text-[11px] text-slate-400 font-medium">
-                        {item.category}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-center">
-                      <div className="inline-flex flex-col items-center gap-1">
-                        <div className="inline-flex items-center gap-1.5">
-                          <span
-                            className={`font-mono font-bold text-xs px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${
-                              isLowStock
-                                ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 shadow-xs'
-                                : 'bg-slate-950 text-slate-200 border-slate-800'
-                            }`}
-                          >
-                            {isLowStock && <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />}
-                            <span>{item.stockCount ?? 0}</span>
-                            <span className="text-[10px] text-slate-400 font-normal">{item.unit}</span>
-                          </span>
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`transition-colors ${
+                        isLowStock ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-slate-900/80'
+                      }`}
+                    >
+                      {/* Name & Specs */}
+                      <td className="p-3.5 pl-5">
+                        <div className="flex items-start gap-3">
+                          {item.imageUrl ? (
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-950 border border-slate-800 shrink-0 mt-0.5"
+                              onError={e => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
+                              <ImageIcon className="w-4 h-4" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-white">{item.name}</span>
+                              {item.badge && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800/40 font-mono">
+                                  {item.badge}
+                                </span>
+                              )}
+                              {isLowStock && (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wide uppercase border ${
+                                    isOutOfStock
+                                      ? 'bg-rose-950/90 text-rose-300 border-rose-500/50 shadow-xs'
+                                      : 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-xs animate-pulse'
+                                  }`}
+                                >
+                                  <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                                  <span>{isOutOfStock ? 'Depleted (0)' : `Low: ${item.stockCount ?? 0} left`}</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5 max-w-md line-clamp-1">{item.specification}</div>
+                          </div>
+                        </div>
+                      </td>
 
-                          {/* Quick +/- buttons */}
-                          <div className="inline-flex items-center rounded-lg border border-slate-800 bg-slate-950 overflow-hidden">
+                      {/* Category */}
+                      <td className="p-3.5">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-[11px] text-slate-300 font-medium capitalize">
+                          <Tag className="w-2.5 h-2.5 text-sky-400" />
+                          <span>{categoryInfo?.label || item.category}</span>
+                        </span>
+                      </td>
+
+                      {/* Stock Level */}
+                      <td className="p-3.5 text-center">
+                        <div className="inline-flex flex-col items-center gap-1">
+                          <div className="inline-flex items-center gap-1.5">
+                            <span
+                              className={`font-mono font-bold text-xs px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${
+                                isLowStock
+                                  ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 shadow-xs'
+                                  : 'bg-slate-950 text-slate-200 border-slate-800'
+                              }`}
+                            >
+                              <span>{item.stockCount ?? 0}</span>
+                              <span className="text-[10px] text-slate-400 font-normal">{item.unit}</span>
+                            </span>
+
+                            {/* Quick +/- buttons */}
+                            <div className="inline-flex items-center rounded-lg border border-slate-800 bg-slate-950 overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => handleStockCountChange(item.id, Math.max(0, (item.stockCount ?? 0) - 1))}
+                                className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs transition-colors"
+                                title="Decrease stock by 1"
+                              >
+                                -
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStockCountChange(item.id, (item.stockCount ?? 0) + 1)}
+                                className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs transition-colors"
+                                title="Increase stock by 1"
+                              >
+                                +
+                              </button>
+                            </div>
+
                             <button
                               type="button"
-                              onClick={() => handleStockCountChange(item.id, Math.max(0, (item.stockCount ?? 0) - 1))}
-                              className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs transition-colors"
-                              title="Decrease stock by 1"
+                              onClick={() => handleStockCountChange(item.id, (item.stockCount ?? 0) + 10)}
+                              className="px-1.5 py-0.5 bg-sky-950 hover:bg-sky-900 text-sky-400 hover:text-sky-300 border border-sky-800/60 text-[10px] font-semibold rounded transition-colors"
+                              title="Quick restock +10 units"
                             >
-                              -
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleStockCountChange(item.id, (item.stockCount ?? 0) + 1)}
-                              className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 text-xs transition-colors"
-                              title="Increase stock by 1"
-                            >
-                              +
+                              +10
                             </button>
                           </div>
+                        </div>
+                      </td>
 
+                      {/* Unit Price */}
+                      <td className="p-3.5 text-right font-mono font-bold text-white tabular-nums">
+                        £{item.unitPrice.toFixed(2)}
+                        <span className="text-[10px] text-slate-500 block font-normal">/{item.unit}</span>
+                      </td>
+
+                      {/* Availability */}
+                      <td className="p-3.5 text-center">
+                        <button
+                          onClick={() => handleToggleStock(item.id)}
+                          className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors ${
+                            item.inStock && (item.stockCount ?? 0) > 0
+                              ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
+                              : 'bg-rose-950/40 text-rose-400 border-rose-500/30'
+                          }`}
+                        >
+                          {item.inStock && (item.stockCount ?? 0) > 0 ? 'Available' : 'Out of Stock'}
+                        </button>
+                      </td>
+
+                      {/* Actions: Edit, Delete, Reorder */}
+                      <td className="p-3.5 pr-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Edit Item Button */}
                           <button
                             type="button"
-                            onClick={() => handleStockCountChange(item.id, (item.stockCount ?? 0) + 10)}
-                            className="px-1.5 py-0.5 bg-sky-950 hover:bg-sky-900 text-sky-400 hover:text-sky-300 border border-sky-800/60 text-[10px] font-semibold rounded transition-colors"
-                            title="Quick restock +10 units"
+                            onClick={() => openEditItemModal(item)}
+                            className="p-1.5 bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white rounded-lg transition-colors"
+                            title="Modify item specifications, pricing or image"
                           >
-                            +10
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
-                        </div>
-                        {isLowStock && (
-                          <span className="text-[9px] font-mono text-amber-400/90 font-semibold tracking-wide">
-                            &lt; 5 UNITS RESERVE
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3.5 text-right font-mono font-bold text-white tabular-nums">
-                      £{item.unitPrice.toFixed(2)}
-                      <span className="text-[10px] text-slate-500 block font-normal">/{item.unit}</span>
-                    </td>
-                    <td className="p-3.5 text-center">
-                      <button
-                        onClick={() => handleToggleStock(item.id)}
-                        className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors ${
-                          item.inStock && (item.stockCount ?? 0) > 0
-                            ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
-                            : 'bg-rose-950/40 text-rose-400 border-rose-500/30'
-                        }`}
-                      >
-                        {item.inStock && (item.stockCount ?? 0) > 0 ? 'Available' : 'Out of Stock'}
-                      </button>
-                    </td>
-                    <td className="p-3.5 pr-5 text-right">
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="inline-flex items-center gap-1">
-                          <span className="text-slate-500 text-[10px]">Price £</span>
-                          <input
-                            type="number"
-                            step="0.10"
-                            min="0"
-                            value={item.unitPrice}
-                            onChange={e => handlePriceChange(item.id, Number(e.target.value) || 0)}
-                            className="w-16 bg-slate-950 border border-slate-800 text-xs px-2 py-1 rounded text-white font-mono text-right focus:outline-none focus:border-sky-500"
-                          />
-                        </div>
-                        <div className="inline-flex items-center gap-1">
-                          <span className="text-slate-500 text-[10px]">Stock</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={item.stockCount ?? 0}
-                            onChange={e => handleStockCountChange(item.id, Number(e.target.value) || 0)}
-                            className={`w-16 bg-slate-950 border text-xs px-2 py-1 rounded font-mono text-right focus:outline-none ${
-                              isOutOfStock
-                                ? 'border-rose-500/60 text-rose-300 bg-rose-950/20'
-                                : isLowStock
-                                ? 'border-amber-500/50 text-amber-300'
-                                : 'border-slate-800 text-white'
-                            }`}
-                          />
-                        </div>
 
-                        {/* Reorder from Supplier & Quick Test Actions */}
-                        <div className="flex items-center gap-1.5 mt-1">
+                          {/* Delete Item Button */}
+                          <button
+                            type="button"
+                            onClick={() => setItemToDelete(item)}
+                            className="p-1.5 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-lg transition-colors"
+                            title="Delete item from catalog"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Reorder Button */}
                           {onOpenSupplierReorder && (
                             <button
                               type="button"
                               onClick={() => onOpenSupplierReorder(item)}
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-colors ${
-                                isOutOfStock
-                                  ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-xs'
-                                  : 'bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-white'
-                              }`}
-                              title="Draft Reorder from Supplier"
+                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-sky-300 rounded-lg transition-colors"
+                              title="Draft supplier purchase order"
                             >
-                              <Truck className="w-2.5 h-2.5" />
-                              <span>{isOutOfStock ? 'Reorder Now' : 'Reorder'}</span>
-                            </button>
-                          )}
-
-                          {!isOutOfStock && (
-                            <button
-                              type="button"
-                              onClick={() => handleStockCountChange(item.id, 0)}
-                              className="text-[9px] text-slate-500 hover:text-rose-400 font-mono transition-colors"
-                              title="Set stockCount to 0 to test automated email & toast notification alert"
-                            >
-                              [0 Alert]
+                              <Truck className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* ============================================================= */}
+      {/* MODAL 1: ADD / MODIFY ITEM MODAL                             */}
+      {/* ============================================================= */}
+      {isItemModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-sky-500/10 rounded-xl text-sky-400 border border-sky-500/20">
+                  {editingItem ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    {editingItem ? `Modify Hardware Item: ${editingItem.name}` : 'Add New Hardware Item'}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {editingItem ? 'Update specifications, pricing, stock levels and images.' : 'Create a new stock item in the workshop catalog.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsItemModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveItemForm} className="space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Item Name <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Victron Blue Smart IP65 Charger 12V 15A"
+                  value={itemFormData.name}
+                  onChange={e => setItemFormData({ ...itemFormData, name: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              {/* Category & Unit */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-slate-300">Category</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoryModalOpen(true)}
+                      className="text-[10px] text-sky-400 hover:underline"
+                    >
+                      + Manage Categories
+                    </button>
+                  </div>
+                  <select
+                    value={itemFormData.category}
+                    onChange={e => setItemFormData({ ...itemFormData, category: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500 capitalize"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Unit of Measure</label>
+                  <div className="flex gap-1.5 items-center">
+                    <input
+                      type="text"
+                      placeholder="e.g. each, per meter, pack"
+                      value={itemFormData.unit}
+                      onChange={e => setItemFormData({ ...itemFormData, unit: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {PRESET_UNITS.map(u => (
+                      <button
+                        key={u}
+                        type="button"
+                        onClick={() => setItemFormData({ ...itemFormData, unit: u })}
+                        className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                          itemFormData.unit === u
+                            ? 'bg-sky-600 text-white border-sky-500'
+                            : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                        }`}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Specification */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Technical Specification / Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. 7-step smart charger with built-in Bluetooth, IP65 waterproof housing for boat bilges"
+                  value={itemFormData.specification}
+                  onChange={e => setItemFormData({ ...itemFormData, specification: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              {/* Unit Price & Stock Count */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Unit Price (£)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-slate-500 font-mono text-xs">£</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={itemFormData.unitPrice}
+                      onChange={e => setItemFormData({ ...itemFormData, unitPrice: parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-slate-950 border border-slate-800 text-xs pl-7 pr-3 py-2 rounded-xl text-white font-mono focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Warehouse Stock Count</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={itemFormData.stockCount}
+                    onChange={e => {
+                      const count = parseInt(e.target.value, 10) || 0;
+                      setItemFormData({
+                        ...itemFormData,
+                        stockCount: count,
+                        inStock: count > 0
+                      });
+                    }}
+                    className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white font-mono focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              {/* Badge & In Stock Toggle */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Product Badge (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Bestseller, Official Victron, New"
+                    value={itemFormData.badge}
+                    onChange={e => setItemFormData({ ...itemFormData, badge: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div className="pt-5">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={itemFormData.inStock}
+                      onChange={e => setItemFormData({ ...itemFormData, inStock: e.target.checked })}
+                      className="w-4 h-4 rounded text-sky-600 bg-slate-950 border-slate-800 focus:ring-sky-500"
+                    />
+                    <span className="text-xs font-semibold text-slate-300">Item is available for purchase in store</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Image URL & Preset Selection */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Image URL</label>
+                <input
+                  type="text"
+                  placeholder="Image path or URL..."
+                  value={itemFormData.imageUrl}
+                  onChange={e => setItemFormData({ ...itemFormData, imageUrl: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500 mb-2"
+                />
+                <span className="text-[11px] text-slate-400 block mb-1.5">Or pick from marine hardware photo presets:</span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {PRESET_IMAGE_OPTIONS.map(preset => (
+                    <button
+                      key={preset.url}
+                      type="button"
+                      onClick={() => setItemFormData({ ...itemFormData, imageUrl: preset.url })}
+                      className={`p-1.5 rounded-lg border text-left flex items-center gap-2 transition-all ${
+                        itemFormData.imageUrl === preset.url
+                          ? 'border-sky-500 bg-sky-950/40 text-white'
+                          : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <img src={preset.url} alt={preset.label} className="w-7 h-7 rounded object-cover shrink-0" />
+                      <span className="text-[10px] truncate">{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsItemModalOpen(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-sky-950 transition-colors"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{editingItem ? 'Save Item Changes' : 'Create Hardware Item'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL 2: DELETE ITEM CONFIRMATION MODAL                      */}
+      {/* ============================================================= */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-rose-500/40 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Delete Catalog Item</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Are you sure you want to delete this hardware item from the catalog and store?
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+              <p className="font-semibold text-white">{itemToDelete.name}</p>
+              <p className="text-[11px] text-slate-400 font-mono">Category: {itemToDelete.category} · Price: £{itemToDelete.unitPrice.toFixed(2)}</p>
+              <p className="text-[11px] text-slate-500">Current Stock: {itemToDelete.stockCount ?? 0} {itemToDelete.unit}</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setItemToDelete(null)}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteItem}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-rose-950"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL 3: CATEGORY MANAGER MODAL                              */}
+      {/* ============================================================= */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Manage Product Categories</h3>
+                  <p className="text-xs text-slate-400">
+                    Add new hardware classifications, rename existing categories, or remove unused ones.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsCategoryModalOpen(false);
+                  setEditingCategory(null);
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Subform: Add / Edit Category */}
+            <form onSubmit={handleSaveCategoryForm} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+                  {editingCategory ? <Edit3 className="w-3.5 h-3.5" /> : <FolderPlus className="w-3.5 h-3.5" />}
+                  <span>{editingCategory ? `Edit Category: ${editingCategory.label}` : 'Add New Category'}</span>
+                </span>
+                {editingCategory && (
+                  <button
+                    type="button"
+                    onClick={openAddCategoryMode}
+                    className="text-[11px] text-slate-400 hover:text-white"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Category Title / Label <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Navigation & Chartplotters"
+                    value={categoryFormData.label}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setCategoryFormData({
+                        ...categoryFormData,
+                        label: val,
+                        id: editingCategory ? categoryFormData.id : val.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+                      });
+                    }}
+                    className="w-full bg-slate-900 border border-slate-800 text-xs px-3 py-1.5 rounded-lg text-white focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Category Slug / ID</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. navigation"
+                    value={categoryFormData.id}
+                    onChange={e => setCategoryFormData({ ...categoryFormData, id: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 text-xs px-3 py-1.5 rounded-lg text-white font-mono focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Description (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. NMEA 2000 drop cables, GPS antennas, and marine displays"
+                  value={categoryFormData.description}
+                  onChange={e => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 text-xs px-3 py-1.5 rounded-lg text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                >
+                  <Save className="w-3 h-3" />
+                  <span>{editingCategory ? 'Update Category' : 'Create Category'}</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Category List Table */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Categories ({categories.length})</h4>
+              <div className="border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800">
+                {categories.map(cat => {
+                  const itemCount = catalog.filter(i => i.category === cat.id).length;
+                  const isEditingThis = editingCategory?.id === cat.id;
+
+                  return (
+                    <div
+                      key={cat.id}
+                      className={`p-3 flex items-center justify-between gap-3 text-xs transition-colors ${
+                        isEditingThis ? 'bg-sky-950/30' : 'bg-slate-950/60 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white">{cat.label}</span>
+                          <span className="font-mono text-[10px] text-slate-500">[{cat.id}]</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-900 text-sky-400 border border-slate-800 font-mono">
+                            {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                          </span>
+                        </div>
+                        {cat.description && (
+                          <p className="text-[11px] text-slate-400 mt-0.5 truncate">{cat.description}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => startEditCategory(cat)}
+                          className="p-1.5 bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white rounded-lg transition-colors"
+                          title="Modify category name and description"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleStartDeleteCategory(cat)}
+                          className="p-1.5 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-lg transition-colors"
+                          title="Delete category"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL 4: DELETE CATEGORY CONFIRMATION MODAL                  */}
+      {/* ============================================================= */}
+      {categoryToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-rose-500/40 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Delete Category: {categoryToDelete.label}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Are you sure you want to delete this category?
+                </p>
+              </div>
+            </div>
+
+            {catalog.filter(i => i.category === categoryToDelete.id).length > 0 ? (
+              <div className="bg-amber-950/30 border border-amber-500/30 p-3 rounded-xl text-xs space-y-2">
+                <p className="font-semibold text-amber-300">
+                  ⚠️ This category currently has {catalog.filter(i => i.category === categoryToDelete.id).length} assigned items!
+                </p>
+                <p className="text-[11px] text-slate-300">
+                  Choose which category these items should be moved to so they remain accessible:
+                </p>
+                <select
+                  value={reassignCategoryTarget}
+                  onChange={e => setReassignCategoryTarget(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 text-xs px-2.5 py-1.5 rounded-lg text-white"
+                >
+                  {categories
+                    .filter(c => c.id !== categoryToDelete.id)
+                    .map(c => (
+                      <option key={c.id} value={c.id}>
+                        Move to: {c.label}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-300">
+                This category has 0 items and can be safely removed.
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setCategoryToDelete(null)}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteCategory}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-rose-950"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Delete Category</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

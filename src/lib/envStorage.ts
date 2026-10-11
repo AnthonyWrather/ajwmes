@@ -1,6 +1,7 @@
 import { AppEnvironment, detectEnvironment } from './environment';
 import { 
   DEFAULT_CATALOG, 
+  DEFAULT_CATEGORIES,
   INITIAL_JOBS, 
   INITIAL_POSTAL_ORDERS, 
   INITIAL_VESSEL_SPEC, 
@@ -15,7 +16,7 @@ import {
   AI_STUDIO_PREVIEW_POSTAL_ORDERS,
   AI_STUDIO_PREVIEW_VESSEL_SPEC
 } from '../data/environmentTestData';
-import { JobRecord, CatalogItem, PostalOrder, VesselSpec, CartItem, UserProfile } from '../types';
+import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, CartItem, UserProfile } from '../types';
 
 /**
  * Scoped Local Storage Manager with Environment Partitioning
@@ -31,6 +32,7 @@ export interface ExportedEnvironmentData {
   environment: AppEnvironment;
   jobs: JobRecord[];
   catalog: CatalogItem[];
+  categories?: CategoryItem[];
   postalOrders: PostalOrder[];
   vesselSpec: VesselSpec;
   cart?: CartItem[];
@@ -116,6 +118,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         postalOrders: AI_STUDIO_DEV_POSTAL_ORDERS,
         vesselSpec: AI_STUDIO_DEV_VESSEL_SPEC,
         catalog: DEFAULT_CATALOG,
+        categories: DEFAULT_CATEGORIES,
         users: DEMO_PROFILES
       };
 
@@ -125,6 +128,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         postalOrders: AI_STUDIO_PREVIEW_POSTAL_ORDERS,
         vesselSpec: AI_STUDIO_PREVIEW_VESSEL_SPEC,
         catalog: DEFAULT_CATALOG,
+        categories: DEFAULT_CATEGORIES,
         users: DEMO_PROFILES
       };
 
@@ -136,6 +140,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         postalOrders: INITIAL_POSTAL_ORDERS,
         vesselSpec: INITIAL_VESSEL_SPEC,
         catalog: DEFAULT_CATALOG,
+        categories: DEFAULT_CATEGORIES,
         users: DEMO_PROFILES
       };
   }
@@ -147,6 +152,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
 export function resetEnvironmentToTestData(envCode?: AppEnvironment): {
   jobs: JobRecord[];
   catalog: CatalogItem[];
+  categories: CategoryItem[];
   postalOrders: PostalOrder[];
   vesselSpec: VesselSpec;
   users: UserProfile[];
@@ -154,6 +160,7 @@ export function resetEnvironmentToTestData(envCode?: AppEnvironment): {
   const seed = getEnvironmentSeedData(envCode);
   setEnvStorageItem('jobs', seed.jobs, envCode);
   setEnvStorageItem('catalog', seed.catalog, envCode);
+  setEnvStorageItem('categories', seed.categories, envCode);
   setEnvStorageItem('postal_orders', seed.postalOrders, envCode);
   setEnvStorageItem('vessel_spec', seed.vesselSpec, envCode);
   setEnvStorageItem('users_list', seed.users, envCode);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, UserProfile, JobRecord, CatalogItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState } from './types';
-import { DEFAULT_CATALOG, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS } from './data/seedData';
+import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState } from './types';
+import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
 import { FirestoreSyncBanner } from './components/common/FirestoreSyncBanner';
@@ -52,7 +52,12 @@ import {
   syncJobToFirestore, 
   subscribeCatalog, 
   syncCatalogItemToFirestore, 
+  deleteCatalogItemFromFirestore,
   seedCatalogToFirestore, 
+  subscribeCategories,
+  syncCategoryToFirestore,
+  deleteCategoryFromFirestore,
+  seedCategoriesToFirestore,
   subscribePostalOrders, 
   syncPostalOrderToFirestore, 
   subscribeVesselSpec, 
@@ -87,6 +92,10 @@ export default function App() {
 
   const [catalog, setCatalog] = useState<CatalogItem[]>(() => {
     return getEnvStorageItem('catalog', envSeed.catalog);
+  });
+
+  const [categories, setCategories] = useState<CategoryItem[]>(() => {
+    return getEnvStorageItem('categories', envSeed.categories || DEFAULT_CATEGORIES);
   });
 
   const [postalOrders, setPostalOrders] = useState<PostalOrder[]>(() => {
@@ -255,6 +264,7 @@ export default function App() {
   useEffect(() => {
     // Seed default baseline catalog & initial user accounts if remote collections are empty
     seedCatalogToFirestore(DEFAULT_CATALOG).catch(err => console.warn('Catalog seeding skipped or cached:', err));
+    seedCategoriesToFirestore(DEFAULT_CATEGORIES).catch(err => console.warn('Categories seeding skipped or cached:', err));
     seedUsersToFirestore(DEMO_PROFILES).catch(err => console.warn('Users seeding skipped or cached:', err));
 
     const unsubJobs = subscribeJobs((remoteJobs) => {
@@ -267,6 +277,13 @@ export default function App() {
     const unsubCatalog = subscribeCatalog((remoteCatalog) => {
       if (remoteCatalog && remoteCatalog.length > 0) {
         setCatalog(remoteCatalog);
+      }
+      setIsFirebaseConnected(true);
+    });
+
+    const unsubCategories = subscribeCategories((remoteCategories) => {
+      if (remoteCategories && remoteCategories.length > 0) {
+        setCategories(remoteCategories);
       }
       setIsFirebaseConnected(true);
     });
@@ -306,6 +323,7 @@ export default function App() {
     return () => {
       unsubJobs();
       unsubCatalog();
+      unsubCategories();
       unsubOrders();
       unsubSpec();
       unsubUsers();
@@ -317,6 +335,7 @@ export default function App() {
     const seed = getEnvironmentSeedData();
     setJobs(getEnvStorageItem('jobs', seed.jobs));
     setCatalog(getEnvStorageItem('catalog', seed.catalog));
+    setCategories(getEnvStorageItem('categories', seed.categories || DEFAULT_CATEGORIES));
     setPostalOrders(getEnvStorageItem('postal_orders', seed.postalOrders));
     setVesselSpec(getEnvStorageItem('vessel_spec', seed.vesselSpec));
     setUsersList(getEnvStorageItem('users_list', seed.users));
@@ -367,6 +386,10 @@ export default function App() {
   useEffect(() => {
     setEnvStorageItem('catalog', catalog);
   }, [catalog]);
+
+  useEffect(() => {
+    setEnvStorageItem('categories', categories);
+  }, [categories]);
 
   useEffect(() => {
     setEnvStorageItem('stock_alerts', stockAlerts);
@@ -495,6 +518,108 @@ export default function App() {
           syncCatalogItemToFirestore(newItem);
         });
         setCatalog(newCatalog);
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Add Item (Admin only)
+  const handleAddItem = (newItem: CatalogItem) => {
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        setCatalog(prev => [newItem, ...prev]);
+        syncCatalogItemToFirestore(newItem);
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Edit / Modify Item (Admin only)
+  const handleEditItem = (updatedItem: CatalogItem) => {
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        setCatalog(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+        syncCatalogItemToFirestore(updatedItem);
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Delete Item (Admin only)
+  const handleDeleteItem = (itemId: string) => {
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        setCatalog(prev => prev.filter(item => item.id !== itemId));
+        deleteCatalogItemFromFirestore(itemId);
+        setCart(prev => prev.filter(c => c.item.id !== itemId));
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Add Category (Admin only)
+  const handleAddCategory = (newCat: CategoryItem) => {
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        setCategories(prev => [...prev, newCat]);
+        syncCategoryToFirestore(newCat);
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Edit / Modify Category (Admin only)
+  const handleEditCategory = (oldId: string, updatedCat: CategoryItem) => {
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        setCategories(prev => prev.map(c => c.id === oldId ? updatedCat : c));
+        if (oldId !== updatedCat.id) {
+          deleteCategoryFromFirestore(oldId);
+          setCatalog(prev => {
+            const next = prev.map(i => i.category === oldId ? { ...i, category: updatedCat.id } : i);
+            next.forEach(item => {
+              if (item.category === updatedCat.id) {
+                syncCatalogItemToFirestore(item);
+              }
+            });
+            return next;
+          });
+        }
+        syncCategoryToFirestore(updatedCat);
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
+  // Delete Category (Admin only)
+  const handleDeleteCategory = (categoryId: string, reassignToCategoryId?: string) => {
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        setCategories(prev => prev.filter(c => c.id !== categoryId));
+        deleteCategoryFromFirestore(categoryId);
+        if (reassignToCategoryId) {
+          setCatalog(prev => {
+            const next = prev.map(i => i.category === categoryId ? { ...i, category: reassignToCategoryId } : i);
+            next.forEach(item => {
+              if (item.category === reassignToCategoryId) {
+                syncCatalogItemToFirestore(item);
+              }
+            });
+            return next;
+          });
+        }
       },
       (denial) => setActionDenial(denial)
     );
@@ -1029,6 +1154,7 @@ export default function App() {
           {currentTab === 'store' && (
             <StoreFront
               catalog={catalog}
+              categories={categories}
               cart={cart}
               onAddToCart={handleAddToCart}
               onUpdateCartQuantity={handleUpdateCartQuantity}
@@ -1108,6 +1234,7 @@ export default function App() {
             <AdminDashboard
               jobs={jobs}
               catalog={catalog}
+              categories={categories}
               snapshots={snapshots}
               postalOrders={postalOrders}
               stockAlerts={stockAlerts}
@@ -1124,6 +1251,12 @@ export default function App() {
               onUpdateUserRole={handleUpdateUserRoleInDatabase}
               onDeleteUser={handleDeleteUserFromDatabase}
               onRefreshUsers={() => seedUsersToFirestore(DEMO_PROFILES)}
+              onAddCatalogItem={handleAddItem}
+              onEditCatalogItem={handleEditItem}
+              onDeleteCatalogItem={handleDeleteItem}
+              onAddCategory={handleAddCategory}
+              onEditCategory={handleEditCategory}
+              onDeleteCategory={handleDeleteCategory}
             />
           )}
 

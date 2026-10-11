@@ -8,6 +8,7 @@ import {
   collection, 
   onSnapshot, 
   setDoc, 
+  deleteDoc,
   getDocs,
   writeBatch,
   enableNetwork,
@@ -15,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
 import { detectEnvironment } from './environment';
-import { JobRecord, CatalogItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState } from '../types';
+import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState } from '../types';
 
 export enum OperationType {
   CREATE = 'create',
@@ -383,6 +384,88 @@ export async function seedCatalogToFirestore(items: CatalogItem[]) {
       const batch = writeBatch(db);
       for (const item of items) {
         batch.set(doc(db, colPath, item.id), cleanForFirestore(item));
+      }
+      await batch.commit();
+    }
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, colPath);
+  }
+}
+
+export async function deleteCatalogItemFromFirestore(itemId: string) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('catalog');
+  const docPath = `${colPath}/${itemId}`;
+  try {
+    await deleteDoc(doc(db, colPath, itemId));
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, docPath);
+  }
+}
+
+export function subscribeCategories(onUpdate: (categories: CategoryItem[]) => void) {
+  if (!firebaseConfig.apiKey) {
+    return () => {};
+  }
+  const colPath = getScopedCollection('categories');
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const categories = snapshot.docs.map((docSnap) => docSnap.data() as CategoryItem);
+        onUpdate(categories);
+      }
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+    },
+    (error) => {
+      if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
+        updateConnectionState({ isConnected: false, errorMessage: error.message });
+      }
+      handleFirestoreError(error, OperationType.GET, colPath);
+    }
+  );
+}
+
+export async function syncCategoryToFirestore(category: CategoryItem) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('categories');
+  const docPath = `${colPath}/${category.id}`;
+  try {
+    await setDoc(doc(db, colPath, category.id), cleanForFirestore(category), { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+export async function deleteCategoryFromFirestore(categoryId: string) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('categories');
+  const docPath = `${colPath}/${categoryId}`;
+  try {
+    await deleteDoc(doc(db, colPath, categoryId));
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, docPath);
+  }
+}
+
+export async function seedCategoriesToFirestore(categories: CategoryItem[]) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('categories');
+  try {
+    const existing = await getDocs(collection(db, colPath));
+    if (existing.empty) {
+      const batch = writeBatch(db);
+      for (const cat of categories) {
+        batch.set(doc(db, colPath, cat.id), cleanForFirestore(cat));
       }
       await batch.commit();
     }

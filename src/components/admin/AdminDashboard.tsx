@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, PostalOrder, StockAlert, UserProfile, UserRole } from '../../types';
+import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, CategoryItem, PostalOrder, StockAlert, UserProfile, UserRole } from '../../types';
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { DiagnosticTimerModal } from './DiagnosticTimerModal';
 import { InventoryManager } from './InventoryManager';
@@ -35,6 +35,7 @@ import { uploadSwitchPanelImage, isFirebaseStorageUrl, formatFileSize } from '..
 interface AdminDashboardProps {
   jobs: JobRecord[];
   catalog: CatalogItem[];
+  categories?: CategoryItem[];
   snapshots: CatalogSnapshot[];
   postalOrders: PostalOrder[];
   stockAlerts?: StockAlert[];
@@ -51,11 +52,18 @@ interface AdminDashboardProps {
   onUpdateUserRole?: (userId: string, newRole: UserRole) => Promise<void> | void;
   onDeleteUser?: (userId: string) => Promise<void> | void;
   onRefreshUsers?: () => void;
+  onAddCatalogItem?: (item: CatalogItem) => void;
+  onEditCatalogItem?: (item: CatalogItem) => void;
+  onDeleteCatalogItem?: (itemId: string) => void;
+  onAddCategory?: (category: CategoryItem) => void;
+  onEditCategory?: (oldId: string, updatedCategory: CategoryItem) => void;
+  onDeleteCategory?: (categoryId: string, reassignToCategoryId?: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   jobs,
   catalog,
+  categories,
   snapshots,
   postalOrders,
   stockAlerts = [],
@@ -71,7 +79,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onSaveUser,
   onUpdateUserRole,
   onDeleteUser,
-  onRefreshUsers
+  onRefreshUsers,
+  onAddCatalogItem,
+  onEditCatalogItem,
+  onDeleteCatalogItem,
+  onAddCategory,
+  onEditCategory,
+  onDeleteCategory
 }) => {
   const [activeAdminTab, setActiveAdminTab] = useState<'jobs' | 'catalog' | 'orders' | 'accounts' | 'print' | 'panels'>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string>(jobs[0]?.id || '');
@@ -565,11 +579,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeAdminTab === 'catalog' && (
         <InventoryManager
           catalog={catalog}
+          categories={categories}
           snapshots={snapshots}
           onUpdateCatalog={onUpdateCatalog}
           onCreateSnapshot={onCreateSnapshot}
           onRestoreSnapshot={onRestoreSnapshot}
           onOpenSupplierReorder={onOpenSupplierReorder}
+          onAddCatalogItem={onAddCatalogItem}
+          onEditCatalogItem={onEditCatalogItem}
+          onDeleteCatalogItem={onDeleteCatalogItem}
+          onAddCategory={onAddCategory}
+          onEditCategory={onEditCategory}
+          onDeleteCategory={onDeleteCategory}
         />
       )}
 
