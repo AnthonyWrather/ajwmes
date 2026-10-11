@@ -1,0 +1,10 @@
+# Block everything except actual source logic
+node_modules/
+.git/
+.vite/
+.firebase/
+build/
+dist/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

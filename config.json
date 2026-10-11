@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "title": "Gemini 3.8 Flash (Paid)",
+      "provider": "gemini",
+      "model": "gemini-3.8-flash",
+      "apiKey": "AIzaSyCtpsZmPdEcyMoVXM0efPnqnfs0Ta0ZooM",
+      "requestOptions": {
+        "extraBody": {
+          "generationConfig": {
+            "maxOutputTokens": 300,
+            "temperature": 0.1
+          }
+        }
+      }
+    }
+  ],
+  "systemMessage": "You are a rigid engineering assistant for the ajwmes project. Be brutally concise. Deliver code updates or direct answers only. Skip conversational explanations, fluff, or duplicate code."
+}
