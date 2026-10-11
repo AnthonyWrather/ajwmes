@@ -254,8 +254,8 @@ export default function App() {
   // Firestore Real-time Synchronization
   useEffect(() => {
     // Seed default baseline catalog & initial user accounts if remote collections are empty
-    seedCatalogToFirestore(DEFAULT_CATALOG);
-    seedUsersToFirestore(DEMO_PROFILES);
+    seedCatalogToFirestore(DEFAULT_CATALOG).catch(err => console.warn('Catalog seeding skipped or cached:', err));
+    seedUsersToFirestore(DEMO_PROFILES).catch(err => console.warn('Users seeding skipped or cached:', err));
 
     const unsubJobs = subscribeJobs((remoteJobs) => {
       if (remoteJobs && remoteJobs.length > 0) {

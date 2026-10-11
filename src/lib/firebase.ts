@@ -54,24 +54,7 @@ export interface FirestoreErrorInfo {
 
 // Initialize Firebase App
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-
-// CRITICAL: Initialize Firestore with database ID and experimentalForceLongPolling
-// This ensures iframe preview proxies, Cloud Run gateways, and AI Studio environments
-// maintain a rock-solid, uninterrupted connection without stream drops or disconnects
-export const db = (() => {
-  try {
-    return initializeFirestore(
-      app,
-      {
-        experimentalForceLongPolling: true,
-        useFetchStreams: false,
-      },
-      firebaseConfig.firestoreDatabaseId
-    );
-  } catch {
-    return getFirestore(app, firebaseConfig.firestoreDatabaseId);
-  }
-})();
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export { storage, uploadSwitchPanelImage, uploadMultiplePanelImages, deleteSwitchPanelImage, isFirebaseStorageUrl } from './storage';
 export type { UploadedPanelImage, UploadProgressInfo } from './storage';
@@ -159,7 +142,7 @@ export async function checkFirestoreConnection(): Promise<boolean> {
   } catch (error) {
     const errMessage = error instanceof Error ? error.message : String(error);
     const isOffline =
-      errMessage.includes('the client is offline') ||
+      errMessage.includes('offline') ||
       errMessage.includes('unavailable') ||
       (typeof navigator !== 'undefined' && !navigator.onLine);
 
@@ -262,7 +245,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 }
 
 // Connection test as mandated by the Firebase Integration Skill
-async function testConnection() {
+async function testConnection(retryCount = 0) {
   const env = detectEnvironment();
   const validKey = Boolean(firebaseConfig.apiKey && firebaseConfig.apiKey.trim().length > 0);
 
@@ -302,6 +285,12 @@ async function testConnection() {
         errorMessage: 'Firebase client is offline' 
       });
     }
+    // Retry up to 3 times with exponential backoff on initial load
+    if (retryCount < 3) {
+      setTimeout(() => {
+        testConnection(retryCount + 1);
+      }, (retryCount + 1) * 2000);
+    }
   }
 }
 testConnection();
@@ -319,10 +308,8 @@ export function subscribeJobs(onUpdate: (jobs: JobRecord[]) => void) {
         const remoteJobs = snapshot.docs.map((docSnap) => docSnap.data() as JobRecord);
         onUpdate(remoteJobs);
       }
-      if (!snapshot.metadata.fromCache) {
-        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        updateConnectionState({ isConnected: true, lastConnectedAt: nowStr });
-      }
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
     },
     (error) => {
       if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
@@ -362,10 +349,8 @@ export function subscribeCatalog(onUpdate: (catalog: CatalogItem[]) => void) {
         const items = snapshot.docs.map((docSnap) => docSnap.data() as CatalogItem);
         onUpdate(items);
       }
-      if (!snapshot.metadata.fromCache) {
-        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        updateConnectionState({ isConnected: true, lastConnectedAt: nowStr });
-      }
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
     },
     (error) => {
       if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
@@ -382,6 +367,8 @@ export async function syncCatalogItemToFirestore(item: CatalogItem) {
   const docPath = `${colPath}/${item.id}`;
   try {
     await setDoc(doc(db, colPath, item.id), cleanForFirestore(item), { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -399,6 +386,8 @@ export async function seedCatalogToFirestore(items: CatalogItem[]) {
       }
       await batch.commit();
     }
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, colPath);
   }
@@ -416,10 +405,8 @@ export function subscribePostalOrders(onUpdate: (orders: PostalOrder[]) => void)
         const orders = snapshot.docs.map((docSnap) => docSnap.data() as PostalOrder);
         onUpdate(orders);
       }
-      if (!snapshot.metadata.fromCache) {
-        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        updateConnectionState({ isConnected: true, lastConnectedAt: nowStr });
-      }
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
     },
     (error) => {
       if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
@@ -436,6 +423,8 @@ export async function syncPostalOrderToFirestore(order: PostalOrder) {
   const docPath = `${colPath}/${order.id}`;
   try {
     await setDoc(doc(db, colPath, order.id), cleanForFirestore(order), { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -453,10 +442,8 @@ export function subscribeVesselSpec(onUpdate: (spec: VesselSpec) => void) {
         const spec = snapshot.docs[0].data() as VesselSpec;
         onUpdate(spec);
       }
-      if (!snapshot.metadata.fromCache) {
-        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        updateConnectionState({ isConnected: true, lastConnectedAt: nowStr });
-      }
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
     },
     (error) => {
       if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
@@ -473,6 +460,8 @@ export async function syncVesselSpecToFirestore(spec: VesselSpec) {
   const docPath = `${colPath}/${spec.id}`;
   try {
     await setDoc(doc(db, colPath, spec.id), cleanForFirestore(spec), { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -514,10 +503,8 @@ export function subscribeUsers(onUpdate: (users: UserProfile[]) => void) {
         });
         onUpdate(users);
       }
-      if (!snapshot.metadata.fromCache) {
-        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        updateConnectionState({ isConnected: true, lastConnectedAt: nowStr });
-      }
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
     },
     (error) => {
       if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
