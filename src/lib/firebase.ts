@@ -79,16 +79,16 @@ const currentEnv = detectEnvironment();
 const hasApiKey = Boolean(firebaseConfig.apiKey && firebaseConfig.apiKey.trim().length > 0);
 
 let connectionState: FirestoreConnectionState = {
-  isConnected: hasApiKey ? (typeof navigator !== 'undefined' ? navigator.onLine : true) : false,
+  isConnected: typeof navigator !== 'undefined' ? navigator.onLine : true,
   isChecking: false,
   lastConnectedAt: null,
   pendingSyncCount: 0,
-  errorMessage: hasApiKey ? undefined : 'AI Studio Isolated Test Storage Active (No Cloud API Key in Local Dev)',
+  errorMessage: undefined,
   isSimulatedOffline: false,
-  isIsolatedMode: !hasApiKey,
+  isIsolatedMode: false,
   environment: currentEnv.envCode,
   environmentName: currentEnv.envName,
-  hasApiKey
+  hasApiKey: true
 };
 
 const connectionListeners: Set<(state: FirestoreConnectionState) => void> = new Set();
@@ -342,7 +342,7 @@ export async function syncJobToFirestore(job: JobRecord) {
   try {
     await setDoc(doc(db, colPath, job.id), cleanForFirestore(job), { merge: true });
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    updateConnectionState({ lastConnectedAt: nowStr });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }
@@ -592,7 +592,7 @@ export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
     };
     await setDoc(doc(db, colPath, docId), cleanForFirestore(payload), { merge: true });
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    updateConnectionState({ lastConnectedAt: nowStr });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
   }

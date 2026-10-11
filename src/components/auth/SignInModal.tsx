@@ -35,6 +35,7 @@ interface SignInModalProps {
   currentUserRole: UserRole;
   onSuccessSignIn: (profile: UserProfile) => void;
   onOpenRegisterTab?: boolean;
+  initialTab?: 'signin' | 'register' | 'quick_personas';
 }
 
 export const SignInModal: React.FC<SignInModalProps> = ({
@@ -42,11 +43,27 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   onClose,
   currentUserRole,
   onSuccessSignIn,
-  onOpenRegisterTab = false
+  onOpenRegisterTab = false,
+  initialTab
 }) => {
   const [activeTab, setActiveTab] = useState<'signin' | 'register' | 'quick_personas'>(
-    onOpenRegisterTab ? 'register' : 'signin'
+    initialTab || (onOpenRegisterTab ? 'register' : 'signin')
   );
+
+  // Sync activeTab when modal opens or initialTab changes
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialTab) {
+        setActiveTab(initialTab);
+      } else if (onOpenRegisterTab) {
+        setActiveTab('register');
+      } else {
+        setActiveTab('signin');
+      }
+      setErrorMessage(null);
+      setSuccessMessage(null);
+    }
+  }, [isOpen, initialTab, onOpenRegisterTab]);
 
   // Sign In form state
   const [email, setEmail] = useState('');
@@ -151,16 +168,19 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   };
 
   const handleSelectQuickPersona = async (profile: UserProfile) => {
-    try {
-      await saveAndSyncUserProfile(profile);
-    } catch (e) {
+    // 1. Immediately notify parent of successful role & profile switch
+    onSuccessSignIn(profile);
+    setSuccessMessage(`Switched to ${profile.name} (${profile.role.toUpperCase()})`);
+    
+    // 2. Persist locally and sync to Firestore in background
+    saveAndSyncUserProfile(profile).catch((e) => {
       console.warn('Sync notice:', e);
-    }
-    setSuccessMessage(`Switched to ${profile.name} (${profile.role.toUpperCase()}) · Stored in database`);
+    });
+
+    // 3. Close modal smoothly
     setTimeout(() => {
-      onSuccessSignIn(profile);
       onClose();
-    }, 400);
+    }, 150);
   };
 
   return (

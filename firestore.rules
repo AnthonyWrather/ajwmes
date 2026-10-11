@@ -22,12 +22,22 @@ service cloud.firestore {
       allow list: if true;
       allow create, update, delete: if isValidId(userId);
     }
+    match /{colPrefix_users}/{userId} {
+      allow get: if colPrefix_users.matches('^(ais_dev_|ais_pre_|gh_pre_)users$') && isValidId(userId);
+      allow list: if colPrefix_users.matches('^(ais_dev_|ais_pre_|gh_pre_)users$');
+      allow create, update, delete: if colPrefix_users.matches('^(ais_dev_|ais_pre_|gh_pre_)users$') && isValidId(userId);
+    }
 
     // Marine hardware catalog (Public browse, Admin & app update)
     match /catalog/{itemId} {
       allow get: if isValidId(itemId);
       allow list: if true;
       allow create, update, delete: if isValidId(itemId);
+    }
+    match /{colPrefix_catalog}/{itemId} {
+      allow get: if colPrefix_catalog.matches('^(ais_dev_|ais_pre_|gh_pre_)catalog$') && isValidId(itemId);
+      allow list: if colPrefix_catalog.matches('^(ais_dev_|ais_pre_|gh_pre_)catalog$');
+      allow create, update, delete: if colPrefix_catalog.matches('^(ais_dev_|ais_pre_|gh_pre_)catalog$') && isValidId(itemId);
     }
 
     // Client diagnostics, quotes, and installation jobs
@@ -36,12 +46,22 @@ service cloud.firestore {
       allow list: if true;
       allow create, update, delete: if isValidId(jobId);
     }
+    match /{colPrefix_jobs}/{jobId} {
+      allow get: if colPrefix_jobs.matches('^(ais_dev_|ais_pre_|gh_pre_)jobs$') && isValidId(jobId);
+      allow list: if colPrefix_jobs.matches('^(ais_dev_|ais_pre_|gh_pre_)jobs$');
+      allow create, update, delete: if colPrefix_jobs.matches('^(ais_dev_|ais_pre_|gh_pre_)jobs$') && isValidId(jobId);
+    }
 
     // Customer postal orders and tracking
     match /postal_orders/{orderId} {
       allow get: if isValidId(orderId);
       allow list: if true;
       allow create, update, delete: if isValidId(orderId);
+    }
+    match /{colPrefix_orders}/{orderId} {
+      allow get: if colPrefix_orders.matches('^(ais_dev_|ais_pre_|gh_pre_)postal_orders$') && isValidId(orderId);
+      allow list: if colPrefix_orders.matches('^(ais_dev_|ais_pre_|gh_pre_)postal_orders$');
+      allow create, update, delete: if colPrefix_orders.matches('^(ais_dev_|ais_pre_|gh_pre_)postal_orders$') && isValidId(orderId);
     }
 
     // Vessel electrical specification profiles
@@ -50,6 +70,11 @@ service cloud.firestore {
       allow list: if true;
       allow create, update, delete: if isValidId(specId);
     }
+    match /{colPrefix_specs}/{specId} {
+      allow get: if colPrefix_specs.matches('^(ais_dev_|ais_pre_|gh_pre_)vessel_specs$') && isValidId(specId);
+      allow list: if colPrefix_specs.matches('^(ais_dev_|ais_pre_|gh_pre_)vessel_specs$');
+      allow create, update, delete: if colPrefix_specs.matches('^(ais_dev_|ais_pre_|gh_pre_)vessel_specs$') && isValidId(specId);
+    }
 
     // Low inventory stock alerts
     match /stock_alerts/{alertId} {
@@ -57,12 +82,22 @@ service cloud.firestore {
       allow list: if true;
       allow create, update, delete: if isValidId(alertId);
     }
+    match /{colPrefix_alerts}/{alertId} {
+      allow get: if colPrefix_alerts.matches('^(ais_dev_|ais_pre_|gh_pre_)stock_alerts$') && isValidId(alertId);
+      allow list: if colPrefix_alerts.matches('^(ais_dev_|ais_pre_|gh_pre_)stock_alerts$');
+      allow create, update, delete: if colPrefix_alerts.matches('^(ais_dev_|ais_pre_|gh_pre_)stock_alerts$') && isValidId(alertId);
+    }
 
     // Custom switch panel laser designs
     match /panel_configs/{configId} {
       allow get: if isValidId(configId);
       allow list: if true;
       allow create, update, delete: if isValidId(configId);
+    }
+    match /{colPrefix_panels}/{configId} {
+      allow get: if colPrefix_panels.matches('^(ais_dev_|ais_pre_|gh_pre_)panel_configs$') && isValidId(configId);
+      allow list: if colPrefix_panels.matches('^(ais_dev_|ais_pre_|gh_pre_)panel_configs$');
+      allow create, update, delete: if colPrefix_panels.matches('^(ais_dev_|ais_pre_|gh_pre_)panel_configs$') && isValidId(configId);
     }
   }
 }

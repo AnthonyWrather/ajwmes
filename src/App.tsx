@@ -152,6 +152,7 @@ export default function App() {
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [signInInitialTab, setSignInInitialTab] = useState<'signin' | 'register' | 'quick_personas'>('signin');
   const [isSignOffModalOpen, setIsSignOffModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [authToast, setAuthToast] = useState<{ title: string; message: string; type: 'success' | 'info' } | null>(null);
@@ -175,10 +176,8 @@ export default function App() {
       setCurrentUserProfile(updated);
       saveAndSyncUserProfile(updated);
     }
-    // Strict RBAC: Automatically redirect if current tab is not authorized for the new role
-    if (!canAccessRoute(newRole, currentTab as AppRoute)) {
-      setCurrentTab(getDefaultRouteForRole(newRole));
-    }
+    // Automatically switch to the active workspace for this role
+    setCurrentTab(getDefaultRouteForRole(newRole));
   };
 
   const handleSuccessSignIn = (profile: UserProfile) => {
@@ -188,15 +187,11 @@ export default function App() {
     saveAndSyncUserProfile(profile);
     setAuthToast({
       title: `Welcome, ${profile.name}`,
-      message: `Signed in successfully with ${ROLE_CONFIGS[profile.role].label} permissions. Stored in Firestore database.`,
+      message: `Signed in successfully with ${ROLE_CONFIGS[profile.role].label} permissions. Active in Firestore database.`,
       type: 'success'
     });
-    // If not allowed on current route, redirect to role's primary view
-    if (!canAccessRoute(profile.role, currentTab as AppRoute)) {
-      setCurrentTab(getDefaultRouteForRole(profile.role));
-    } else if (profile.role === 'client' && currentTab === 'home') {
-      setCurrentTab('portal');
-    }
+    // Immediately navigate to the primary workspace for this role
+    setCurrentTab(getDefaultRouteForRole(profile.role));
   };
 
   const handleConfirmSignOff = () => {
@@ -296,6 +291,10 @@ export default function App() {
         setCurrentUserProfile((prev) => {
           const match = remoteUsers.find((u) => u.id === prev.id || u.email.toLowerCase() === prev.email.toLowerCase());
           if (match) {
+            if (match.role && match.role !== prev.role) {
+              setCurrentUserRole(match.role);
+              saveCurrentRole(match.role);
+            }
             return { ...prev, ...match };
           }
           return prev;
@@ -975,7 +974,14 @@ export default function App() {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
         currentUserProfile={currentUserProfile}
-        onOpenSignInModal={() => setIsSignInModalOpen(true)}
+        onOpenSignInModal={() => {
+          setSignInInitialTab('signin');
+          setIsSignInModalOpen(true);
+        }}
+        onOpenTeamRoles={() => {
+          setSignInInitialTab('quick_personas');
+          setIsSignInModalOpen(true);
+        }}
         onOpenSignOffModal={() => setIsSignOffModalOpen(true)}
         onOpenAccountModal={() => setIsAccountModalOpen(true)}
         onOpenEnvironmentSettings={() => setIsEnvironmentModalOpen(true)}
@@ -1148,6 +1154,7 @@ export default function App() {
         onClose={() => setIsSignInModalOpen(false)}
         currentUserRole={currentUserRole}
         onSuccessSignIn={handleSuccessSignIn}
+        initialTab={signInInitialTab}
       />
 
       {/* Reassuring Sign Off Confirmation Modal */}

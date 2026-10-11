@@ -81,8 +81,8 @@ export function detectEnvironment(): EnvironmentInfo {
         isPreview: false,
         isGitHubDeployed: false,
         storageNamespace: 'ajwmes_aistudio_dev',
-        firestoreCollectionPrefix: 'ais_dev_',
-        dataDescription: 'Isolated AI Studio development test data. Changes do not overwrite GitHub or production datasets.',
+        firestoreCollectionPrefix: '',
+        dataDescription: 'Connected to live Firestore database (ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a).',
         hasApiKey,
         hostname,
         isSimulatedOverride
@@ -96,8 +96,8 @@ export function detectEnvironment(): EnvironmentInfo {
         isPreview: true,
         isGitHubDeployed: false,
         storageNamespace: 'ajwmes_aistudio_pre',
-        firestoreCollectionPrefix: 'ais_pre_',
-        dataDescription: 'Dedicated preview test sandbox for stakeholders and testers. Partitioned from dev and production.',
+        firestoreCollectionPrefix: '',
+        dataDescription: 'Connected to live Firestore database (ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a).',
         hasApiKey,
         hostname,
         isSimulatedOverride
@@ -111,8 +111,8 @@ export function detectEnvironment(): EnvironmentInfo {
         isPreview: true,
         isGitHubDeployed: true,
         storageNamespace: 'ajwmes_github_pre',
-        firestoreCollectionPrefix: 'gh_pre_',
-        dataDescription: 'GitHub Actions PR preview channel test data with dedicated preview namespace.',
+        firestoreCollectionPrefix: '',
+        dataDescription: 'GitHub Actions PR preview channel connected to Firestore database.',
         hasApiKey,
         hostname,
         isSimulatedOverride
