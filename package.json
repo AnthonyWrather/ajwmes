@@ -11,8 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit",
-    "migrate:firestore": "node scripts/migrate-firestore.js"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",

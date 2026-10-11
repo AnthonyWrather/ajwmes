@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   X, 
-  Database, 
   Server, 
   Layers, 
   RefreshCw, 
@@ -10,11 +9,9 @@ import {
   Trash2, 
   CheckCircle2, 
   AlertCircle, 
-  ExternalLink,
   ShieldCheck,
   Eye,
   GitBranch,
-  Terminal,
   Cpu,
   Copy,
   Check
@@ -32,12 +29,6 @@ import {
   ExportedEnvironmentData 
 } from '../../lib/envStorage';
 import { FirestoreConnectionState } from '../../types';
-import { 
-  KNOWN_FIREBASE_PROJECTS, 
-  getStoredProjectOverride, 
-  setStoredProjectOverride 
-} from '../../lib/firebaseConfig';
-import { migrateDataToProject, MigrationProgress } from '../../lib/migration';
 
 interface EnvironmentSettingsModalProps {
   isOpen: boolean;
@@ -55,39 +46,13 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   onRetryConnection
 }) => {
   const [envInfo, setEnvInfo] = useState<EnvironmentInfo>(() => detectEnvironment());
-  const [activeTab, setActiveTab] = useState<'overview' | 'migration' | 'testdata' | 'guide'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'testdata' | 'guide'>('overview');
   const [copiedJson, setCopiedJson] = useState(false);
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [actionSuccessNotice, setActionSuccessNotice] = useState<string | null>(null);
-  const [activeProject, setActiveProject] = useState<string>(() => getStoredProjectOverride() || 'prime-sign-454323-a1');
-  const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
 
   if (!isOpen) return null;
-
-  const handleSwitchProject = (projId: string) => {
-    setActiveProject(projId);
-    setStoredProjectOverride(projId);
-    setActionSuccessNotice(`Switched active Cloud Project to: ${projId}. Reloading connection...`);
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  };
-
-  const handleRunMigration = async () => {
-    setMigrationProgress({
-      status: 'checking',
-      message: 'Testing connection to gen-lang-client-0618772940...',
-      totalDocs: 0,
-      migratedDocs: 0
-    });
-    const res = await migrateDataToProject('gen-lang-client-0618772940', (p) => {
-      setMigrationProgress(p);
-    });
-    if (res.success) {
-      setActionSuccessNotice('Migration to gen-lang-client-0618772940 completed successfully!');
-    }
-  };
 
   const handleSwitchEnvironment = (env: AppEnvironment | 'auto') => {
     setEnvironmentOverride(env);
@@ -170,17 +135,6 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
             }`}
           >
             Active Environment &amp; Storage
-          </button>
-          <button
-            onClick={() => setActiveTab('migration')}
-            className={`pb-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'migration'
-                ? 'border-amber-400 text-amber-300'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Database className="w-3.5 h-3.5" />
-            <span>GCP Project &amp; Datastore Migration</span>
           </button>
           <button
             onClick={() => setActiveTab('testdata')}
@@ -373,205 +327,6 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                     </button>
                   </div>
                 )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'migration' && (
-            <div className="space-y-6">
-              {/* Project Comparison Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Source Project Card */}
-                <div className={`p-4 rounded-xl border space-y-3 ${
-                  activeProject === 'prime-sign-454323-a1'
-                    ? 'bg-amber-950/30 border-amber-500/50 ring-1 ring-amber-500/30'
-                    : 'bg-slate-950/70 border-slate-800'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono uppercase text-amber-400 font-bold">Source Project (Current Live Data)</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      39 Docs Live
-                    </span>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white font-mono">prime-sign-454323-a1</div>
-                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                      DB: <span className="text-slate-300">ai-studio-ajwmarineelectri-...</span>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-400">
-                    Currently houses your jobs (2), catalog hardware (23), categories (7), orders (1), specs (1), and users (5).
-                  </p>
-                  <div className="pt-1 flex items-center justify-between">
-                    <button
-                      onClick={() => handleSwitchProject('prime-sign-454323-a1')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        activeProject === 'prime-sign-454323-a1'
-                          ? 'bg-amber-500 text-slate-950 cursor-default'
-                          : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30'
-                      }`}
-                    >
-                      {activeProject === 'prime-sign-454323-a1' ? '✓ Currently Active in App' : 'Use This Project in App'}
-                    </button>
-                    <a
-                      href="https://console.firebase.google.com/project/prime-sign-454323-a1/firestore"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-slate-400 hover:text-white inline-flex items-center gap-1"
-                    >
-                      <span>Console</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-
-                {/* Target Project Card */}
-                <div className={`p-4 rounded-xl border space-y-3 ${
-                  activeProject === 'gen-lang-client-0618772940'
-                    ? 'bg-sky-950/30 border-sky-500/50 ring-1 ring-sky-500/30'
-                    : 'bg-slate-950/70 border-slate-800'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono uppercase text-sky-400 font-bold">Target Project (Requested Destination)</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40">
-                      Destination
-                    </span>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white font-mono">gen-lang-client-0618772940</div>
-                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                      DB: <span className="text-slate-300">ai-studio-ajwmarineelectri-...</span>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-400">
-                    The target project where you want your live Firestore database to reside.
-                  </p>
-                  <div className="pt-1 flex items-center justify-between">
-                    <button
-                      onClick={() => handleSwitchProject('gen-lang-client-0618772940')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        activeProject === 'gen-lang-client-0618772940'
-                          ? 'bg-sky-500 text-slate-950 cursor-default'
-                          : 'bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30'
-                      }`}
-                    >
-                      {activeProject === 'gen-lang-client-0618772940' ? '✓ Currently Active in App' : 'Use This Project in App'}
-                    </button>
-                    <a
-                      href="https://console.firebase.google.com/project/gen-lang-client-0618772940/firestore"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-slate-400 hover:text-white inline-flex items-center gap-1"
-                    >
-                      <span>Console</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Migration Action Card */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <div className="font-bold text-white text-sm flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 text-sky-400" />
-                      <span>One-Click Data Migration</span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Copy all live records (39 documents backed up from <code className="text-amber-300 font-mono">prime-sign-454323-a1</code>) into <code className="text-sky-300 font-mono">gen-lang-client-0618772940</code>.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleRunMigration}
-                    disabled={migrationProgress?.status === 'migrating' || migrationProgress?.status === 'checking'}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold transition-all cursor-pointer shadow-lg shadow-sky-950"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${migrationProgress?.status === 'migrating' ? 'animate-spin' : ''}`} />
-                    <span>Migrate to gen-lang-client</span>
-                  </button>
-                </div>
-
-                {migrationProgress && (
-                  <div className={`p-3.5 rounded-lg border text-xs space-y-2 ${
-                    migrationProgress.status === 'completed'
-                      ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-200'
-                      : migrationProgress.status === 'error'
-                      ? 'bg-rose-950/60 border-rose-500/40 text-rose-200'
-                      : 'bg-slate-900 border-slate-800 text-slate-300'
-                  }`}>
-                    <div className="flex items-center justify-between font-semibold">
-                      <span>{migrationProgress.message}</span>
-                      {migrationProgress.totalDocs > 0 && (
-                        <span>{migrationProgress.migratedDocs} / {migrationProgress.totalDocs}</span>
-                      )}
-                    </div>
-                    {migrationProgress.errorDetail && (
-                      <div className="text-[11px] text-rose-300 bg-rose-950/80 p-2.5 rounded border border-rose-800/40 space-y-2">
-                        <p>{migrationProgress.errorDetail}</p>
-                        <a
-                          href="https://console.firebase.google.com/project/gen-lang-client-0618772940/firestore"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-900/60 hover:bg-rose-850 text-white font-semibold underline text-[10px]"
-                        >
-                          <span>Open gen-lang-client-0618772940 in Firebase Console</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Step-by-Step Instructions: Create in New Project & Delete Old Datastore */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 font-bold text-white text-sm">
-                  <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span>How to Complete Project Switch &amp; Delete Old Datastore</span>
-                </div>
-                <div className="space-y-3 text-[11px] text-slate-300 leading-relaxed">
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
-                    <div className="font-semibold text-white">Step 1: Ensure Firestore is Created on gen-lang-client-0618772940</div>
-                    <p className="text-slate-400">
-                      Open <a href="https://console.firebase.google.com/project/gen-lang-client-0618772940/firestore" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline font-mono">Firebase Console</a>, click <strong>Create database</strong> (choose Production mode, region <code className="font-mono text-slate-200">europe-west2</code>).
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
-                    <div className="font-semibold text-white">Step 2: Copy Data with 1 Click or Terminal Script</div>
-                    <p className="text-slate-400">
-                      Click the <strong className="text-sky-300">"Migrate to gen-lang-client"</strong> button above, or run in terminal:
-                    </p>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-850 font-mono text-[10px] text-sky-300 flex items-center justify-between">
-                      <code>npm run migrate:firestore gen-lang-client-0618772940</code>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-rose-950/20 border border-rose-900/40 space-y-2">
-                    <div className="font-semibold text-rose-300 flex items-center gap-2">
-                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                      <span>Step 3: Delete the Old Datastore in prime-sign-454323-a1</span>
-                    </div>
-                    <p className="text-slate-400">
-                      Because cloud resource deletion requires owner-level IAM security credentials, you can safely delete the old datastore in Google Cloud Console or via Cloud Shell:
-                    </p>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 font-mono text-[10px] text-rose-300 flex items-center justify-between">
-                      <code>gcloud firestore databases delete --database="ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a" --project="prime-sign-454323-a1"</code>
-                    </div>
-                    <div className="pt-1">
-                      <a
-                        href="https://console.cloud.google.com/firestore/databases?project=prime-sign-454323-a1"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sky-400 hover:text-sky-300 underline font-semibold text-[11px]"
-                      >
-                        <span>Open Firestore Databases for prime-sign-454323-a1 in Google Cloud Console</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}
