@@ -358,9 +358,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="space-y-3">
-              {jobs.map(job => (
+              {jobs.map((job, idx) => (
                 <div
-                  key={job.id}
+                  key={job.id ? `job-${job.id}-${idx}` : `job-${job.reference || idx}`}
                   onClick={() => setSelectedJobId(job.id)}
                   className={`p-4 rounded-2xl border cursor-pointer transition-all space-y-2.5 ${
                     selectedJobId === job.id
@@ -498,7 +498,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {allPanelAssets.map((asset, idx) => (
                 <div
-                  key={idx}
+                  key={`panel-${asset.jobId}-${asset.index}-${idx}`}
                   className="bg-slate-900 border border-slate-800 hover:border-sky-500/60 rounded-2xl overflow-hidden shadow-lg transition-all group flex flex-col justify-between"
                 >
                   <div 

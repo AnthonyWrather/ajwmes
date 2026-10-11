@@ -145,10 +145,10 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
                 onChange={e => setSelectedCatalogId(e.target.value)}
                 className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
               >
-                {catalog.map(item => {
+                {catalog.map((item, idx) => {
                   const isLow = (item.stockCount ?? 0) < 5;
                   return (
-                    <option key={item.id} value={item.id}>
+                    <option key={item.id ? `diag-cat-${item.id}-${idx}` : `diag-cat-${idx}`} value={item.id}>
                       {isLow ? `⚠️ [Low Stock: ${item.stockCount ?? 0} left] ` : ''}
                       {item.name} — £{item.unitPrice.toFixed(2)} ({item.unit})
                     </option>
@@ -197,8 +197,8 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
             {materials.length === 0 ? (
               <div className="p-3 text-center text-xs text-slate-500">No materials billed yet</div>
             ) : (
-              materials.map(m => (
-                <div key={m.id} className="p-2.5 flex items-center justify-between text-xs">
+              materials.map((m, idx) => (
+                <div key={m.id ? `diag-mat-${m.id}-${idx}` : `diag-mat-${idx}`} className="p-2.5 flex items-center justify-between text-xs">
                   <div className="flex-1 min-w-0 pr-2">
                     <span className="font-medium text-white truncate block">{m.name}</span>
                     <span className="text-[11px] text-slate-400">{m.quantity} {m.unit} @ £{m.unitPrice.toFixed(2)}</span>

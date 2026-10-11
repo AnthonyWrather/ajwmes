@@ -314,7 +314,7 @@ export function subscribeJobs(onUpdate: (jobs: JobRecord[]) => void) {
     collection(db, colPath),
     (snapshot) => {
       if (!snapshot.empty) {
-        const remoteJobs = snapshot.docs.map((docSnap) => docSnap.data() as JobRecord);
+        const remoteJobs = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as JobRecord));
         onUpdate(remoteJobs);
       }
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -355,7 +355,7 @@ export function subscribeCatalog(onUpdate: (catalog: CatalogItem[]) => void) {
     collection(db, colPath),
     (snapshot) => {
       if (!snapshot.empty) {
-        const items = snapshot.docs.map((docSnap) => docSnap.data() as CatalogItem);
+        const items = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as CatalogItem));
         onUpdate(items);
       }
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -424,7 +424,7 @@ export function subscribeCategories(onUpdate: (categories: CategoryItem[]) => vo
     collection(db, colPath),
     (snapshot) => {
       if (!snapshot.empty) {
-        const categories = snapshot.docs.map((docSnap) => docSnap.data() as CategoryItem);
+        const categories = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as CategoryItem));
         onUpdate(categories);
       }
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -493,7 +493,7 @@ export function subscribePostalOrders(onUpdate: (orders: PostalOrder[]) => void)
     collection(db, colPath),
     (snapshot) => {
       if (!snapshot.empty) {
-        const orders = snapshot.docs.map((docSnap) => docSnap.data() as PostalOrder);
+        const orders = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as PostalOrder));
         onUpdate(orders);
       }
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });

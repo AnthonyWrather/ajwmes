@@ -141,11 +141,12 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     { id: 'all', label: 'All Items' },
     { id: 'zero_stock', label: `🚨 Depleted (0)${zeroStockCount > 0 ? ` (${zeroStockCount})` : ''}` },
     { id: 'low_stock', label: `⚠️ Low Stock (<5)${lowStockCount > 0 ? ` (${lowStockCount})` : ''}` },
-    ...categories.map(c => {
-      const count = catalog.filter(i => i.category === c.id).length;
+    ...categories.map((c, idx) => {
+      const catId = c.id || `cat-${idx}`;
+      const count = catalog.filter(i => i.category === catId).length;
       return {
-        id: c.id,
-        label: `${c.label} (${count})`
+        id: catId,
+        label: `${c.label || 'Category'} (${count})`
       };
     })
   ];
@@ -653,8 +654,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             {snapshots.length === 0 ? (
               <p className="text-xs text-slate-500 italic col-span-full">No save points recorded yet.</p>
             ) : (
-              snapshots.map(snap => (
-                <div key={snap.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+              snapshots.map((snap, idx) => (
+                <div key={snap.id ? `snap-${snap.id}-${idx}` : `snap-${idx}`} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-white truncate max-w-[160px]">{snap.label}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">{snap.timestamp} · {snap.itemsCount} items</p>
@@ -712,9 +713,9 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
-            {zeroStockItems.map(item => (
+            {zeroStockItems.map((item, idx) => (
               <div
-                key={item.id}
+                key={item.id ? `zero-${item.id}-${idx}` : `zero-${idx}`}
                 className="p-2.5 rounded-xl bg-slate-950 border border-rose-500/40 flex items-center justify-between gap-2"
               >
                 <div className="min-w-0">
@@ -780,9 +781,9 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            {lowStockItems.map(item => (
+            {lowStockItems.map((item, idx) => (
               <div
-                key={item.id}
+                key={item.id ? `low-${item.id}-${idx}` : `low-${idx}`}
                 className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-amber-500/30 text-xs"
               >
                 <span className="font-semibold text-white">{item.name}</span>
@@ -806,9 +807,9 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Category Filter Pills */}
         <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-xl overflow-x-auto scrollbar-none max-w-full">
-          {filterPills.map(pill => (
+          {filterPills.map((pill, idx) => (
             <button
-              key={pill.id}
+              key={`pill-${pill.id}-${idx}`}
               onClick={() => setSelectedCategory(pill.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${
                 selectedCategory === pill.id
@@ -882,14 +883,14 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredItems.map(item => {
+                filteredItems.map((item, idx) => {
                   const isLowStock = (item.stockCount ?? 0) < 5;
                   const isOutOfStock = (item.stockCount ?? 0) <= 0 || !item.inStock;
                   const categoryInfo = categories.find(c => c.id === item.category);
 
                   return (
                     <tr
-                      key={item.id}
+                      key={item.id ? `item-${item.id}-${idx}` : `item-${idx}`}
                       className={`transition-colors ${
                         isLowStock ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-slate-900/80'
                       }`}
@@ -1129,8 +1130,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     onChange={e => setItemFormData({ ...itemFormData, category: e.target.value })}
                     className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500 capitalize"
                   >
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
+                    {categories.map((cat, idx) => (
+                      <option key={cat.id ? `cat-opt-${cat.id}-${idx}` : `cat-opt-${idx}`} value={cat.id || ''}>
                         {cat.label}
                       </option>
                     ))}
@@ -1149,9 +1150,9 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     />
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1.5">
-                    {PRESET_UNITS.map(u => (
+                    {PRESET_UNITS.map((u, idx) => (
                       <button
-                        key={u}
+                        key={u ? `unit-${u}-${idx}` : `unit-${idx}`}
                         type="button"
                         onClick={() => setItemFormData({ ...itemFormData, unit: u })}
                         className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
@@ -1447,9 +1448,9 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       Select one of our high-resolution marine electrical workshop presets:
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {PRESET_IMAGE_OPTIONS.map(preset => (
+                      {PRESET_IMAGE_OPTIONS.map((preset, idx) => (
                         <button
-                          key={preset.url}
+                          key={preset.url ? `preset-${preset.url}-${idx}` : `preset-${idx}`}
                           type="button"
                           onClick={() => {
                             setItemFormData({
@@ -1697,13 +1698,13 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             <div className="space-y-2">
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Active Categories ({categories.length})</h4>
               <div className="border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800">
-                {categories.map(cat => {
+                {categories.map((cat, idx) => {
                   const itemCount = catalog.filter(i => i.category === cat.id).length;
                   const isEditingThis = editingCategory?.id === cat.id;
 
                   return (
                     <div
-                      key={cat.id}
+                      key={cat.id ? `cat-manage-${cat.id}-${idx}` : `cat-manage-${idx}`}
                       className={`p-3 flex items-center justify-between gap-3 text-xs transition-colors ${
                         isEditingThis ? 'bg-sky-950/30' : 'bg-slate-950/60 hover:bg-slate-900/60'
                       }`}
@@ -1791,8 +1792,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 >
                   {categories
                     .filter(c => c.id !== categoryToDelete.id)
-                    .map(c => (
-                      <option key={c.id} value={c.id}>
+                    .map((c, idx) => (
+                      <option key={c.id ? `reassign-${c.id}-${idx}` : `reassign-${idx}`} value={c.id || ''}>
                         Move to: {c.label}
                       </option>
                     ))}
