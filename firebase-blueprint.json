@@ -53,7 +53,8 @@
         "unitPrice": { "type": "number" },
         "inStock": { "type": "boolean" },
         "stockCount": { "type": "number" },
-        "imageUrl": { "type": "string", "maxLength": 512 }
+        "imageUrl": { "type": "string", "maxLength": 512 },
+        "imageStoragePath": { "type": "string", "maxLength": 512 }
       },
       "required": ["id", "name", "category", "unitPrice", "stockCount"]
     },

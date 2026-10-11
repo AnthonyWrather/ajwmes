@@ -53,6 +53,7 @@ import {
   subscribeCatalog, 
   syncCatalogItemToFirestore, 
   deleteCatalogItemFromFirestore,
+  deleteCatalogItemImage,
   seedCatalogToFirestore, 
   subscribeCategories,
   syncCategoryToFirestore,
@@ -542,6 +543,15 @@ export default function App() {
       currentUserRole,
       'edit_catalog_pricing',
       () => {
+        const prevItem = catalog.find(item => item.id === updatedItem.id);
+        // If image was replaced or cleared, delete the old image if it was uploaded
+        if (
+          prevItem &&
+          prevItem.imageStoragePath &&
+          prevItem.imageStoragePath !== updatedItem.imageStoragePath
+        ) {
+          deleteCatalogItemImage(prevItem.imageStoragePath);
+        }
         setCatalog(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
         syncCatalogItemToFirestore(updatedItem);
       },
@@ -549,12 +559,20 @@ export default function App() {
     );
   };
 
-  // Delete Item (Admin only)
+  // Delete Item (Admin only) - deletes item and associated image
   const handleDeleteItem = (itemId: string) => {
     enforceAction(
       currentUserRole,
       'edit_catalog_pricing',
       () => {
+        const itemToDelete = catalog.find(item => item.id === itemId);
+        if (itemToDelete) {
+          if (itemToDelete.imageStoragePath) {
+            deleteCatalogItemImage(itemToDelete.imageStoragePath);
+          } else if (itemToDelete.imageUrl) {
+            deleteCatalogItemImage(itemToDelete.imageUrl);
+          }
+        }
         setCatalog(prev => prev.filter(item => item.id !== itemId));
         deleteCatalogItemFromFirestore(itemId);
         setCart(prev => prev.filter(c => c.item.id !== itemId));

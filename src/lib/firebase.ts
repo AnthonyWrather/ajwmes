@@ -57,8 +57,16 @@ export interface FirestoreErrorInfo {
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
-export { storage, uploadSwitchPanelImage, uploadMultiplePanelImages, deleteSwitchPanelImage, isFirebaseStorageUrl } from './storage';
-export type { UploadedPanelImage, UploadProgressInfo } from './storage';
+export { 
+  storage, 
+  uploadSwitchPanelImage, 
+  uploadMultiplePanelImages, 
+  deleteSwitchPanelImage, 
+  isFirebaseStorageUrl,
+  uploadCatalogItemImage,
+  deleteCatalogItemImage
+} from './storage';
+export type { UploadedPanelImage, UploadProgressInfo, UploadedCatalogImage } from './storage';
 
 // Connection state manager
 const currentEnv = detectEnvironment();

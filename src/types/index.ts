@@ -123,6 +123,7 @@ export interface CatalogItem {
   inStock: boolean;
   stockCount: number;
   imageUrl?: string;
+  imageStoragePath?: string;
   badge?: string;
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CatalogItem, CatalogSnapshot, CategoryItem } from '../../types';
 import { 
   Plus, 
@@ -21,9 +21,20 @@ import {
   ArrowRight,
   Sparkles,
   PackageCheck,
-  AlertCircle
+  AlertCircle,
+  UploadCloud,
+  Loader2,
+  Cloud,
+  CheckCircle2,
+  RefreshCw
 } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../../data/seedData';
+import { 
+  uploadCatalogItemImage, 
+  deleteCatalogItemImage, 
+  isFirebaseStorageUrl, 
+  formatFileSize 
+} from '../../lib/storage';
 
 interface InventoryManagerProps {
   catalog: CatalogItem[];
@@ -88,9 +99,19 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     unitPrice: 10,
     stockCount: 15,
     inStock: true,
-    imageUrl: PRESET_IMAGE_OPTIONS[0].url,
+    imageUrl: '',
+    imageStoragePath: '',
     badge: ''
   });
+
+  // Image Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [previousUploadedImagePath, setPreviousUploadedImagePath] = useState<string | null>(null);
+  const [imageSourceTab, setImageSourceTab] = useState<'upload' | 'preset' | 'url'>('upload');
 
   // Item Delete Confirmation Modal State
   const [itemToDelete, setItemToDelete] = useState<CatalogItem | null>(null);
@@ -237,6 +258,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   // -------------------------------------------------------------
   const openAddItemModal = () => {
     setEditingItem(null);
+    setPreviousUploadedImagePath(null);
+    setUploadError(null);
+    setIsUploadingImage(false);
+    setUploadProgress(0);
+    setImageSourceTab('upload');
     const newId = `item-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`;
     setItemFormData({
       id: newId,
@@ -247,7 +273,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       unitPrice: 12.50,
       stockCount: 20,
       inStock: true,
-      imageUrl: PRESET_IMAGE_OPTIONS[0].url,
+      imageUrl: '',
+      imageStoragePath: '',
       badge: ''
     });
     setIsItemModalOpen(true);
@@ -255,6 +282,16 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
   const openEditItemModal = (item: CatalogItem) => {
     setEditingItem(item);
+    const existingCloudPath = item.imageStoragePath || (isFirebaseStorageUrl(item.imageUrl || '') ? item.imageUrl! : null);
+    setPreviousUploadedImagePath(existingCloudPath);
+    setUploadError(null);
+    setIsUploadingImage(false);
+    setUploadProgress(0);
+    setImageSourceTab(
+      existingCloudPath 
+        ? 'upload' 
+        : (item.imageUrl?.startsWith('/assets/') ? 'preset' : (item.imageUrl ? 'url' : 'upload'))
+    );
     setItemFormData({
       id: item.id,
       name: item.name,
@@ -264,10 +301,63 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       unitPrice: item.unitPrice,
       stockCount: item.stockCount ?? 0,
       inStock: item.inStock,
-      imageUrl: item.imageUrl || PRESET_IMAGE_OPTIONS[0].url,
+      imageUrl: item.imageUrl || '',
+      imageStoragePath: item.imageStoragePath || '',
       badge: item.badge || ''
     });
     setIsItemModalOpen(true);
+  };
+
+  // Image upload handling for Add/Edit item form
+  const handleImageFileSelect = async (file: File) => {
+    if (!file) return;
+    setIsUploadingImage(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
+    try {
+      const result = await uploadCatalogItemImage(
+        file,
+        itemFormData.id || editingItem?.id || 'new_item',
+        (info) => {
+          setUploadProgress(info.progress);
+        }
+      );
+
+      // Clean up previous temporary uploaded image if replaced during this session
+      if (
+        itemFormData.imageStoragePath &&
+        itemFormData.imageStoragePath !== previousUploadedImagePath &&
+        itemFormData.imageStoragePath !== result.storagePath
+      ) {
+        deleteCatalogItemImage(itemFormData.imageStoragePath);
+      }
+
+      setItemFormData(prev => ({
+        ...prev,
+        imageUrl: result.url,
+        imageStoragePath: result.storagePath
+      }));
+      setImageSourceTab('upload');
+      showNotification(`Image "${file.name}" uploaded successfully (${result.formattedSize}).`);
+    } catch (err: any) {
+      console.error('Image upload failed:', err);
+      setUploadError(err.message || 'Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    // If an image was uploaded during this modal session (not saved yet), delete it from storage
+    if (itemFormData.imageStoragePath && itemFormData.imageStoragePath !== previousUploadedImagePath) {
+      deleteCatalogItemImage(itemFormData.imageStoragePath);
+    }
+    setItemFormData(prev => ({
+      ...prev,
+      imageUrl: '',
+      imageStoragePath: ''
+    }));
   };
 
   const handleSaveItemForm = (e: React.FormEvent) => {
@@ -287,10 +377,19 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       stockCount: Number(itemFormData.stockCount) || 0,
       inStock: itemFormData.inStock && Number(itemFormData.stockCount) > 0,
       imageUrl: itemFormData.imageUrl.trim() || undefined,
+      imageStoragePath: itemFormData.imageStoragePath.trim() || undefined,
       badge: itemFormData.badge.trim() || undefined
     };
 
     if (editingItem) {
+      // If previous uploaded image was replaced or cleared, delete the old one from storage
+      if (
+        previousUploadedImagePath &&
+        previousUploadedImagePath !== cleanedItem.imageStoragePath
+      ) {
+        deleteCatalogItemImage(previousUploadedImagePath);
+      }
+
       if (onEditCatalogItem) {
         onEditCatalogItem(cleanedItem);
       } else {
@@ -311,12 +410,22 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   };
 
   // -------------------------------------------------------------
-  // Item Delete Handlers
+  // Item Delete Handlers - deletes item and associated image
   // -------------------------------------------------------------
-  const handleConfirmDeleteItem = () => {
+  const handleConfirmDeleteItem = async () => {
     if (!itemToDelete) return;
     const targetId = itemToDelete.id;
     const targetName = itemToDelete.name;
+
+    // Delete associated image from storage
+    const imageToDelete = itemToDelete.imageStoragePath || itemToDelete.imageUrl;
+    if (imageToDelete) {
+      try {
+        await deleteCatalogItemImage(imageToDelete);
+      } catch (e) {
+        console.warn('Could not delete image on item delete:', e);
+      }
+    }
 
     if (onDeleteCatalogItem) {
       onDeleteCatalogItem(targetId);
@@ -326,7 +435,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     }
 
     setItemToDelete(null);
-    showNotification(`Item "${targetName}" removed from catalog.`);
+    showNotification(`Item "${targetName}" and associated images permanently deleted.`);
   };
 
   // -------------------------------------------------------------
@@ -789,14 +898,24 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       <td className="p-3.5 pl-5">
                         <div className="flex items-start gap-3">
                           {item.imageUrl ? (
-                            <img
-                              src={item.imageUrl}
-                              alt={item.name}
-                              className="w-10 h-10 rounded-lg object-cover bg-slate-950 border border-slate-800 shrink-0 mt-0.5"
-                              onError={e => {
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
+                            <div className="relative shrink-0 mt-0.5">
+                              <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                className="w-10 h-10 rounded-lg object-cover bg-slate-950 border border-slate-800"
+                                onError={e => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                              {(item.imageStoragePath || isFirebaseStorageUrl(item.imageUrl)) && (
+                                <span 
+                                  className="absolute -bottom-1 -right-1 p-0.5 bg-sky-950 text-sky-400 border border-sky-800 rounded-full shadow-xs"
+                                  title="Cloud uploaded image stored in Firebase"
+                                >
+                                  <Cloud className="w-2.5 h-2.5" />
+                                </span>
+                              )}
+                            </div>
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
                               <ImageIcon className="w-4 h-4" />
@@ -1123,34 +1242,257 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 </div>
               </div>
 
-              {/* Image URL & Preset Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Image URL</label>
-                <input
-                  type="text"
-                  placeholder="Image path or URL..."
-                  value={itemFormData.imageUrl}
-                  onChange={e => setItemFormData({ ...itemFormData, imageUrl: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500 mb-2"
-                />
-                <span className="text-[11px] text-slate-400 block mb-1.5">Or pick from marine hardware photo presets:</span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {PRESET_IMAGE_OPTIONS.map(preset => (
+              {/* Product Image Section (Upload / Presets / Direct URL) */}
+              <div className="space-y-2 pt-1 border-t border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Product Hardware Image</span>
+                  </label>
+                  {/* Image source tabs */}
+                  <div className="flex items-center gap-1 p-0.5 bg-slate-950 rounded-lg border border-slate-800 text-[11px]">
                     <button
-                      key={preset.url}
                       type="button"
-                      onClick={() => setItemFormData({ ...itemFormData, imageUrl: preset.url })}
-                      className={`p-1.5 rounded-lg border text-left flex items-center gap-2 transition-all ${
-                        itemFormData.imageUrl === preset.url
-                          ? 'border-sky-500 bg-sky-950/40 text-white'
-                          : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                      onClick={() => setImageSourceTab('upload')}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-colors flex items-center gap-1 ${
+                        imageSourceTab === 'upload'
+                          ? 'bg-sky-600 text-white font-bold shadow-xs'
+                          : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
-                      <img src={preset.url} alt={preset.label} className="w-7 h-7 rounded object-cover shrink-0" />
-                      <span className="text-[10px] truncate">{preset.label}</span>
+                      <UploadCloud className="w-3 h-3" />
+                      <span>Upload Photo</span>
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setImageSourceTab('preset')}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                        imageSourceTab === 'preset'
+                          ? 'bg-sky-600 text-white font-bold shadow-xs'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>Presets</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageSourceTab('url')}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                        imageSourceTab === 'url'
+                          ? 'bg-sky-600 text-white font-bold shadow-xs'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>Web URL</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* TAB 1: UPLOAD IMAGE */}
+                {imageSourceTab === 'upload' && (
+                  <div className="space-y-2">
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/svg+xml,image/heic,image/gif"
+                      onChange={e => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleImageFileSelect(e.target.files[0]);
+                        }
+                      }}
+                      className="hidden"
+                    />
+
+                    {/* Active Upload Preview Card */}
+                    {itemFormData.imageUrl ? (
+                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={itemFormData.imageUrl}
+                            alt="Preview"
+                            className="w-14 h-14 rounded-lg object-cover bg-slate-900 border border-slate-700/80 shrink-0"
+                            onError={e => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-semibold text-white">Active Product Image</span>
+                              {itemFormData.imageStoragePath || isFirebaseStorageUrl(itemFormData.imageUrl) ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800/60">
+                                  <Cloud className="w-2.5 h-2.5" />
+                                  <span>Cloud Storage</span>
+                                </span>
+                              ) : itemFormData.imageUrl.startsWith('/assets/') ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 border border-slate-800">
+                                  <span>Preset Asset</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
+                                  <CheckCircle2 className="w-2.5 h-2.5" />
+                                  <span>Uploaded</span>
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-sm">
+                              {itemFormData.imageStoragePath || itemFormData.imageUrl}
+                            </p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">
+                              This image is bound to this item and will be deleted if the item is removed.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploadingImage}
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors"
+                            title="Upload a new photo to replace this one"
+                          >
+                            <RefreshCw className="w-3 h-3 text-sky-400" />
+                            <span>Replace</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            disabled={isUploadingImage}
+                            className="px-2.5 py-1.5 bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 text-xs font-semibold rounded-lg flex items-center gap-1 border border-rose-800/40 transition-colors"
+                            title="Remove image from item"
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-400" />
+                            <span>Remove</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Drag & Drop Upload Dropzone */
+                      <div
+                        onDragOver={e => {
+                          e.preventDefault();
+                          setIsDragOver(true);
+                        }}
+                        onDragLeave={() => setIsDragOver(false)}
+                        onDrop={e => {
+                          e.preventDefault();
+                          setIsDragOver(false);
+                          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            handleImageFileSelect(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`p-6 rounded-xl border-2 border-dashed cursor-pointer text-center transition-all ${
+                          isDragOver
+                            ? 'border-sky-400 bg-sky-950/30 text-white scale-[1.01]'
+                            : 'border-slate-800 bg-slate-950/70 hover:border-sky-500/60 hover:bg-slate-950 text-slate-400'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="p-3 bg-sky-500/10 rounded-2xl text-sky-400 border border-sky-500/20">
+                            <UploadCloud className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">
+                              Click to upload product image or drag &amp; drop
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              PNG, JPG, WEBP, SVG, HEIC up to 25 MB · Stored securely in Firebase Storage
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Uploading progress bar */}
+                    {isUploadingImage && (
+                      <div className="p-3 bg-sky-950/40 border border-sky-500/40 rounded-xl space-y-1.5 animate-in fade-in">
+                        <div className="flex items-center justify-between text-xs text-sky-300">
+                          <span className="flex items-center gap-1.5 font-semibold">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" />
+                            <span>Uploading image to Firebase Cloud Storage...</span>
+                          </span>
+                          <span className="font-mono font-bold">{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-sky-500 h-1.5 rounded-full transition-all duration-200"
+                            style={{ width: `${Math.max(5, uploadProgress)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload error banner */}
+                    {uploadError && (
+                      <div className="p-2.5 bg-rose-950/60 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-center justify-between gap-2">
+                        <span>{uploadError}</span>
+                        <button
+                          type="button"
+                          onClick={() => setUploadError(null)}
+                          className="text-rose-400 hover:text-white"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 2: MARINE PRESETS */}
+                {imageSourceTab === 'preset' && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-slate-400">
+                      Select one of our high-resolution marine electrical workshop presets:
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {PRESET_IMAGE_OPTIONS.map(preset => (
+                        <button
+                          key={preset.url}
+                          type="button"
+                          onClick={() => {
+                            setItemFormData({
+                              ...itemFormData,
+                              imageUrl: preset.url,
+                              imageStoragePath: ''
+                            });
+                          }}
+                          className={`p-1.5 rounded-lg border text-left flex items-center gap-2 transition-all ${
+                            itemFormData.imageUrl === preset.url
+                              ? 'border-sky-500 bg-sky-950/40 text-white shadow-xs'
+                              : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <img src={preset.url} alt={preset.label} className="w-7 h-7 rounded object-cover shrink-0" />
+                          <span className="text-[10px] truncate">{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: WEB URL */}
+                {imageSourceTab === 'url' && (
+                  <div className="space-y-1">
+                    <input
+                      type="url"
+                      placeholder="https://example.com/product-image.jpg"
+                      value={itemFormData.imageUrl}
+                      onChange={e => {
+                        setItemFormData({
+                          ...itemFormData,
+                          imageUrl: e.target.value,
+                          imageStoragePath: ''
+                        });
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500"
+                    />
+                    <p className="text-[10px] text-slate-500">
+                      Provide a direct web URL to an external product photo.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Form Buttons */}
@@ -1164,7 +1506,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-sky-950 transition-colors"
+                  disabled={isUploadingImage}
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-sky-950 transition-colors"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>{editingItem ? 'Save Item Changes' : 'Create Hardware Item'}</span>
@@ -1193,10 +1536,37 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               </div>
             </div>
 
-            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
-              <p className="font-semibold text-white">{itemToDelete.name}</p>
-              <p className="text-[11px] text-slate-400 font-mono">Category: {itemToDelete.category} · Price: £{itemToDelete.unitPrice.toFixed(2)}</p>
-              <p className="text-[11px] text-slate-500">Current Stock: {itemToDelete.stockCount ?? 0} {itemToDelete.unit}</p>
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+              <div className="flex items-center gap-3">
+                {itemToDelete.imageUrl ? (
+                  <img
+                    src={itemToDelete.imageUrl}
+                    alt={itemToDelete.name}
+                    className="w-12 h-12 rounded-lg object-cover bg-slate-900 border border-slate-800 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 shrink-0">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="font-semibold text-white truncate">{itemToDelete.name}</p>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    Category: {itemToDelete.category} · Price: £{itemToDelete.unitPrice.toFixed(2)}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Current Stock: {itemToDelete.stockCount ?? 0} {itemToDelete.unit}
+                  </p>
+                </div>
+              </div>
+
+              {/* Explicit image deletion notice as requested */}
+              {itemToDelete.imageUrl && (
+                <div className="flex items-center gap-2 p-2 bg-rose-950/50 border border-rose-500/30 rounded-lg text-rose-300 text-[11px] mt-1">
+                  <Trash2 className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                  <span>The associated product image will be permanently deleted from cloud storage.</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2.5 pt-2">
@@ -1213,7 +1583,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-rose-950"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Confirm Delete</span>
+                <span>Confirm Delete &amp; Remove Image</span>
               </button>
             </div>
           </div>

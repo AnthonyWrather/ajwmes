@@ -280,3 +280,142 @@ export function isFirebaseStorageUrl(url: string): boolean {
   if (!url) return false;
   return url.includes('firebasestorage.googleapis.com') || url.includes('.appspot.com');
 }
+
+export interface UploadedCatalogImage {
+  url: string;
+  storagePath: string;
+  fileName: string;
+  sizeBytes: number;
+  formattedSize: string;
+  contentType: string;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (e) => reject(e);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Upload a product image when creating or maintaining catalog items
+ */
+export async function uploadCatalogItemImage(
+  file: File,
+  itemId?: string,
+  onProgress?: (info: UploadProgressInfo) => void
+): Promise<UploadedCatalogImage> {
+  const validation = validateImageFile(file);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid file format or size');
+  }
+
+  const timestamp = Date.now();
+  const sanitized = sanitizeFileName(file.name);
+  const itemFolder = itemId ? sanitizeFileName(itemId) : 'new_items';
+  const storagePath = `catalog_items/${itemFolder}/${timestamp}_${sanitized}`;
+
+  try {
+    const storageRef = ref(storage, storagePath);
+    const metadata = {
+      contentType: file.type || 'image/jpeg',
+      customMetadata: {
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+        itemId: itemId || 'unassigned',
+        type: 'catalog_hardware_item'
+      }
+    };
+
+    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+
+    const downloadUrl = await new Promise<string>((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot: UploadTaskSnapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          if (onProgress) {
+            onProgress({
+              progress: Math.min(100, Math.round(progress)),
+              bytesTransferred: snapshot.bytesTransferred,
+              totalBytes: snapshot.totalBytes,
+              state: snapshot.state as any,
+              fileName: file.name
+            });
+          }
+        },
+        (error) => {
+          console.warn('Firebase Storage upload failed, switching to client storage:', error);
+          reject(error);
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(url);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+    });
+
+    return {
+      url: downloadUrl,
+      storagePath,
+      fileName: file.name,
+      sizeBytes: file.size,
+      formattedSize: formatFileSize(file.size),
+      contentType: file.type || 'image/jpeg'
+    };
+  } catch (error) {
+    console.warn('Falling back to local DataURL for catalog item image upload:', error);
+    const dataUrl = await readFileAsDataUrl(file);
+    return {
+      url: dataUrl,
+      storagePath: `local_catalog/${timestamp}_${sanitized}`,
+      fileName: file.name,
+      sizeBytes: file.size,
+      formattedSize: formatFileSize(file.size),
+      contentType: file.type || 'image/jpeg'
+    };
+  }
+}
+
+/**
+ * Delete a catalog item image from Firebase Storage
+ */
+export async function deleteCatalogItemImage(storagePathOrUrl?: string): Promise<boolean> {
+  if (!storagePathOrUrl) return false;
+
+  // Protect bundled preset photos in /assets/images
+  if (
+    storagePathOrUrl.startsWith('/assets/') || 
+    storagePathOrUrl.startsWith('assets/') ||
+    storagePathOrUrl.startsWith('/src/assets/')
+  ) {
+    return true;
+  }
+
+  // Handle local data URLs
+  if (storagePathOrUrl.startsWith('data:') || storagePathOrUrl.startsWith('local_catalog/')) {
+    return true;
+  }
+
+  try {
+    let targetRef: StorageReference;
+    if (storagePathOrUrl.startsWith('http://') || storagePathOrUrl.startsWith('https://')) {
+      targetRef = ref(storage, storagePathOrUrl);
+    } else {
+      targetRef = ref(storage, storagePathOrUrl);
+    }
+
+    await deleteObject(targetRef);
+    return true;
+  } catch (error) {
+    console.warn('Failed to delete catalog item image from Firebase Storage (may have already been deleted or unauthenticated):', error);
+    return false;
+  }
+}
+
