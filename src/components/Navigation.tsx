@@ -5,32 +5,27 @@ import { UserRole, UserProfile } from '../types';
 import { 
   Sparkles, 
   User, 
-  Shield, 
-  ShieldCheck,
   Wrench, 
   Menu, 
   X, 
   ShoppingBag, 
   Truck, 
-  WifiOff, 
   RefreshCw, 
   Zap, 
   Package, 
-  Globe, 
   Key,
   LogOut,
   ChevronDown,
-  Settings,
   Ship
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../lib/auth';
-import { canAccessRoute, getDefaultRouteForRole, AppRoute } from '../lib/rbac';
+import { canAccessRoute } from '../lib/rbac';
 
 interface NavigationProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   currentUserRole: UserRole;
-  setCurrentUserRole: (role: UserRole) => void;
+  setCurrentUserRole?: (role: UserRole) => void;
   onOpenBookingModal: () => void;
   cartCount?: number;
   onOpenCart?: () => void;
@@ -77,20 +72,6 @@ export const Navigation: React.FC<NavigationProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleSelectRole = (role: UserRole) => {
-    setCurrentUserRole(role);
-    // If current tab is not permitted for the new role, redirect to the role's default view
-    if (!canAccessRoute(role, currentTab as AppRoute)) {
-      setCurrentTab(getDefaultRouteForRole(role));
-    } else {
-      // If switching directly into role specific views
-      if (role === 'technician') setCurrentTab('technician');
-      else if (role === 'postal') setCurrentTab('postal');
-      else if (role === 'admin') setCurrentTab('admin');
-      else if (role === 'client' && currentTab === 'home') setCurrentTab('portal');
-    }
-  };
 
   return (
     <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
@@ -303,17 +284,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                       </button>
                     )}
 
-                    <button
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        onOpenAuthModal?.();
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
-                    >
-                      <Key className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Switch Role / Firebase Auth</span>
-                    </button>
-
                     <div className="h-px bg-slate-800 my-1" />
 
                     <button
@@ -330,96 +300,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                 )}
               </div>
             )}
-
-            {/* Quick 5-Role Switcher for rapid testing */}
-            <div className="hidden xl:flex items-center p-1 bg-slate-900 border border-slate-800 rounded-xl text-xs gap-0.5">
-              <span className="text-[10px] text-slate-500 px-1 font-mono uppercase">Role:</span>
-              
-              <button
-                onClick={() => handleSelectRole('guest')}
-                title="Guest: Order goods & switch panels online"
-                className={`px-2 py-0.5 rounded-lg font-medium text-[11px] transition-colors cursor-pointer ${
-                  currentUserRole === 'guest' ? 'bg-slate-700 text-white font-bold shadow-xs' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Guest
-              </button>
-
-              <button
-                onClick={() => handleSelectRole('client')}
-                title="Client: Vessel owner specs, custom panels & job progress"
-                className={`px-2 py-0.5 rounded-lg font-medium text-[11px] transition-colors cursor-pointer ${
-                  currentUserRole === 'client' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Client
-              </button>
-
-              <button
-                onClick={() => handleSelectRole('technician')}
-                title="Technician: Work on assigned boat jobs & diagnostics only"
-                className={`px-2 py-0.5 rounded-lg font-medium text-[11px] transition-colors cursor-pointer flex items-center gap-1 ${
-                  currentUserRole === 'technician' ? 'bg-amber-600 text-white font-bold shadow-xs' : 'text-amber-400 hover:text-white'
-                }`}
-              >
-                <Zap className="w-3 h-3 text-amber-300" />
-                <span>Tech</span>
-              </button>
-
-              <button
-                onClick={() => handleSelectRole('postal')}
-                title="Postal: Package and send online store postal orders only"
-                className={`px-2 py-0.5 rounded-lg font-medium text-[11px] transition-colors cursor-pointer flex items-center gap-1 ${
-                  currentUserRole === 'postal' ? 'bg-purple-600 text-white font-bold shadow-xs' : 'text-purple-400 hover:text-white'
-                }`}
-              >
-                <Package className="w-3 h-3 text-purple-300" />
-                <span>Postal</span>
-              </button>
-
-              <button
-                onClick={() => handleSelectRole('admin')}
-                title="Admin: Jobs, Images, Postal Orders, Stock/Catalog & Print Studio"
-                className={`px-2 py-0.5 rounded-lg font-medium text-[11px] transition-colors cursor-pointer ${
-                  currentUserRole === 'admin' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'text-emerald-400 hover:text-white'
-                }`}
-              >
-                Admin
-              </button>
-
-              {/* Auth / Role Details Popover Button */}
-              {onOpenAuthModal && (
-                <button
-                  onClick={onOpenAuthModal}
-                  className="ml-1 p-1 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-slate-800 transition-colors"
-                  title="Manage User Authentication & Role Permissions"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                </button>
-              )}
-
-              {/* Inspect Full RBAC Matrix Button */}
-              {onOpenPermissionsMatrix && (
-                <button
-                  onClick={onOpenPermissionsMatrix}
-                  className="p-1 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800 transition-colors"
-                  title="Inspect 5-Role RBAC Permissions Matrix"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                </button>
-              )}
-            </div>
-
-          {/* Current Role Badge on Medium screens */}
-          {onOpenAuthModal && (
-            <button
-              onClick={onOpenAuthModal}
-              className={`hidden sm:flex lg:hidden items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono border cursor-pointer ${ROLE_CONFIGS[currentUserRole].badgeClass}`}
-              title="Click to switch role or view Firebase Auth"
-            >
-              <span className="font-bold">{ROLE_CONFIGS[currentUserRole].shortLabel}</span>
-            </button>
-          )}
 
           {/* Real-time Firestore Cloud Sync Status */}
           {isFirebaseConnected ? (
@@ -550,42 +430,6 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
           </div>
 
-          {/* Mobile Role Switcher */}
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-              Active User Role:
-            </span>
-            <div className="grid grid-cols-5 gap-1 text-xs">
-              {(['guest', 'client', 'technician', 'postal', 'admin'] as UserRole[]).map(r => (
-                <button
-                  key={r}
-                  onClick={() => {
-                    handleSelectRole(r);
-                  }}
-                  className={`py-1.5 px-1 rounded-lg text-center font-semibold text-[11px] capitalize border ${
-                    currentUserRole === r
-                      ? 'bg-sky-600 text-white border-sky-500'
-                      : 'bg-slate-900 text-slate-300 border-slate-800'
-                  }`}
-                >
-                  {r === 'technician' ? 'Tech' : r}
-                </button>
-              ))}
-            </div>
-            {onOpenAuthModal && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenAuthModal();
-                }}
-                className="w-full text-center py-1.5 text-xs text-sky-400 hover:underline flex items-center justify-center gap-1.5"
-              >
-                <Key className="w-3.5 h-3.5" />
-                <span>Open Firebase Auth &amp; Role Details</span>
-              </button>
-            )}
-          </div>
-
           <div className="grid grid-cols-2 gap-2 text-xs font-semibold pt-2 border-t border-slate-900">
             <button
               onClick={() => { setCurrentTab('home'); setMobileMenuOpen(false); }}
@@ -660,19 +504,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                 className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-sky-300 col-span-2"
               >
                 Anthony's Master Workshop
-              </button>
-            )}
-
-            {onOpenPermissionsMatrix && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenPermissionsMatrix();
-                }}
-                className="p-2.5 rounded-lg bg-slate-900/80 border border-emerald-500/30 text-left text-emerald-400 col-span-2 flex items-center gap-2 text-xs font-bold"
-              >
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Inspect 5-Role RBAC Permissions Matrix</span>
               </button>
             )}
           </div>
