@@ -23,8 +23,8 @@ firebase-debug.log
 
 # Package manager tracking lockfiles (Massive text files full of dependency trees)
 # package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
+yarn.lock
+pnpm-lock.yaml
 
 # IDE state & local cache files
 .vscode/
