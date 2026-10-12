@@ -22,7 +22,7 @@ firebase-debug.log
 .git/
 
 # Package manager tracking lockfiles (Massive text files full of dependency trees)
-# package-lock.json
+package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
