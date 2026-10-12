@@ -15,7 +15,7 @@ coverage/
 
 # Firebase deployment & local emulator caches
 .firebase/
-# .firebaserc
+.firebaserc
 firebase-debug.log
 
 # Version control internals (Never let an AI index your raw git history chunks)
