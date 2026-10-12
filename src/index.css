@@ -26,9 +26,8 @@
     print-color-adjust: exact !important;
   }
 
-  /* When the packing slip or work order modal is active during print, hide the application shell completely */
-  body.packing-slip-modal-open #root,
-  body.work-order-modal-open #root {
+  /* When the packing slip modal is active during print, hide the application shell completely */
+  body.packing-slip-modal-open #root {
     display: none !important;
   }
 
@@ -44,8 +43,7 @@
   }
 
   /* Reset portal modal overlay so it flows natively into printable document */
-  #packing-slip-portal-root,
-  #work-order-portal-root {
+  #packing-slip-portal-root {
     position: static !important;
     inset: auto !important;
     background: transparent !important;
@@ -61,9 +59,8 @@
     -webkit-backdrop-filter: none !important;
   }
 
-  /* Document sheet styles for clean print output */
-  .packing-slip-sheet,
-  .work-order-sheet {
+  /* Packing slip sheet styles for clean print output */
+  .packing-slip-sheet {
     position: static !important;
     width: 100% !important;
     max-width: 100% !important;

@@ -3,7 +3,6 @@ import { JobRecord, MessageItem, MaterialLineItem, CatalogItem } from '../../typ
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { DiagnosticTimerModal } from '../admin/DiagnosticTimerModal';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
-import { WorkOrderPrintModal } from './WorkOrderPrintModal';
 import { 
   Wrench, 
   Clock, 
@@ -25,9 +24,7 @@ import {
   Phone,
   Mail,
   Zap,
-  Info,
-  Printer,
-  ClipboardList
+  Info
 } from 'lucide-react';
 import { uploadSwitchPanelImage, isFirebaseStorageUrl } from '../../lib/storage';
 
@@ -49,10 +46,6 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
   const [selectedJobId, setSelectedJobId] = useState<string>(jobs[0]?.id || '');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [activeTimerJob, setActiveTimerJob] = useState<JobRecord | null>(null);
-
-  // Work Order Print Modal State
-  const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
-  const [printJob, setPrintJob] = useState<JobRecord | null>(null);
 
   // Lightbox Modal State
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -302,29 +295,16 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setPrintJob(job);
-                        setIsWorkOrderModalOpen(true);
-                      }}
-                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 border border-slate-700 rounded-lg text-[11px] transition-colors cursor-pointer"
-                      title="Print clipboard work order for this vessel"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setActiveTimerJob(job);
-                      }}
-                      className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 shadow-sm shadow-amber-600/30 cursor-pointer"
-                    >
-                      <Clock className="w-3 h-3" />
-                      <span>Log Labor / Parts</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      setActiveTimerJob(job);
+                    }}
+                    className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 shadow-sm shadow-amber-600/30"
+                  >
+                    <Clock className="w-3 h-3" />
+                    <span>Log Labor / Parts</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -354,28 +334,14 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     </p>
                   </div>
 
-                  {/* Actions: Print Work Order & Stopwatch */}
-                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                    <button
-                      onClick={() => {
-                        setPrintJob(selectedJob);
-                        setIsWorkOrderModalOpen(true);
-                      }}
-                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:border-amber-500/50 text-slate-200 hover:text-white border border-slate-700 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
-                      title="Print workshop clipboard work order with labor and materials breakdown"
-                    >
-                      <Printer className="w-4 h-4 text-amber-400" />
-                      <span>Print Work Order</span>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTimerJob(selectedJob)}
-                      className="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-600/30 active:scale-95 transition-all cursor-pointer"
-                    >
-                      <Clock className="w-4 h-4" />
-                      <span>Stopwatch (£25/hr)</span>
-                    </button>
-                  </div>
+                  {/* Stopwatch / Sheet Action Button */}
+                  <button
+                    onClick={() => setActiveTimerJob(selectedJob)}
+                    className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-600/30 active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>Open Diagnostic Stopwatch (£25/hr)</span>
+                  </button>
                 </div>
 
                 {/* Status Switcher & Materials Summary */}
@@ -413,22 +379,9 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                   </div>
 
                   <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-400 font-semibold block uppercase tracking-wider">
-                        Recorded Labor &amp; Hardware
-                      </span>
-                      <button
-                        onClick={() => {
-                          setPrintJob(selectedJob);
-                          setIsWorkOrderModalOpen(true);
-                        }}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
-                        title="Print clipboard breakdown"
-                      >
-                        <Printer className="w-3 h-3" />
-                        <span>Print Sheet</span>
-                      </button>
-                    </div>
+                    <span className="text-[11px] text-slate-400 font-semibold block uppercase tracking-wider">
+                      Recorded Labor &amp; Hardware
+                    </span>
                     <div className="flex items-center justify-between text-xs pt-1">
                       <span className="text-slate-300 font-mono">{selectedJob.diagnosticHours} Hours Labor:</span>
                       <span className="text-white font-mono font-bold">£{selectedJob.totalLabor.toFixed(2)}</span>
@@ -505,16 +458,6 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
           onClose={() => setActiveTimerJob(null)}
         />
       )}
-
-      {/* Workshop Clipboard Work Order Print Modal */}
-      <WorkOrderPrintModal
-        isOpen={isWorkOrderModalOpen}
-        job={printJob || selectedJob}
-        onClose={() => {
-          setIsWorkOrderModalOpen(false);
-          setPrintJob(null);
-        }}
-      />
     </div>
   );
 };
