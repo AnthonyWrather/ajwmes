@@ -6,26 +6,3 @@ coverage/
 *.log
 .env*
 !.env.example
-
-# ==========================================
-# AI & Build Tool Overrides (Add These)
-# ==========================================
-# Vite dev server cache (Contains massive compiled text chunks)
-.vite/
-
-# Firebase deployment & local emulator caches
-.firebase/
-.firebaserc
-firebase-debug.log
-
-# Version control internals (Never let an AI index your raw git history chunks)
-.git/
-
-# Package manager tracking lockfiles (Massive text files full of dependency trees)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# IDE state & local cache files
-.vscode/
-.idea/
