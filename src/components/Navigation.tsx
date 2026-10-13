@@ -210,16 +210,6 @@ export const Navigation: React.FC<NavigationProps> = ({
               )}
             </button>
 
-            {/* 1-Click Team Roles Quick Switcher */}
-            <button
-              onClick={() => (onOpenTeamRoles || onOpenSignInModal)?.()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 border border-amber-500/30 text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
-              title="1-Click Team Roles: Instantly switch persona (Admin, Field Tech, Postal Dispatch, Client)"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">1-Click Roles</span>
-              <span className="sm:hidden">Roles</span>
-            </button>
 
             {/* User Account / Sign In State */}
             {currentUserRole === 'guest' ? (
@@ -277,16 +267,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        (onOpenTeamRoles || onOpenSignInModal)?.();
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-amber-950/40 text-amber-300 hover:text-amber-200 flex items-center gap-2 cursor-pointer font-semibold border border-transparent hover:border-amber-500/30 mb-1"
-                    >
-                      <Zap className="w-3.5 h-3.5 text-amber-400" />
-                      <span>1-Click Team Roles (Switch Identity)</span>
-                    </button>
 
                     <button
                       onClick={() => {
@@ -398,16 +378,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
-                      (onOpenTeamRoles || onOpenSignInModal)?.();
-                    }}
-                    className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all flex items-center gap-1"
-                  >
-                    <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Roles</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
                       onOpenSignInModal?.();
                     }}
                     className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-sm shadow-sky-600/30"
@@ -438,18 +408,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1.5 mt-3 pt-2.5 border-t border-slate-800/80 text-xs">
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      (onOpenTeamRoles || onOpenSignInModal)?.();
-                    }}
-                    className="py-1.5 px-1.5 bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 rounded-xl font-semibold flex items-center justify-center gap-1 border border-amber-500/30"
-                  >
-                    <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Roles</span>
-                  </button>
-
+                <div className="grid grid-cols-2 gap-1.5 mt-3 pt-2.5 border-t border-slate-800/80 text-xs">
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
