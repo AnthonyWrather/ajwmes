@@ -43,7 +43,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', showSubtitle = true }) 
         </div>
         {showSubtitle && (
           <span className="text-[10px] text-slate-400 font-medium tracking-tight mt-0.5">
-            AJW Marine Electrical Services · Gosport &amp; Solent
+            Marine Electrical Services - Gosport &amp; Solent
           </span>
         )}
       </div>

@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan for resolving cross-environment user account leakage in the Operations Dashboard by strictly scoping all Firestore collections with environment prefixes and filtering user accounts to the active environment.",
-  "updatedAt": "2026-10-13T21:30:52.999894322Z",
+  "summary": "Implementation plan for refining the main navigation: removing the redundant 'Services & Solent' link (with the AJWMES logo serving as the primary Home action) and upgrading responsive wrapping behavior to transition cleanly to the mobile drawer on tablets and narrow screens.",
+  "updatedAt": "2026-10-13T22:45:41.222155215Z",
   "requestFeedback": true,
   "userFacing": true
 }

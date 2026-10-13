@@ -86,22 +86,17 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div 
           onClick={() => setCurrentTab('home')}
           className="cursor-pointer shrink-0"
+          title="AJWMES · Home"
         >
           <Logo size="md" showSubtitle={false} />
         </div>
 
-        {/* Zone 2: Clean Text Navigation Links - Role Adaptive */}
-        <nav className="hidden md:flex items-center gap-4 text-xs font-semibold text-slate-400">
-          <button
-            onClick={() => setCurrentTab('home')}
-            className={`hover:text-white transition-colors ${currentTab === 'home' ? 'text-white font-bold' : ''}`}
-          >
-            Services &amp; Solent
-          </button>
+        {/* Zone 2: Clean Text Navigation Links - Role Adaptive (≥ 1280px) */}
+        <nav className="hidden xl:flex items-center gap-4 text-xs font-semibold text-slate-400">
 
           <button
             onClick={() => setCurrentTab('store')}
-            className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 ${currentTab === 'store' ? 'text-sky-400 font-bold' : ''}`}
+            className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${currentTab === 'store' ? 'text-sky-400 font-bold' : ''}`}
           >
             <ShoppingBag className="w-3.5 h-3.5 text-sky-400" />
             <span>Parts Store</span>
@@ -109,7 +104,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           <button
             onClick={() => setCurrentTab('tracker')}
-            className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 ${currentTab === 'tracker' ? 'text-sky-400 font-bold' : ''}`}
+            className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${currentTab === 'tracker' ? 'text-sky-400 font-bold' : ''}`}
           >
             <Truck className="w-3.5 h-3.5 text-sky-400" />
             <span>Track Order</span>
@@ -119,7 +114,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {canAccessRoute(currentUserRole, 'designer') && (
             <button
               onClick={() => setCurrentTab('designer')}
-              className={`hover:text-white transition-colors flex items-center gap-1 ${currentTab === 'designer' ? 'text-sky-400 font-bold' : ''}`}
+              className={`hover:text-white transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${currentTab === 'designer' ? 'text-sky-400 font-bold' : ''}`}
             >
               <Sparkles className="w-3.5 h-3.5 text-sky-400" />
               <span>Switch Panels</span>
@@ -129,7 +124,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {canAccessRoute(currentUserRole, 'replica') && (
             <button
               onClick={() => setCurrentTab('replica')}
-              className={`hover:text-white transition-colors ${currentTab === 'replica' ? 'text-white font-bold' : ''}`}
+              className={`hover:text-white transition-colors whitespace-nowrap shrink-0 ${currentTab === 'replica' ? 'text-white font-bold' : ''}`}
             >
               Replica Panels
             </button>
@@ -139,7 +134,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {canAccessRoute(currentUserRole, 'portal') && (
             <button
               onClick={() => setCurrentTab('portal')}
-              className={`hover:text-white transition-colors flex items-center gap-1 ${currentTab === 'portal' ? 'text-sky-400 font-bold' : ''}`}
+              className={`hover:text-white transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${currentTab === 'portal' ? 'text-sky-400 font-bold' : ''}`}
             >
               <User className="w-3.5 h-3.5" />
               <span>Vessel Portal</span>
@@ -150,7 +145,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {canAccessRoute(currentUserRole, 'technician') && (
             <button
               onClick={() => setCurrentTab('technician')}
-              className={`hover:text-amber-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border ${
+              className={`hover:text-amber-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 ${
                 currentTab === 'technician' 
                   ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 font-bold shadow-sm shadow-amber-950' 
                   : 'text-amber-400/90 border-amber-500/30 hover:bg-amber-950/40'
@@ -165,7 +160,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {canAccessRoute(currentUserRole, 'postal') && (
             <button
               onClick={() => setCurrentTab('postal')}
-              className={`hover:text-purple-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border ${
+              className={`hover:text-purple-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 ${
                 currentTab === 'postal' 
                   ? 'bg-purple-950/80 text-purple-300 border-purple-500/50 font-bold shadow-sm shadow-purple-950' 
                   : 'text-purple-400/90 border-purple-500/30 hover:bg-purple-950/40'
@@ -180,7 +175,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {canAccessRoute(currentUserRole, 'admin') && (
             <button
               onClick={() => setCurrentTab('admin')}
-              className={`hover:text-sky-300 transition-colors flex items-center gap-1 ${currentTab === 'admin' ? 'text-sky-400 font-bold' : ''}`}
+              className={`hover:text-sky-300 transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${currentTab === 'admin' ? 'text-sky-400 font-bold' : ''}`}
             >
               <Wrench className="w-3.5 h-3.5 text-sky-400" />
               <span>Master Workshop</span>
@@ -350,16 +345,17 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-slate-400 hover:text-white"
+            className="xl:hidden p-2 text-slate-400 hover:text-white cursor-pointer"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile & Tablet Drawer Menu (< 1280px) */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-950 border-b border-slate-800 p-4 space-y-4 animate-in slide-in-from-top-2">
+        <div className="xl:hidden bg-slate-950 border-b border-slate-800 p-4 space-y-4 animate-in slide-in-from-top-2 max-h-[calc(100vh-4rem)] overflow-y-auto">
           {/* Mobile User Profile / Auth State Card */}
           <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl space-y-2.5">
             {currentUserRole === 'guest' ? (
@@ -437,22 +433,17 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           <div className="grid grid-cols-2 gap-2 text-xs font-semibold pt-2 border-t border-slate-900">
             <button
-              onClick={() => { setCurrentTab('home'); setMobileMenuOpen(false); }}
-              className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-white"
-            >
-              Services &amp; Solent
-            </button>
-            <button
               onClick={() => { setCurrentTab('store'); setMobileMenuOpen(false); }}
-              className="p-2.5 rounded-lg bg-slate-900 border border-sky-500/40 text-left text-sky-400 font-bold"
+              className="p-2.5 rounded-lg bg-slate-900 border border-sky-500/40 text-left text-sky-400 font-bold flex items-center gap-1.5"
             >
-              Parts Store {cartCount > 0 ? `(${cartCount})` : ''}
+              <ShoppingBag className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <span>Parts Store {cartCount > 0 ? `(${cartCount})` : ''}</span>
             </button>
             <button
               onClick={() => { setCurrentTab('tracker'); setMobileMenuOpen(false); }}
               className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-sky-400 flex items-center gap-1.5"
             >
-              <Truck className="w-3.5 h-3.5 text-sky-400" />
+              <Truck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
               <span>Track Order</span>
             </button>
 

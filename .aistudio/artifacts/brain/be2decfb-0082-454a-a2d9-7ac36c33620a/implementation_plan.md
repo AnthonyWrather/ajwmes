@@ -1,109 +1,92 @@
-# Environment-Scoped Firestore Collections & User Account Isolation
+# Main Navigation Responsive Refactor & Menu Clean-Up
 
-Investigate and fix the issue where the Administrator's Operations Dashboard displays user accounts from all environments instead of isolating records to the active environment.
+Streamline the top navigation bar by removing the redundant "Services & Solent" link, ensuring the AJWMES brand logo serves as the primary Home navigation anchor, and resolving responsive wrapping glitches by transitioning cleanly to the drawer menu on tablets and narrow screens.
 
 ## User Review & Critical Decisions
 
-> [!IMPORTANT]
-> The following architectural decisions were confirmed:
-> - **Partitioning Strategy**: Dedicated Firestore collection per environment (`ais_dev_users`, `ais_pre_users`, `gh_pre_users`, `users`) with `environment` metadata embedded on each document.
-> - **Operations Dashboard View**: Strictly display user accounts belonging to the current environment only.
-> - **Scope of Prefixes**: Apply environment collection prefixes to all Firestore collections (including `jobs`, `postal_orders`, `catalog`, `categories`, `vessel_specs`, and `stock_alerts`).
-
-- **Confirmed Decision 1**: Set `firestoreCollectionPrefix` in `src/lib/environment.ts` to `'ais_dev_'`, `'ais_pre_'`, `'gh_pre_'`, and `''` (production).
-- **Confirmed Decision 2**: Ensure user profile documents embed the active environment code (`environment: 'aistudio-dev' | 'aistudio-preview' | ...`).
-- **Confirmed Decision 3**: Operations Dashboard user list strictly filters to the active environment.
+> [!NOTE]
+> **Implementation Complete**:
+> - Removed redundant "Services & Solent" text links from both desktop and drawer menus.
+> - Established AJWMES logo as the primary Home button with explicit tooltip and cursor affordance.
+> - Switched breakpoint to `xl` (1280px) and enforced single-line `whitespace-nowrap shrink-0` to eliminate link wrapping and clipping.
 
 ---
 
 ## 1. Overview & Core Concept
 
-### What It Does
-Ensures strict environment isolation between AI Studio Development, AI Studio Shared Preview, GitHub PR Previews, and Live Production. Each environment will read from and write to its own dedicated Firestore collection partition (e.g. `ais_dev_users` vs `ais_pre_users` vs production `users`), and all user profiles will carry explicit environment metadata.
-
-### Root Cause Analysis
-1. `src/lib/environment.ts` returned `firestoreCollectionPrefix: ''` for all environments.
-2. `getScopedCollection('users')` evaluated to `'users'` across all instances, causing all environments to share a single unpartitioned collection in Firestore.
-3. On application startup, `usersList` was momentarily initialized from environment-namespaced localStorage (`ajwmes_aistudio_dev_users_list`), which made it temporarily look like only local accounts were present.
-4. As soon as Firestore connected or a new user registered, the real-time `onSnapshot` listener (`subscribeUsers`) fired and replaced local state with every record in the shared `'users'` collection.
+- **What It Does**: Refactors `src/components/Navigation.tsx` to follow a robust single-row, three-zone Top Bar Contract. It eliminates horizontal link wrapping bugs, prevents item clipping on tablet/laptop viewports, and removes duplicate navigation entries.
+- **Target Audience / Persona**: Boat owners, yacht skippers, field marine technicians, and workshop dispatch staff accessing AJWMES across smartphones, iPads/tablets, laptops, and wide workshop displays.
+- **Key Value**: Guarantees that every navigation link remains completely accessible and fully operational on all screen sizes, with no awkward multi-line wrapping or hidden broken buttons.
 
 ---
 
 ## 2. User Experience & Visual Design
 
 ### Key User Flows
-1. **Admin Navigates to Operations Dashboard -> User Accounts**:
-   - The dashboard header displays the active environment badge (e.g., `AI Studio Dev Workspace [ais_dev_users]`).
-   - The user accounts table only shows users belonging to that specific environment.
-   - When a new client registers in the current environment, the record is immediately created in `ais_dev_users`, synchronized to Firestore, and displayed without pulling in users from Preview or Production.
-2. **Environment Switching / Simulation**:
-   - If an administrator switches environments via the Environment Settings Modal, the dashboard immediately pivots to the corresponding partition (`ais_pre_users`, `gh_pre_users`, or production `users`).
+1. **Returning to Home**: User clicks the prominent AJWMES anchor-bolt logo at any time from any tab to return to the landing overview.
+2. **Desktop Navigation (≥ 1280px)**: Clear single-line navigation bar containing:
+   - Parts Store (with active indicator & basket counter badge)
+   - Track Order (postal tracking)
+   - Switch Panels & Replica Panels (panel design tools)
+   - Vessel Portal (owner specs and diagnostic logs)
+   - Role-specific actions (Tech Jobs, Postal Dispatch, Master Workshop for authenticated staff)
+   - Basket button + User profile pill / Sign-in button
+3. **Tablet & Mobile Navigation (< 1280px)**:
+   - Clean, uncluttered header containing AJWMES logo, basket icon, user sign-in pill, and an accessible hamburger menu toggle.
+   - Opening the drawer presents a beautifully organized, scrollable menu grid where every link has generous touch targets (≥ 44px) and clear status indicators.
 
-### Visual Identity & Feedback
-- Active environment indicator chip in `UserAccountsManager` (e.g., `Active Partition: ais_dev_users`).
-- Clear record count specific to the active environment (e.g., `3 Dev Accounts`).
+### Visual Styling & Contract Compliance
+- **Zero Wrapping**: All nav link buttons utilize `whitespace-nowrap shrink-0` and unified gap spacing (`gap-4` to `gap-5`).
+- **Unified Branding**: Brand logo retains tooltip `title="AJWMES · AJW Marine Electrical Services"` and pointer cursor.
 
 ---
 
 ## 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Collection-Level Prefixing vs Single Collection with Queries**
-  - *Chosen Approach*: Environment-scoped collection names (`ais_dev_users`, `ais_pre_users`, `gh_pre_users`, `users`) as already configured in `firestore.rules`.
-  - *Why*: Provides hard physical separation in Firestore, preventing cross-environment quota pollution, accidental data overwrites during test runs, and test data leaking into production.
-- **Decision 2: Defensive Client-Side Filtering**
-  - *Chosen Approach*: Even within the scoped collection, add an explicit check to ensure records match the active environment, guarding against edge cases during migrations or imports.
-- **Decision 3: Anthony Wrather Master Admin Seeding**
-  - *Chosen Approach*: Seed Anthony's master administrator account (`anthonywrather@gmail.com`) into each environment partition so admin access is seamless across dev, preview, and deployed environments.
+- **Decision 1: Breakpoint Transition at `xl` (1280px)**
+  - *Chosen Approach*: Update desktop nav from `hidden md:flex` to `hidden xl:flex` and drawer toggle from `md:hidden` to `xl:hidden`.
+  - *Why*: The AJWMES app features rich role-based navigation (guest, client, tech, postal, admin). When all permissions are loaded, the nav bar contains 6 to 9 items plus profile info. A 768px (`md`) or 1024px (`lg`) cutoff allows links to collide and wrap into the header's fixed height. Shifting to `xl` provides complete safety on iPads, tablets, and small laptops.
+  - *Alternatives Considered*: Collapsing excess items into a "More..." popup menu was evaluated, but user confirmed direct transition to the mobile drawer is preferred and provides a cleaner, more consistent experience.
+
+- **Decision 2: Removal of "Services & Solent"**
+  - *Chosen Approach*: Remove the dedicated text button from both desktop nav and mobile drawer.
+  - *Why*: Clicking the brand wordmark ("AJWMES") already navigates to the Home tab where services, pricing, and Solent coverage are featured directly. Removing the duplicate button frees valuable horizontal real estate.
 
 ---
 
-## 4. Technical Architecture & Data Strategy
+## 4. Technical Architecture & Implementation Strategy
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                   detectEnvironment()                  │
-│       Returns envCode & firestoreCollectionPrefix      │
-│  dev: 'ais_dev_' │ preview: 'ais_pre_' │ live: ''      │
-└───────────────────────────┬────────────────────────────┘
-                            │
-            ┌───────────────┴───────────────┐
-            ▼                               ▼
-┌───────────────────────────────┐ ┌───────────────────────────────┐
-│     getScopedCollection()     │ │     Environment Metadata      │
-│   e.g. 'ais_dev_users'        │ │   profile.environment =       │
-│   e.g. 'ais_dev_jobs'         │ │   'aistudio-dev'              │
-└───────────────┬───────────────┘ └───────────────┬───────────────┘
-                │                                 │
-                ▼                                 ▼
-┌────────────────────────────────────────────────────────┐
-│                     Firestore DB                       │
-│   ais_dev_users / ais_pre_users / gh_pre_users / users  │
-│   ais_dev_jobs  / ais_pre_jobs  / gh_pre_jobs  / jobs   │
-└───────────────────────────┬────────────────────────────┘
-                            │
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│           Admin Operations Dashboard                   │
-│   UserAccountsManager: strictly shows active partition  │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Navigation Header (h-16)                        │
+├───────────────────┬─────────────────────────────────┬──────────────────┤
+│   Zone 1: Brand   │    Zone 2: Navigation Links     │  Zone 3: Actions │
+│  (Always Visible) │    (xl:flex / xl:hidden)        │ (Always Visible) │
+│                   │                                 │                  │
+│ [Anchor] AJWMES   │ [Desktop ≥ 1280px]              │ [Cart]           │
+│ (onClick -> Home) │ • Parts Store                   │ [User / Sign In] │
+│                   │ • Track Order                   │ [Hamburger Icon] │
+│                   │ • Switch Panels                 │  (< 1280px only) │
+│                   │ • Replica Panels                │                  │
+│                   │ • Vessel Portal                 │                  │
+│                   │ • Role Station (Tech/Post/Admin)│                  │
+└───────────────────┴─────────────────────────────────┴──────────────────┘
+                                │ (< 1280px toggle open)
+                                ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Mobile Drawer (< 1280px)                        │
+│ • User Account Card & Role Badge                                       │
+│ • Grid Links: Parts Store, Track Order, Switch Panels, Replica, Portal │
+│ • Role Stations (Technician Jobs, Postal Dispatch, Master Workshop)    │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Files to Update
-1. `src/lib/environment.ts`:
-   - Set `firestoreCollectionPrefix: 'ais_dev_'` for `aistudio-dev`.
-   - Set `firestoreCollectionPrefix: 'ais_pre_'` for `aistudio-preview`.
-   - Set `firestoreCollectionPrefix: 'gh_pre_'` for `github-preview`.
-   - Keep `firestoreCollectionPrefix: ''` for `github-deployed`.
-2. `src/types/index.ts`:
-   - Add `environment?: AppEnvironment` to `UserProfile`.
-3. `src/lib/auth.ts`:
-   - Attach `environment: detectEnvironment().envCode` in `registerVesselAccount` and `DEMO_PROFILES`.
-4. `src/lib/firebase.ts`:
-   - Ensure `syncUserToFirestore` and `seedUsersToFirestore` persist the `environment` attribute.
-   - Ensure all collections respect `getScopedCollection()`.
-5. `src/components/admin/UserAccountsManager.tsx`:
-   - Filter `users` list to the current environment and display the partition name.
-6. `firebase-blueprint.json`:
-   - Update `User` entity to include `environment` property.
-7. Verification:
-   - Run `compile_applet` and test environment isolation.
+### Planned File Modifications
+- `src/components/Navigation.tsx`:
+  - Remove "Services & Solent" button from desktop nav (lines 95–100).
+  - Remove "Services & Solent" button from mobile drawer (lines 439–444).
+  - Change desktop nav display from `hidden md:flex` to `hidden xl:flex`.
+  - Add `whitespace-nowrap shrink-0` across all horizontal nav link buttons.
+  - Change mobile drawer toggle button from `md:hidden` to `xl:hidden`.
+  - Change mobile drawer container from `md:hidden` to `xl:hidden`.
+  - Add smooth transition and backdrop touch dismiss to the mobile drawer.
