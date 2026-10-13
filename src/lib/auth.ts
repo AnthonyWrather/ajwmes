@@ -182,12 +182,38 @@ export function getSavedUserProfile(): UserProfile {
   try {
     const saved = getEnvStorageItem<UserProfile | null>('current_user_profile', null);
     if (saved) {
-      return saved;
+      const demoFallback = DEMO_PROFILES.find(p => p.email.toLowerCase() === saved.email?.toLowerCase());
+      const isAnthony = saved.email?.toLowerCase() === 'anthonywrather@gmail.com';
+      return {
+        ...saved,
+        name: saved.name || demoFallback?.name || (isAnthony ? 'Anthony Wrather' : (saved.email ? saved.email.split('@')[0] : 'Marine User')),
+        phone: saved.phone || demoFallback?.phone || (isAnthony ? '07700 900551' : ''),
+        vesselName: saved.vesselName || demoFallback?.vesselName || (isAnthony ? 'AJW Solent Response' : ''),
+        vesselType: saved.vesselType || demoFallback?.vesselType || (isAnthony ? 'Workboat / Fast Tender' : 'Sailing Yacht'),
+        marinaBerth: saved.marinaBerth || demoFallback?.marinaBerth || (isAnthony ? 'Gosport Marina (HQ Workshop)' : ''),
+        avatarUrl: saved.avatarUrl || saved.photoURL || demoFallback?.avatarUrl || '',
+        systemVoltage: saved.systemVoltage || demoFallback?.systemVoltage || '12V'
+      };
     }
   } catch (e) {
     console.warn('Could not read saved user profile', e);
   }
   return demoMatch;
+}
+
+export function enrichUserProfile(profile: UserProfile): UserProfile {
+  const demoFallback = DEMO_PROFILES.find(p => p.email.toLowerCase() === profile.email?.toLowerCase());
+  const isAnthony = profile.email?.toLowerCase() === 'anthonywrather@gmail.com';
+  return {
+    ...profile,
+    name: profile.name || demoFallback?.name || (isAnthony ? 'Anthony Wrather' : (profile.email ? profile.email.split('@')[0] : 'Marine User')),
+    phone: profile.phone || demoFallback?.phone || (isAnthony ? '07700 900551' : ''),
+    vesselName: profile.vesselName || demoFallback?.vesselName || (isAnthony ? 'AJW Solent Response' : ''),
+    vesselType: profile.vesselType || demoFallback?.vesselType || (isAnthony ? 'Workboat / Fast Tender' : 'Sailing Yacht'),
+    marinaBerth: profile.marinaBerth || demoFallback?.marinaBerth || (isAnthony ? 'Gosport Marina (HQ Workshop)' : ''),
+    avatarUrl: profile.avatarUrl || profile.photoURL || demoFallback?.avatarUrl || '',
+    systemVoltage: profile.systemVoltage || demoFallback?.systemVoltage || '12V'
+  };
 }
 
 export function saveUserProfile(profile: UserProfile) {
@@ -318,12 +344,12 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
           }
         }
 
-        const existingProfile: UserProfile = {
+        const existingProfile = enrichUserProfile({
           id: data.uid || data.id || docSnap.id,
           name: data.displayName || data.name || cleanEmail.split('@')[0],
           email: data.email || cleanEmail,
-          phone: data.phone || '',
-          role: data.role || (cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client'),
+          phone: data.phone || (demoMatch ? demoMatch.phone : ''),
+          role: data.role || (cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : (demoMatch?.role || 'client')),
           avatarUrl: data.avatarUrl || data.photoURL || '',
           photoURL: data.photoURL || data.avatarUrl || '',
           vesselName: data.vesselName || '',
@@ -337,7 +363,7 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
           updatedAt: new Date().toISOString(),
           password: data.password || demoMatch?.password || 'ajwmes2026',
           passwordHash: data.passwordHash || providedHash || demoMatch?.passwordHash || encodePassword('ajwmes2026')
-        };
+        });
 
         // Update last login and ensure password is saved in database
         const updatePayload: any = {
@@ -366,13 +392,13 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
         return { success: false, error: 'Incorrect password for this account. Please try again.' };
       }
     }
-    const updatedDemo: UserProfile = {
+    const updatedDemo: UserProfile = enrichUserProfile({
       ...demoMatch,
       password: demoMatch.password || 'ajwmes2026',
       passwordHash: demoMatch.passwordHash || encodePassword('ajwmes2026'),
       lastLoginAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    };
+    });
     await saveAndSyncUserProfile(updatedDemo);
     return { success: true, profile: updatedDemo };
   }
@@ -380,7 +406,7 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
   // 3. Auto grant admin to Anthony Wrather's email
   const assignedRole: UserRole = cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client';
   const now = new Date().toISOString();
-  const newProfile: UserProfile = {
+  const newProfile = enrichUserProfile({
     id: `user-${Date.now()}`,
     name: cleanEmail.split('@')[0].replace(/[\._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     email: cleanEmail,
@@ -392,7 +418,7 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
     lastLoginAt: now,
     updatedAt: now,
     passwordHash: providedHash
-  };
+  });
 
   await saveAndSyncUserProfile(newProfile);
   return { success: true, profile: newProfile };
@@ -440,11 +466,11 @@ export async function signInWithGoogle(): Promise<SignInWithGoogleResult> {
     }
 
     const now = new Date().toISOString();
-    const profile: UserProfile = {
+    const profile = enrichUserProfile({
       id: fbUser.uid,
       name: fbUser.displayName || existingData.displayName || existingData.name || (fbUser.email ? fbUser.email.split('@')[0] : 'Marine User'),
       email: fbUser.email || existingData.email || '',
-      phone: existingData.phone || '',
+      phone: existingData.phone || fbUser.phoneNumber || '',
       role: assignedRole,
       avatarUrl: fbUser.photoURL || existingData.avatarUrl || undefined,
       photoURL: fbUser.photoURL || existingData.photoURL || undefined,
@@ -457,7 +483,7 @@ export async function signInWithGoogle(): Promise<SignInWithGoogleResult> {
       createdAt: existingData.createdAt || now,
       lastLoginAt: now,
       updatedAt: now
-    };
+    });
 
     // Explicitly persist full user record in Firestore database
     await syncUserToFirestore(profile);

@@ -25,6 +25,8 @@ import {
   saveUserProfile, 
   saveAndSyncUserProfile,
   syncUserRoleToFirestore,
+  enrichUserProfile,
+  subscribeAuthState,
   DEMO_PROFILES, 
   ROLE_CONFIGS 
 } from './lib/auth';
@@ -178,11 +180,12 @@ export default function App() {
     saveCurrentRole(newRole);
     const demoProfile = DEMO_PROFILES.find(p => p.role === newRole);
     if (demoProfile) {
-      setCurrentUserProfile(demoProfile);
-      saveUserProfile(demoProfile);
+      const enriched = enrichUserProfile(demoProfile);
+      setCurrentUserProfile(enriched);
+      saveUserProfile(enriched);
       syncUserRoleToFirestore(demoProfile.id, newRole);
     } else if (currentUserProfile) {
-      const updated = { ...currentUserProfile, role: newRole, updatedAt: new Date().toISOString() };
+      const updated = enrichUserProfile({ ...currentUserProfile, role: newRole, updatedAt: new Date().toISOString() });
       setCurrentUserProfile(updated);
       saveAndSyncUserProfile(updated);
     }
@@ -191,17 +194,18 @@ export default function App() {
   };
 
   const handleSuccessSignIn = (profile: UserProfile) => {
-    setCurrentUserProfile(profile);
-    setCurrentUserRole(profile.role);
-    saveUserProfile(profile);
-    saveAndSyncUserProfile(profile);
+    const enriched = enrichUserProfile(profile);
+    setCurrentUserProfile(enriched);
+    setCurrentUserRole(enriched.role);
+    saveUserProfile(enriched);
+    saveAndSyncUserProfile(enriched);
     setAuthToast({
-      title: `Welcome, ${profile.name}`,
-      message: `Signed in successfully with ${ROLE_CONFIGS[profile.role].label} permissions. Active in Firestore database.`,
+      title: `Welcome, ${enriched.name}`,
+      message: `Signed in successfully with ${ROLE_CONFIGS[enriched.role].label} permissions. Active in Firestore database.`,
       type: 'success'
     });
     // Immediately navigate to the primary workspace for this role
-    setCurrentTab(getDefaultRouteForRole(profile.role));
+    setCurrentTab(getDefaultRouteForRole(enriched.role));
   };
 
   const handleConfirmSignOff = () => {
@@ -309,11 +313,12 @@ export default function App() {
         setCurrentUserProfile((prev) => {
           const match = remoteUsers.find((u) => u.id === prev.id || u.email.toLowerCase() === prev.email.toLowerCase());
           if (match) {
-            if (match.role && match.role !== prev.role) {
-              setCurrentUserRole(match.role);
-              saveCurrentRole(match.role);
+            const enriched = enrichUserProfile({ ...prev, ...match });
+            if (enriched.role && enriched.role !== prev.role) {
+              setCurrentUserRole(enriched.role);
+              saveCurrentRole(enriched.role);
             }
-            return { ...prev, ...match };
+            return enriched;
           }
           return prev;
         });
@@ -329,6 +334,41 @@ export default function App() {
       unsubSpec();
       unsubUsers();
     };
+  }, []);
+
+  // Listen to Firebase Authentication state for active session persistence
+  useEffect(() => {
+    const unsubAuth = subscribeAuthState((fbUser) => {
+      if (fbUser) {
+        const cleanEmail = fbUser.email?.toLowerCase() || '';
+        const isAnthony = cleanEmail === 'anthonywrather@gmail.com';
+        const assignedRole: UserRole = isAnthony ? 'admin' : 'client';
+        const baseProfile: UserProfile = {
+          id: fbUser.uid,
+          name: fbUser.displayName || (isAnthony ? 'Anthony Wrather' : (cleanEmail ? cleanEmail.split('@')[0] : 'Marine User')),
+          email: fbUser.email || '',
+          phone: fbUser.phoneNumber || '',
+          role: assignedRole,
+          avatarUrl: fbUser.photoURL || undefined,
+          photoURL: fbUser.photoURL || undefined,
+          vesselName: isAnthony ? 'AJW Solent Response' : '',
+          vesselType: isAnthony ? 'Workboat / Fast Tender' : 'Sailing Yacht',
+          marinaBerth: isAnthony ? 'Gosport Marina (HQ Workshop)' : '',
+          systemVoltage: '12V',
+          notifyJobUpdates: true,
+          notifyDispatchSms: true,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        const enriched = enrichUserProfile(baseProfile);
+        setCurrentUserProfile(enriched);
+        setCurrentUserRole(enriched.role);
+        saveUserProfile(enriched);
+      }
+    });
+
+    return () => unsubAuth();
   }, []);
 
   // Helper: Reload state when environment or test dataset is changed from modal

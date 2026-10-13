@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole, JobRecord, PostalOrder } from '../../types';
 import { 
   ROLE_CONFIGS, 
@@ -84,6 +84,24 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   const [notifyJobUpdates, setNotifyJobUpdates] = useState(currentUserProfile.notifyJobUpdates ?? true);
   const [notifyDispatchSms, setNotifyDispatchSms] = useState(currentUserProfile.notifyDispatchSms ?? true);
   const [systemVoltagePref, setSystemVoltagePref] = useState<'12V' | '24V'>(currentUserProfile.systemVoltage || '12V');
+
+  // Synchronize form values whenever modal opens or currentUserProfile updates
+  useEffect(() => {
+    if (isOpen) {
+      const demoFallback = DEMO_PROFILES.find(p => p.email.toLowerCase() === currentUserProfile.email?.toLowerCase());
+
+      setName(currentUserProfile.name || demoFallback?.name || '');
+      setEmail(currentUserProfile.email || demoFallback?.email || '');
+      setPhone(currentUserProfile.phone || demoFallback?.phone || '');
+      setAvatarUrl(currentUserProfile.avatarUrl || currentUserProfile.photoURL || demoFallback?.avatarUrl || '');
+      setVesselName(currentUserProfile.vesselName || demoFallback?.vesselName || '');
+      setVesselType(currentUserProfile.vesselType || demoFallback?.vesselType || 'Sailing Yacht');
+      setMarinaBerth(currentUserProfile.marinaBerth || demoFallback?.marinaBerth || '');
+      setNotifyJobUpdates(currentUserProfile.notifyJobUpdates ?? demoFallback?.notifyJobUpdates ?? true);
+      setNotifyDispatchSms(currentUserProfile.notifyDispatchSms ?? demoFallback?.notifyDispatchSms ?? true);
+      setSystemVoltagePref(currentUserProfile.systemVoltage || demoFallback?.systemVoltage || '12V');
+    }
+  }, [isOpen, currentUserProfile]);
 
   // Feedback states
   const [isSaving, setIsSaving] = useState(false);
