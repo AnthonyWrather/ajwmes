@@ -411,11 +411,19 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
   return { success: true, profile: newProfile };
 }
 
+export interface SignInWithGoogleResult {
+  success: boolean;
+  user?: FirebaseUser;
+  profile?: UserProfile;
+  error?: string;
+  isApiKeyError?: boolean;
+}
+
 /**
  * Sign in with Google using Firebase Authentication.
  * Handles popups safely, syncs or provisions user profile in Firestore `users/{uid}`.
  */
-export async function signInWithGoogle(): Promise<{ success: boolean; user?: FirebaseUser; profile?: UserProfile; error?: string }> {
+export async function signInWithGoogle(): Promise<SignInWithGoogleResult> {
   try {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -473,6 +481,13 @@ export async function signInWithGoogle(): Promise<{ success: boolean; user?: Fir
     console.warn('Firebase signInWithGoogle notice:', error);
     const errCode = (error?.code || '').toLowerCase();
     const rawMsg = error instanceof Error ? error.message : String(error);
+    const isApiKeyError = 
+      errCode.includes('api-key-not-valid') || 
+      errCode.includes('invalid-api-key') || 
+      rawMsg.toLowerCase().includes('api-key-not-valid') ||
+      rawMsg.toLowerCase().includes('invalid api key') ||
+      rawMsg.toLowerCase().includes('please pass a valid api key');
+
     let friendlyMessage = rawMsg || 'Google sign-in could not be completed.';
 
     if (errCode.includes('popup-blocked')) {
@@ -483,10 +498,10 @@ export async function signInWithGoogle(): Promise<{ success: boolean; user?: Fir
       friendlyMessage = 'Current hosting domain is not yet in Firebase Authorized Domains (Firebase Console > Authentication > Settings > Authorized domains). Use 1-click admin sign-in below.';
     } else if (errCode.includes('configuration-not-found') || rawMsg.includes('configuration-not-found')) {
       friendlyMessage = 'Firebase Google Authentication provider configuration is being synced. Please retry or click "Sign In as Anthony Wrather (Admin)".';
-    } else if (errCode.includes('api-key-not-valid') || rawMsg.includes('api-key-not-valid')) {
-      friendlyMessage = 'Firebase API key was rejected by Google Identity Services. Ensure VITE_FIREBASE_API_KEY is configured in your hosting secrets, or use 1-click admin sign-in below.';
+    } else if (isApiKeyError) {
+      friendlyMessage = 'Firebase Authentication rejected the Web API key (auth/api-key-not-valid). Check your Firebase Web API Key in Firebase Console or use 1-click admin sign-in below.';
     }
-    return { success: false, error: friendlyMessage };
+    return { success: false, error: friendlyMessage, isApiKeyError };
   }
 }
 

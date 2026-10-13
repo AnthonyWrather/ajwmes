@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Github, Globe, Cloud, Check, Copy, X, Terminal, ExternalLink } from 'lucide-react';
+import { Github, Globe, Cloud, Check, Copy, X, Terminal, ExternalLink, Key } from 'lucide-react';
 
 interface FreeHostingGuideModalProps {
   isOpen: boolean;
@@ -7,7 +7,7 @@ interface FreeHostingGuideModalProps {
 }
 
 export const FreeHostingGuideModal: React.FC<FreeHostingGuideModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'firebase' | 'github_actions' | 'custom_domain'>('firebase');
+  const [activeTab, setActiveTab] = useState<'firebase' | 'github_actions' | 'custom_domain' | 'auth_troubleshoot'>('firebase');
   const [copiedText, setCopiedText] = useState('');
 
   if (!isOpen) return null;
@@ -52,6 +52,16 @@ GitHub will automatically build and deploy your site on every push!`;
 2. Click "Add custom domain" (e.g. ajwmarine.co.uk or www.ajwmarine.co.uk).
 3. Follow the DNS instructions to add the 2 A-records or TXT record with your domain provider.
 4. Firebase provisions your SSL certificate automatically within 24 hours.`;
+
+  const authSecretSteps = `# In GitHub repository settings (Settings > Secrets and variables > Actions):
+Add repository secret:
+VITE_FIREBASE_API_KEY = AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
+
+# In Firebase Console (Authentication > Settings > Authorized domains):
+Add your custom or preview domain:
+- gen-lang-client-0618772940.web.app
+- gen-lang-client-0618772940.firebaseapp.com
+- yourdomain.co.uk`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
@@ -98,6 +108,15 @@ GitHub will automatically build and deploy your site on every push!`;
           >
             <Globe className="w-4 h-4" />
             <span>3. Custom Domain</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('auth_troubleshoot')}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+              activeTab === 'auth_troubleshoot' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Key className="w-4 h-4" />
+            <span>4. Auth &amp; API Key</span>
           </button>
         </div>
 
@@ -162,6 +181,47 @@ GitHub will automatically build and deploy your site on every push!`;
             <p className="text-[11px] text-slate-400">
               ✓ Free SSL certificate by Google &nbsp; ✓ Global CDN edge network &nbsp; ✓ Zero renewal costs
             </p>
+          </div>
+        )}
+
+        {activeTab === 'auth_troubleshoot' && (
+          <div className="space-y-3 text-xs">
+            <p className="text-slate-300 leading-relaxed">
+              If you receive <code className="text-amber-300 font-mono">auth/api-key-not-valid</code> when signing in on Firebase Hosting:
+            </p>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-[11px] text-slate-300">
+              <div className="font-bold text-white flex items-center gap-2">
+                <Key className="w-4 h-4 text-sky-400" />
+                <span>Firebase Web API Key vs Gemini Key</span>
+              </div>
+              <p className="text-slate-400">
+                A Gemini AI Studio key (<code className="text-slate-300 font-mono">aistudio.google.com/apikey</code>) only works with generative AI endpoints. Firebase Authentication requires the <strong>Firebase Web API Key</strong> from your Firebase project.
+              </p>
+              <div className="pt-1">
+                <span className="text-white font-semibold">1. Web API Key for gen-lang-client-0618772940:</span>
+                <div className="mt-1 flex items-center justify-between p-2 rounded bg-slate-900 border border-slate-800 font-mono text-sky-300 text-[11px]">
+                  <span>AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg</span>
+                  <button
+                    onClick={() => copyToClipboard('AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg', 'api_key_val')}
+                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] flex items-center gap-1 font-sans cursor-pointer"
+                  >
+                    {copiedText === 'api_key_val' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedText === 'api_key_val' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative bg-slate-950 rounded-xl p-3.5 border border-slate-800 font-mono text-[11px] text-sky-300">
+              <pre className="overflow-x-auto whitespace-pre-wrap">{authSecretSteps}</pre>
+              <button
+                onClick={() => copyToClipboard(authSecretSteps, 'auth_steps')}
+                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1"
+              >
+                {copiedText === 'auth_steps' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedText === 'auth_steps' ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
           </div>
         )}
 

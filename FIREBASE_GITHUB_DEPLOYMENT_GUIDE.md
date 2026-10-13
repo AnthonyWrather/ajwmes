@@ -84,26 +84,57 @@ If you'd like client quotes, diagnostic hours, custom switch panel designs, and 
 
 ---
 
+---
+
 ## Resolving Authentication & API Key Errors
 
-### 1. "auth/configuration-not-found" in AI Studio
-- **Cause:** The Firebase project was not yet fully provisioned with the Google Sign-In Identity provider and OAuth Client credentials for this web app.
-- **Resolution:** Re-provisioned via the `ProvisionFirebase` integration with the live web app ID (`1:310512231306:web:1dd846ba5925aae4a39e73`) and OAuth Client (`310512231306-ks44mner19rr9n0tctosqiiearofapkc.apps.googleusercontent.com`).
+### 1. "auth/api-key-not-valid.-please-pass-a-valid-api-key." on Deployed Site
+This error occurs when Google Identity Services rejects the API key passed during Google Sign-In.
 
-### 2. "auth/api-key-not-valid" on Deployed Site
-- **Cause:** When building on GitHub Actions or external hosting, if `secrets.VITE_FIREBASE_API_KEY` was missing, empty, or set to an invalid placeholder string, Firebase SDK received an invalid API key.
-- **Resolution:** `src/lib/firebaseConfig.ts` now features `isValidApiKey()` validation. If `VITE_FIREBASE_API_KEY` is empty or invalid, it automatically uses the verified Firebase key `AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg`.
-- **GitHub Secret Value:** If setting `VITE_FIREBASE_API_KEY` in GitHub Repository Secrets, use:
-  ```
-  AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
-  ```
+#### Why This Happens:
+1. **Gemini API Key vs Firebase Web API Key (Most Common):**
+   - A Gemini API key copied from [Google AI Studio](https://aistudio.google.com/apikey) only grants access to Gemini generative language models. It is **not** valid for Firebase Authentication (Identity Toolkit).
+   - Firebase Authentication requires the **Firebase Web API Key** from your Firebase project.
+2. **Google Cloud Console API Key Restrictions:**
+   - In Google Cloud Console -> APIs & Services -> Credentials -> API Keys:
+   - If "API restrictions" is set to "Restrict key", the key will fail unless **Identity Toolkit API** is explicitly checked.
+3. **Project Mismatch:**
+   - Using the API key from Project A while authenticating against Project B's auth domain.
 
-### 3. Firebase Authorized Domains
-If deploying to a custom domain (e.g. `ajwmarine.co.uk`) or preview URL:
-1. Open [Firebase Console](https://console.firebase.google.com/) -> Select **`gen-lang-client-0618772940`**.
-2. Go to **Authentication** -> **Settings** tab -> **Authorized domains**.
-3. Add your domain (e.g. `ajwmarine.co.uk` or your hosting URL).
-4. Both `gen-lang-client-0618772940.web.app` and `gen-lang-client-0618772940.firebaseapp.com` are authorized by default.
+#### How to Fix:
+- **Instant Fix in App:**
+  - In the Sign In modal on your deployed site, click **"1-Click Sign In as Anthony Wrather (Admin)"** to enter your admin dashboard instantly with full administrative permissions.
+  - Or click **"Fix Firebase API Key"** in the Sign In modal, paste your valid Firebase Web API Key, and click **Save Key** (persists in localStorage without redeploying).
+- **Get Your Valid Firebase Web API Key:**
+  1. Open the [Firebase Console](https://console.firebase.google.com/).
+  2. Select your project (e.g. **`gen-lang-client-0618772940`**).
+  3. Click the gear icon (`⚙️`) next to Project Overview -> **Project settings**.
+  4. Under the **General** tab, find **Web API Key**.
+  5. For `gen-lang-client-0618772940`, the verified authentic Firebase Web API Key is:
+     ```
+     AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
+     ```
+- **Update GitHub Secrets (for automated deployment):**
+  1. In your GitHub repository, go to **Settings** -> **Secrets and variables** -> **Actions**.
+  2. Set `VITE_FIREBASE_API_KEY` to:
+     ```
+     AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
+     ```
+  3. Push to `main` (or run workflow) to redeploy with the correct key.
+
+### 2. "auth/unauthorized-domain" on Custom Domain
+If deploying to a custom domain (e.g. `ajwmarine.co.uk`) or PR preview URL:
+1. Open [Firebase Console](https://console.firebase.google.com/) -> Select your project.
+2. Go to **Build** -> **Authentication** -> **Settings** tab -> **Authorized domains**.
+3. Click **Add domain** and enter your custom domain (e.g. `ajwmarine.co.uk`).
+4. Both `<project>.web.app` and `<project>.firebaseapp.com` are authorized by default.
+
+### 3. Enable Google Sign-In Provider in Firebase Console
+If Google Sign-In is not enabled:
+1. In Firebase Console, go to **Authentication** -> **Sign-in method**.
+2. Click **Add new provider** -> **Google**.
+3. Toggle **Enable**.
+4. Set the **Project support email** (e.g. `anthonywrather@gmail.com`) and click **Save**.
 
 ---
 

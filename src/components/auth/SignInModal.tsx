@@ -9,6 +9,14 @@ import {
   saveAndSyncUserProfile 
 } from '../../lib/auth';
 import { 
+  firebaseConfig, 
+  getCustomApiKey, 
+  setCustomApiKey, 
+  DEFAULT_API_KEY, 
+  isValidApiKey,
+  tryAutoFetchHostingConfig 
+} from '../../lib/firebaseConfig';
+import { 
   X, 
   Key, 
   User, 
@@ -82,6 +90,10 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isApiKeyError, setIsApiKeyError] = useState(false);
+  const [customKeyInput, setCustomKeyInput] = useState('');
+  const [showKeyEditor, setShowKeyEditor] = useState(false);
+  const [keySaveMessage, setKeySaveMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -92,6 +104,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     try {
       const result = await signInWithGoogle();
       if (result.success && result.profile) {
+        setIsApiKeyError(false);
         setSuccessMessage(`Welcome back, ${result.profile.name}! Signed in as ${result.profile.role.toUpperCase()}.`);
         setTimeout(() => {
           onSuccessSignIn(result.profile!);
@@ -99,9 +112,58 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         }, 600);
       } else if (result.error) {
         setErrorMessage(result.error);
+        if (result.isApiKeyError || result.error.includes('api-key-not-valid') || result.error.includes('invalid-api-key')) {
+          setIsApiKeyError(true);
+        }
       }
     } catch (e: any) {
-      setErrorMessage(e?.message || 'Google authentication error.');
+      const msg = e?.message || 'Google authentication error.';
+      setErrorMessage(msg);
+      if (msg.includes('api-key-not-valid') || msg.includes('invalid-api-key')) {
+        setIsApiKeyError(true);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveCustomKey = () => {
+    const trimmed = customKeyInput.trim();
+    if (!isValidApiKey(trimmed)) {
+      setKeySaveMessage('Key must be a valid Google/Firebase Web API key (starts with "AIza...", ~39 chars).');
+      return;
+    }
+    setCustomApiKey(trimmed);
+    setKeySaveMessage('✅ API key saved! Reloading configuration...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 700);
+  };
+
+  const handleResetDefaultKey = () => {
+    setCustomApiKey(DEFAULT_API_KEY);
+    setKeySaveMessage('✅ Reset to verified default key! Reloading...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 700);
+  };
+
+  const handleAutoDetectHosting = async () => {
+    setIsLoading(true);
+    setKeySaveMessage('Querying Firebase Hosting reserved endpoint (/__/firebase/init.json)...');
+    try {
+      const detected = await tryAutoFetchHostingConfig();
+      if (detected?.apiKey) {
+        setCustomApiKey(detected.apiKey);
+        setKeySaveMessage(`✅ Auto-detected hosting key for project "${detected.projectId || 'Firebase'}"! Reloading...`);
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      } else {
+        setKeySaveMessage('Could not auto-detect init.json on this host. Please paste your Firebase Web API Key below.');
+      }
+    } catch {
+      setKeySaveMessage('Auto-detection failed. Please paste your Firebase Web API Key manually below.');
     } finally {
       setIsLoading(false);
     }
@@ -256,28 +318,124 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {/* Feedback Alerts */}
         <div className="px-6 pt-4 empty:hidden">
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div className="flex-1 space-y-2">
-                <div>
-                  <span className="font-semibold block">Authentication Notice</span>
-                  <span>{errorMessage}</span>
+            <div className="p-3.5 rounded-2xl bg-rose-950/90 border border-rose-500/50 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in space-y-2 flex-col">
+              <div className="flex items-start justify-between w-full gap-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white block">Authentication Notice</span>
+                    <span className="text-rose-200 leading-relaxed">{errorMessage}</span>
+                  </div>
                 </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const adminProfile = DEMO_PROFILES.find(p => p.role === 'admin') || DEMO_PROFILES[0];
-                      handleSelectQuickPersona(adminProfile);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 rounded-lg text-[11px] font-bold border border-emerald-500/50 cursor-pointer transition-colors"
-                  >
-                    <Wrench className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>Sign In Directly as Anthony Wrather (Administrator)</span>
-                  </button>
-                </div>
+                <button 
+                  onClick={() => { setErrorMessage(null); setIsApiKeyError(false); }} 
+                  className="text-rose-400 hover:text-white text-xs p-1"
+                >
+                  ✕
+                </button>
               </div>
-              <button onClick={() => setErrorMessage(null)} className="text-rose-400 hover:text-white text-xs">✕</button>
+
+              {/* Instant 1-Click Sign-in Bypasses */}
+              <div className="w-full pt-1 border-t border-rose-800/40 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const adminProfile = DEMO_PROFILES.find(p => p.role === 'admin') || DEMO_PROFILES[0];
+                    handleSelectQuickPersona(adminProfile);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-900/90 hover:bg-emerald-800 text-emerald-100 rounded-xl text-xs font-bold border border-emerald-500/60 cursor-pointer transition-all shadow-sm"
+                >
+                  <Wrench className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>1-Click Sign In as Anthony Wrather (Admin)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const clientProfile = DEMO_PROFILES.find(p => p.role === 'client') || DEMO_PROFILES[3];
+                    handleSelectQuickPersona(clientProfile);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-950/80 hover:bg-sky-900/80 text-sky-200 rounded-xl text-xs font-semibold border border-sky-500/40 cursor-pointer transition-all"
+                >
+                  <Ship className="w-3.5 h-3.5 text-sky-300" />
+                  <span>Sign In as Client</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowKeyEditor(!showKeyEditor)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 cursor-pointer transition-all ml-auto"
+                >
+                  <span>{showKeyEditor ? 'Hide Key Fix' : 'Fix Firebase API Key'}</span>
+                </button>
+              </div>
+
+              {/* API Key In-App Fixer & Diagnostic Panel */}
+              {(isApiKeyError || showKeyEditor) && (
+                <div className="w-full p-3 bg-slate-950/90 rounded-xl border border-slate-800 space-y-2.5 text-slate-300 text-[11px] mt-1">
+                  <div className="font-bold text-white flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-sky-400">
+                      <Key className="w-3.5 h-3.5" />
+                      <span>Firebase Web API Key Resolver</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      Project: <strong className="text-slate-200">{firebaseConfig.projectId}</strong>
+                    </span>
+                  </div>
+
+                  <p className="text-slate-400 leading-normal">
+                    Why did Google Identity Services reject the key?
+                    <br />
+                    1. <strong>Gemini Key Mismatch:</strong> An AI Studio Gemini key (<code className="text-amber-300 font-mono">aistudio.google.com/apikey</code>) was provided instead of the Firebase Web API Key.
+                    <br />
+                    2. <strong>Firebase Web API Key:</strong> Copy the Web API Key from <span className="text-white font-medium">Firebase Console &gt; Project Settings &gt; General</span>.
+                    <br />
+                    3. <strong>Identity Toolkit:</strong> Ensure Google Cloud Console Credentials allow the Identity Toolkit API.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      value={customKeyInput}
+                      onChange={(e) => setCustomKeyInput(e.target.value)}
+                      placeholder="Paste Firebase Web API Key (AIzaSy...)"
+                      className="flex-1 w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-sky-500"
+                    />
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={handleSaveCustomKey}
+                        disabled={!customKeyInput.trim()}
+                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white rounded-lg font-bold text-xs cursor-pointer transition-colors"
+                      >
+                        Save Key
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAutoDetectHosting}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs cursor-pointer transition-colors"
+                        title="Auto-detect from /__/firebase/init.json on Firebase Hosting"
+                      >
+                        Auto-Detect
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetDefaultKey}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs cursor-pointer transition-colors"
+                        title="Reset to verified default key"
+                      >
+                        Reset Default
+                      </button>
+                    </div>
+                  </div>
+
+                  {keySaveMessage && (
+                    <div className="text-[11px] text-amber-300 font-medium">
+                      {keySaveMessage}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

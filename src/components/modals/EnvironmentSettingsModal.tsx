@@ -11,10 +11,13 @@ import {
   AlertCircle, 
   ShieldCheck,
   Eye,
+  EyeOff,
   GitBranch,
   Cpu,
   Copy,
-  Check
+  Check,
+  Key,
+  ExternalLink
 } from 'lucide-react';
 import { 
   detectEnvironment, 
@@ -28,6 +31,15 @@ import {
   resetEnvironmentToTestData, 
   ExportedEnvironmentData 
 } from '../../lib/envStorage';
+import { 
+  firebaseConfig, 
+  getCustomApiKey, 
+  setCustomApiKey, 
+  DEFAULT_API_KEY, 
+  isValidApiKey, 
+  clearCustomFirebaseConfig, 
+  tryAutoFetchHostingConfig 
+} from '../../lib/firebaseConfig';
 import { FirestoreConnectionState } from '../../types';
 
 interface EnvironmentSettingsModalProps {
@@ -51,8 +63,44 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [actionSuccessNotice, setActionSuccessNotice] = useState<string | null>(null);
+  const [customKeyInput, setCustomKeyInput] = useState('');
+  const [showKeySecret, setShowKeySecret] = useState(false);
+  const [keyNotice, setKeyNotice] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleSaveApiKey = () => {
+    const trimmed = customKeyInput.trim();
+    if (!isValidApiKey(trimmed)) {
+      setKeyNotice('Error: Key must start with "AIza..." and be a valid Google/Firebase Web API key.');
+      return;
+    }
+    setCustomApiKey(trimmed);
+    setKeyNotice('✅ Firebase Web API Key saved! Reloading application...');
+    setTimeout(() => window.location.reload(), 800);
+  };
+
+  const handleResetDefaultApiKey = () => {
+    setCustomApiKey(DEFAULT_API_KEY);
+    setKeyNotice('✅ Reset to verified default Firebase API key! Reloading...');
+    setTimeout(() => window.location.reload(), 800);
+  };
+
+  const handleAutoDetectHostingConfig = async () => {
+    setKeyNotice('Querying Firebase Hosting reserved endpoint (/__/firebase/init.json)...');
+    try {
+      const detected = await tryAutoFetchHostingConfig();
+      if (detected?.apiKey) {
+        setCustomApiKey(detected.apiKey);
+        setKeyNotice(`✅ Auto-detected hosting key for project "${detected.projectId || 'Firebase'}"! Reloading...`);
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        setKeyNotice('No init.json found on this domain. Please paste your Firebase Web API Key manually.');
+      }
+    } catch {
+      setKeyNotice('Failed to auto-detect hosting config. Please paste key manually.');
+    }
+  };
 
   const handleSwitchEnvironment = (env: AppEnvironment | 'auto') => {
     setEnvironmentOverride(env);
@@ -327,6 +375,101 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Firebase Project & Web API Key Management Card */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Key className="w-4 h-4 text-sky-400" />
+                    <span className="font-bold text-white">Firebase Project &amp; Web API Key Diagnostics</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-500/30 font-mono text-[10px]">
+                    Project: {firebaseConfig.projectId}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-400">
+                  Resolves <code className="text-amber-300 font-mono">auth/api-key-not-valid</code> errors when deployed to Firebase.
+                  Ensure you are using the <strong>Firebase Web API Key</strong> from the Firebase Console, not a Google Gemini AI Studio key.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 block">Active Web App ID:</span>
+                    <span className="font-mono text-slate-200 select-all truncate block">{firebaseConfig.appId}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Auth Domain:</span>
+                    <span className="font-mono text-slate-200 select-all truncate block">{firebaseConfig.authDomain}</span>
+                  </div>
+                  <div className="sm:col-span-2 flex items-center justify-between pt-1 border-t border-slate-800">
+                    <span className="text-slate-400">Active Web API Key:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sky-300 text-[11px]">
+                        {showKeySecret 
+                          ? firebaseConfig.apiKey 
+                          : `${firebaseConfig.apiKey.slice(0, 8)}••••••••••••${firebaseConfig.apiKey.slice(-4)}`
+                        }
+                      </span>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowKeySecret(!showKeySecret)}
+                        className="text-slate-400 hover:text-white p-0.5 cursor-pointer"
+                        title={showKeySecret ? 'Hide Key' : 'Reveal Key'}
+                      >
+                        {showKeySecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Key Overwrite Input */}
+                <div className="space-y-2 pt-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">
+                    Update or Override Web API Key for this Browser:
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <input
+                      type="text"
+                      value={customKeyInput}
+                      onChange={(e) => setCustomKeyInput(e.target.value)}
+                      placeholder="Paste your Firebase Web API Key (AIzaSy...)"
+                      className="flex-1 w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-sky-500"
+                    />
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={handleSaveApiKey}
+                        disabled={!customKeyInput.trim()}
+                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white rounded-lg font-bold text-xs cursor-pointer transition-colors"
+                      >
+                        Save Key
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAutoDetectHostingConfig}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs cursor-pointer transition-colors"
+                        title="Auto-detect from /__/firebase/init.json on Firebase Hosting"
+                      >
+                        Auto-Detect
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetDefaultApiKey}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs cursor-pointer transition-colors"
+                        title="Reset to default authentic Firebase key"
+                      >
+                        Reset Default
+                      </button>
+                    </div>
+                  </div>
+                  {keyNotice && (
+                    <div className="text-[11px] text-amber-300 font-medium">
+                      {keyNotice}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
