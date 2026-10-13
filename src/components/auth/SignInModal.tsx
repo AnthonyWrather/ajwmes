@@ -35,6 +35,7 @@ interface SignInModalProps {
   onSuccessSignIn: (profile: UserProfile) => void;
   onOpenRegisterTab?: boolean;
   initialTab?: 'signin' | 'register' | 'quick_personas';
+  initialEmail?: string;
 }
 
 export const SignInModal: React.FC<SignInModalProps> = ({
@@ -43,13 +44,14 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   currentUserRole,
   onSuccessSignIn,
   onOpenRegisterTab = false,
-  initialTab
+  initialTab,
+  initialEmail = ''
 }) => {
   const [activeTab, setActiveTab] = useState<'signin' | 'register' | 'quick_personas'>(
     initialTab || (onOpenRegisterTab ? 'register' : 'signin')
   );
 
-  // Sync activeTab when modal opens or initialTab changes
+  // Sync activeTab and prefilled email when modal opens or initialTab/initialEmail changes
   React.useEffect(() => {
     if (isOpen) {
       if (initialTab) {
@@ -59,10 +61,14 @@ export const SignInModal: React.FC<SignInModalProps> = ({
       } else {
         setActiveTab('signin');
       }
+      if (initialEmail) {
+        setEmail(initialEmail);
+        setRegEmail(initialEmail);
+      }
       setErrorMessage(null);
       setSuccessMessage(null);
     }
-  }, [isOpen, initialTab, onOpenRegisterTab]);
+  }, [isOpen, initialTab, onOpenRegisterTab, initialEmail]);
 
   // Sign In form state
   const [email, setEmail] = useState('');
@@ -106,6 +112,16 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           onSuccessSignIn(res.profile!);
           onClose();
         }, 500);
+      } else if (res.notFound) {
+        // Refuse login, transfer email and redirect to vessel registration
+        const cleanEnteredEmail = email.trim().toLowerCase();
+        setRegEmail(cleanEnteredEmail);
+        if (password && password.length >= 6) {
+          setRegPassword(password);
+          setRegConfirmPassword(password);
+        }
+        setActiveTab('register');
+        setErrorMessage(`No account found for "${cleanEnteredEmail}". Login refused. We have redirected you to the registration page with your email address copied over.`);
       } else {
         setErrorMessage(res.error || 'Could not verify account credentials.');
       }
@@ -215,7 +231,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           </button>
 
           <button
-            onClick={() => { setActiveTab('register'); setErrorMessage(null); }}
+            onClick={() => { 
+              if (email.trim() && !regEmail.trim()) {
+                setRegEmail(email.trim().toLowerCase());
+              }
+              setActiveTab('register'); 
+              setErrorMessage(null); 
+            }}
             className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'register'
                 ? 'bg-sky-600 text-white font-bold shadow-sm shadow-sky-600/30'
@@ -362,7 +384,17 @@ export const SignInModal: React.FC<SignInModalProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab('register')}
+                  onClick={() => {
+                    if (email.trim()) {
+                      setRegEmail(email.trim().toLowerCase());
+                    }
+                    if (password && password.length >= 6) {
+                      setRegPassword(password);
+                      setRegConfirmPassword(password);
+                    }
+                    setActiveTab('register');
+                    setErrorMessage(null);
+                  }}
                   className="text-sky-400 hover:underline cursor-pointer"
                 >
                   Create boat account →
@@ -418,7 +450,14 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Email Address *</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300">Email Address *</label>
+                  {regEmail && email && regEmail.toLowerCase() === email.trim().toLowerCase() && (
+                    <span className="text-[10px] text-sky-400 font-mono bg-sky-950/60 border border-sky-500/30 px-1.5 py-0.5 rounded">
+                      Transferred from sign-in
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input

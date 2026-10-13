@@ -170,6 +170,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [signInInitialTab, setSignInInitialTab] = useState<'signin' | 'register' | 'quick_personas'>('signin');
+  const [signInInitialEmail, setSignInInitialEmail] = useState<string>('');
   const [isSignOffModalOpen, setIsSignOffModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [authToast, setAuthToast] = useState<{ title: string; message: string; type: 'success' | 'info' } | null>(null);
@@ -1432,10 +1433,14 @@ export default function App() {
       {/* Dedicated Sign In & Vessel Registration Modal */}
       <SignInModal
         isOpen={isSignInModalOpen}
-        onClose={() => setIsSignInModalOpen(false)}
+        onClose={() => {
+          setIsSignInModalOpen(false);
+          setSignInInitialEmail('');
+        }}
         currentUserRole={currentUserRole}
         onSuccessSignIn={handleSuccessSignIn}
         initialTab={signInInitialTab}
+        initialEmail={signInInitialEmail}
       />
 
       {/* Reassuring Sign Off Confirmation Modal */}
@@ -1481,6 +1486,12 @@ export default function App() {
           saveAndSyncUserProfile(profile);
         }}
         onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
+        onOpenRegister={(emailToRegister) => {
+          setIsAuthModalOpen(false);
+          setSignInInitialTab('register');
+          setSignInInitialEmail(emailToRegister || '');
+          setIsSignInModalOpen(true);
+        }}
       />
 
       {/* Booking & Quote Modal */}

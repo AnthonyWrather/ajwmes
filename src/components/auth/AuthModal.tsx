@@ -34,6 +34,7 @@ interface AuthModalProps {
   currentUserProfile: UserProfile;
   onUpdateUserProfile: (profile: UserProfile) => void;
   onOpenPermissionsMatrix?: () => void;
+  onOpenRegister?: (email?: string) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -43,11 +44,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSelectRole,
   currentUserProfile,
   onUpdateUserProfile,
-  onOpenPermissionsMatrix
+  onOpenPermissionsMatrix,
+  onOpenRegister
 }) => {
   const [activeTab, setActiveTab] = useState<'roles' | 'email' | 'blueprint'>('roles');
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authFeedback, setAuthFeedback] = useState<string | null>(null);
+  const [notFoundEmail, setNotFoundEmail] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
 
@@ -61,6 +64,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
     setIsSigningIn(true);
     setAuthFeedback(null);
+    setNotFoundEmail(null);
     try {
       const result = await signInWithEmailOrAccount(emailInput, passwordInput);
       if (result.success && result.profile) {
@@ -69,6 +73,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setAuthFeedback(`Signed in as ${result.profile.email} (${result.profile.role.toUpperCase()})`);
       } else if (result.error) {
         setAuthFeedback(result.error);
+        if (result.notFound) {
+          setNotFoundEmail(emailInput.trim().toLowerCase());
+        }
       }
     } catch (e: any) {
       setAuthFeedback(e?.message || 'Authentication error.');
@@ -178,17 +185,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Feedback Alert */}
         {authFeedback && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-sky-950/70 border border-sky-500/40 text-xs text-sky-200 flex items-center justify-between gap-2 animate-in fade-in">
+          <div className="mx-6 mt-4 p-3 rounded-xl bg-sky-950/70 border border-sky-500/40 text-xs text-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
               <span>{authFeedback}</span>
             </div>
-            <button 
-              onClick={() => setAuthFeedback(null)}
-              className="text-slate-400 hover:text-white text-xs"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {notFoundEmail && onOpenRegister && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const email = notFoundEmail;
+                    setAuthFeedback(null);
+                    setNotFoundEmail(null);
+                    onOpenRegister(email);
+                  }}
+                  className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Register Account Now →
+                </button>
+              )}
+              <button 
+                onClick={() => { setAuthFeedback(null); setNotFoundEmail(null); }}
+                className="text-slate-400 hover:text-white text-xs p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 
