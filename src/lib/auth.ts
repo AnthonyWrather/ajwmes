@@ -293,21 +293,51 @@ export async function saveAndSyncUserProfile(profile: UserProfile): Promise<{ su
   }
 }
 
+function encodePassword(password: string): string {
+  try {
+    return btoa(unescape(encodeURIComponent(password)));
+  } catch {
+    return btoa(password);
+  }
+}
+
 /**
  * Register a new vessel owner account and sync to Firestore.
  */
 export async function registerVesselAccount(details: {
   name: string;
   email: string;
+  password?: string;
   phone?: string;
   vesselName?: string;
   vesselType?: string;
   marinaBerth?: string;
 }): Promise<UserProfile> {
   const cleanEmail = details.email.trim().toLowerCase();
+  if (!cleanEmail) {
+    throw new Error('Please enter a valid email address.');
+  }
+
+  // Check if user already exists in Firestore
+  if (firebaseConfig.apiKey) {
+    try {
+      const usersCol = collection(db, getScopedCollection('users'));
+      const q = query(usersCol, where('email', '==', cleanEmail));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        throw new Error('An account with this email address already exists. Please sign in with your password.');
+      }
+    } catch (e: any) {
+      if (e?.message?.includes('already exists')) {
+        throw e;
+      }
+    }
+  }
+
   const assignedRole: UserRole = cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client';
   const id = `user-${Date.now()}`;
   const now = new Date().toISOString();
+  const pwdHash = details.password ? encodePassword(details.password) : '';
   const profile: UserProfile = {
     id,
     name: details.name.trim() || 'Vessel Owner',
@@ -322,7 +352,8 @@ export async function registerVesselAccount(details: {
     notifyDispatchSms: true,
     createdAt: now,
     lastLoginAt: now,
-    updatedAt: now
+    updatedAt: now,
+    passwordHash: pwdHash
   };
 
   await saveAndSyncUserProfile(profile);
@@ -330,13 +361,14 @@ export async function registerVesselAccount(details: {
 }
 
 /**
- * Direct email sign-in or demo account retrieval with live Firestore lookup.
+ * Direct email & password sign-in with live Firestore lookup and password verification.
  */
 export async function signInWithEmailOrAccount(email: string, password?: string): Promise<{ success: boolean; profile?: UserProfile; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
   if (!cleanEmail) {
     return { success: false, error: 'Please enter a valid email address.' };
   }
+  const providedHash = password ? encodePassword(password) : '';
 
   // 1. Look up existing user in Firestore 'users' collection first if API key is present
   if (firebaseConfig.apiKey) {
@@ -347,6 +379,12 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
       if (!snap.empty) {
         const docSnap = snap.docs[0];
         const data = docSnap.data();
+
+        // If account has a stored password and password was provided, verify it
+        if (data.passwordHash && password && data.passwordHash !== providedHash) {
+          return { success: false, error: 'Incorrect password for this account. Please try again.' };
+        }
+
         const existingProfile: UserProfile = {
           id: data.uid || data.id || docSnap.id,
           name: data.displayName || data.name || cleanEmail.split('@')[0],
@@ -363,14 +401,20 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
           notifyDispatchSms: data.notifyDispatchSms ?? true,
           createdAt: data.createdAt || new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          passwordHash: data.passwordHash || providedHash
         };
+
         // Update last login in database
-        await setDoc(doc(db, getScopedCollection('users'), existingProfile.id), {
+        const updatePayload: any = {
           lastLoginAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        }, { merge: true });
+        };
+        if (!data.passwordHash && providedHash) {
+          updatePayload.passwordHash = providedHash;
+        }
 
+        await setDoc(doc(db, getScopedCollection('users'), existingProfile.id), updatePayload, { merge: true });
         saveUserProfile(existingProfile);
         return { success: true, profile: existingProfile };
       }
@@ -385,7 +429,8 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
     const updatedDemo: UserProfile = {
       ...demoMatch,
       lastLoginAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      passwordHash: demoMatch.passwordHash || providedHash
     };
     await saveAndSyncUserProfile(updatedDemo);
     return { success: true, profile: updatedDemo };
@@ -404,7 +449,8 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
     notifyDispatchSms: true,
     createdAt: now,
     lastLoginAt: now,
-    updatedAt: now
+    updatedAt: now,
+    passwordHash: providedHash
   };
 
   await saveAndSyncUserProfile(newProfile);

@@ -589,7 +589,8 @@ export function subscribeUsers(onUpdate: (users: UserProfile[]) => void) {
             notifyDispatchSms: data.notifyDispatchSms ?? true,
             createdAt: data.createdAt || '',
             lastLoginAt: data.lastLoginAt || '',
-            updatedAt: data.updatedAt || ''
+            updatedAt: data.updatedAt || '',
+            passwordHash: data.passwordHash || ''
           } as UserProfile;
         });
         onUpdate(users);
@@ -631,7 +632,8 @@ export function subscribeUserProfile(userId: string, onUpdate: (user: UserProfil
           notifyDispatchSms: data.notifyDispatchSms ?? true,
           createdAt: data.createdAt || '',
           lastLoginAt: data.lastLoginAt || '',
-          updatedAt: data.updatedAt || ''
+          updatedAt: data.updatedAt || '',
+          passwordHash: data.passwordHash || ''
         };
         onUpdate(profile);
       } else {
@@ -668,7 +670,8 @@ export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
       notifyDispatchSms: profile.notifyDispatchSms ?? true,
       createdAt: profile.createdAt || new Date().toISOString(),
       lastLoginAt: profile.lastLoginAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      passwordHash: profile.passwordHash || ''
     };
     await setDoc(doc(db, colPath, docId), cleanForFirestore(payload), { merge: true });
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });

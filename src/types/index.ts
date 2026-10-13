@@ -27,6 +27,7 @@ export interface UserProfile {
   createdAt?: string;
   lastLoginAt?: string;
   updatedAt?: string;
+  passwordHash?: string;
 }
 
 export type ServiceType = 

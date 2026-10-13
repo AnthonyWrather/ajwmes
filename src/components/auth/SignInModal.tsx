@@ -3,19 +3,10 @@ import { UserRole, UserProfile } from '../../types';
 import { 
   ROLE_CONFIGS, 
   DEMO_PROFILES, 
-  signInWithGoogle, 
   signInWithEmailOrAccount, 
   registerVesselAccount,
   saveAndSyncUserProfile 
 } from '../../lib/auth';
-import { 
-  firebaseConfig, 
-  getCustomApiKey, 
-  setCustomApiKey, 
-  DEFAULT_API_KEY, 
-  isValidApiKey,
-  tryAutoFetchHostingConfig 
-} from '../../lib/firebaseConfig';
 import { 
   X, 
   Key, 
@@ -30,11 +21,11 @@ import {
   Zap, 
   Package, 
   Wrench, 
-  ArrowRight, 
   Anchor, 
-  Sparkles,
   Phone,
-  MapPin
+  MapPin,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface SignInModalProps {
@@ -76,102 +67,30 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   // Sign In form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   // Register form state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regPhone, setRegPhone] = useState('');
   const [regVesselName, setRegVesselName] = useState('');
   const [regVesselType, setRegVesselType] = useState('Sailing Yacht');
   const [regMarina, setRegMarina] = useState('Haslar Marina');
 
-  // Loading & error feedback
+  // Loading & feedback
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isApiKeyError, setIsApiKeyError] = useState(false);
-  const [customKeyInput, setCustomKeyInput] = useState('');
-  const [showKeyEditor, setShowKeyEditor] = useState(false);
-  const [keySaveMessage, setKeySaveMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    try {
-      const result = await signInWithGoogle();
-      if (result.success && result.profile) {
-        setIsApiKeyError(false);
-        setSuccessMessage(`Welcome back, ${result.profile.name}! Signed in as ${result.profile.role.toUpperCase()}.`);
-        setTimeout(() => {
-          onSuccessSignIn(result.profile!);
-          onClose();
-        }, 600);
-      } else if (result.error) {
-        setErrorMessage(result.error);
-        if (result.isApiKeyError || result.error.includes('api-key-not-valid') || result.error.includes('invalid-api-key')) {
-          setIsApiKeyError(true);
-        }
-      }
-    } catch (e: any) {
-      const msg = e?.message || 'Google authentication error.';
-      setErrorMessage(msg);
-      if (msg.includes('api-key-not-valid') || msg.includes('invalid-api-key')) {
-        setIsApiKeyError(true);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSaveCustomKey = () => {
-    const trimmed = customKeyInput.trim();
-    if (!isValidApiKey(trimmed)) {
-      setKeySaveMessage('Key must be a valid Google/Firebase Web API key (starts with "AIza...", ~39 chars).');
-      return;
-    }
-    setCustomApiKey(trimmed);
-    setKeySaveMessage('✅ API key saved! Reloading configuration...');
-    setTimeout(() => {
-      window.location.reload();
-    }, 700);
-  };
-
-  const handleResetDefaultKey = () => {
-    setCustomApiKey(DEFAULT_API_KEY);
-    setKeySaveMessage('✅ Reset to verified default key! Reloading...');
-    setTimeout(() => {
-      window.location.reload();
-    }, 700);
-  };
-
-  const handleAutoDetectHosting = async () => {
-    setIsLoading(true);
-    setKeySaveMessage('Querying Firebase Hosting reserved endpoint (/__/firebase/init.json)...');
-    try {
-      const detected = await tryAutoFetchHostingConfig();
-      if (detected?.apiKey) {
-        setCustomApiKey(detected.apiKey);
-        setKeySaveMessage(`✅ Auto-detected hosting key for project "${detected.projectId || 'Firebase'}"! Reloading...`);
-        setTimeout(() => {
-          window.location.reload();
-        }, 800);
-      } else {
-        setKeySaveMessage('Could not auto-detect init.json on this host. Please paste your Firebase Web API Key below.');
-      }
-    } catch {
-      setKeySaveMessage('Auto-detection failed. Please paste your Firebase Web API Key manually below.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
+    if (!email.trim()) {
       setErrorMessage('Please enter your email address.');
       return;
     }
@@ -182,13 +101,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     try {
       const res = await signInWithEmailOrAccount(email, password);
       if (res.success && res.profile) {
-        setSuccessMessage(`Welcome aboard, ${res.profile.name}!`);
+        setSuccessMessage(`Welcome back, ${res.profile.name}! Signed in as ${res.profile.role.toUpperCase()}.`);
         setTimeout(() => {
           onSuccessSignIn(res.profile!);
           onClose();
         }, 500);
       } else {
-        setErrorMessage(res.error || 'Could not verify account.');
+        setErrorMessage(res.error || 'Could not verify account credentials.');
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Authentication error occurred.');
@@ -200,9 +119,18 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim() || !regEmail.trim()) {
-      setErrorMessage('Full name and email are required to register.');
+      setErrorMessage('Full name and email address are required to register.');
       return;
     }
+    if (regPassword.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setErrorMessage('Passwords do not match. Please re-enter.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -211,13 +139,14 @@ export const SignInModal: React.FC<SignInModalProps> = ({
       const profile = await registerVesselAccount({
         name: regName,
         email: regEmail,
+        password: regPassword,
         phone: regPhone,
         vesselName: regVesselName,
         vesselType: regVesselType,
         marinaBerth: regMarina
       });
 
-      setSuccessMessage(`Vessel owner account created for ${profile.name}! Redirecting...`);
+      setSuccessMessage(`Vessel owner account created for ${profile.name}! Opening portal...`);
       setTimeout(() => {
         onSuccessSignIn(profile);
         onClose();
@@ -230,16 +159,11 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   };
 
   const handleSelectQuickPersona = async (profile: UserProfile) => {
-    // 1. Immediately notify parent of successful role & profile switch
     onSuccessSignIn(profile);
     setSuccessMessage(`Switched to ${profile.name} (${profile.role.toUpperCase()})`);
-    
-    // 2. Persist locally and sync to Firestore in background
     saveAndSyncUserProfile(profile).catch((e) => {
       console.warn('Sync notice:', e);
     });
-
-    // 3. Close modal smoothly
     setTimeout(() => {
       onClose();
     }, 150);
@@ -262,7 +186,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 </span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Sign in to manage vessel electrical specs, view live diagnostic jobs &amp; track orders.
+                Sign in to manage vessel electrical specs, view diagnostic jobs &amp; track orders.
               </p>
             </div>
           </div>
@@ -318,124 +242,18 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {/* Feedback Alerts */}
         <div className="px-6 pt-4 empty:hidden">
           {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-rose-950/90 border border-rose-500/50 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in space-y-2 flex-col">
-              <div className="flex items-start justify-between w-full gap-2">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-white block">Authentication Notice</span>
-                    <span className="text-rose-200 leading-relaxed">{errorMessage}</span>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => { setErrorMessage(null); setIsApiKeyError(false); }} 
-                  className="text-rose-400 hover:text-white text-xs p-1"
-                >
-                  ✕
-                </button>
+            <div className="p-3.5 rounded-2xl bg-rose-950/90 border border-rose-500/50 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span className="font-bold text-white block">Authentication Notice</span>
+                <span className="text-rose-200 leading-relaxed">{errorMessage}</span>
               </div>
-
-              {/* Instant 1-Click Sign-in Bypasses */}
-              <div className="w-full pt-1 border-t border-rose-800/40 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const adminProfile = DEMO_PROFILES.find(p => p.role === 'admin') || DEMO_PROFILES[0];
-                    handleSelectQuickPersona(adminProfile);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-900/90 hover:bg-emerald-800 text-emerald-100 rounded-xl text-xs font-bold border border-emerald-500/60 cursor-pointer transition-all shadow-sm"
-                >
-                  <Wrench className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>1-Click Sign In as Anthony Wrather (Admin)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const clientProfile = DEMO_PROFILES.find(p => p.role === 'client') || DEMO_PROFILES[3];
-                    handleSelectQuickPersona(clientProfile);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-950/80 hover:bg-sky-900/80 text-sky-200 rounded-xl text-xs font-semibold border border-sky-500/40 cursor-pointer transition-all"
-                >
-                  <Ship className="w-3.5 h-3.5 text-sky-300" />
-                  <span>Sign In as Client</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowKeyEditor(!showKeyEditor)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 cursor-pointer transition-all ml-auto"
-                >
-                  <span>{showKeyEditor ? 'Hide Key Fix' : 'Fix Firebase API Key'}</span>
-                </button>
-              </div>
-
-              {/* API Key In-App Fixer & Diagnostic Panel */}
-              {(isApiKeyError || showKeyEditor) && (
-                <div className="w-full p-3 bg-slate-950/90 rounded-xl border border-slate-800 space-y-2.5 text-slate-300 text-[11px] mt-1">
-                  <div className="font-bold text-white flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-sky-400">
-                      <Key className="w-3.5 h-3.5" />
-                      <span>Firebase Web API Key Resolver</span>
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      Project: <strong className="text-slate-200">{firebaseConfig.projectId}</strong>
-                    </span>
-                  </div>
-
-                  <p className="text-slate-400 leading-normal">
-                    Why did Google Identity Services reject the key?
-                    <br />
-                    1. <strong>Gemini Key Mismatch:</strong> An AI Studio Gemini key (<code className="text-amber-300 font-mono">aistudio.google.com/apikey</code>) was provided instead of the Firebase Web API Key.
-                    <br />
-                    2. <strong>Firebase Web API Key:</strong> Copy the Web API Key from <span className="text-white font-medium">Firebase Console &gt; Project Settings &gt; General</span>.
-                    <br />
-                    3. <strong>Identity Toolkit:</strong> Ensure Google Cloud Console Credentials allow the Identity Toolkit API.
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-                    <input
-                      type="text"
-                      value={customKeyInput}
-                      onChange={(e) => setCustomKeyInput(e.target.value)}
-                      placeholder="Paste Firebase Web API Key (AIzaSy...)"
-                      className="flex-1 w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-sky-500"
-                    />
-                    <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={handleSaveCustomKey}
-                        disabled={!customKeyInput.trim()}
-                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white rounded-lg font-bold text-xs cursor-pointer transition-colors"
-                      >
-                        Save Key
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAutoDetectHosting}
-                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs cursor-pointer transition-colors"
-                        title="Auto-detect from /__/firebase/init.json on Firebase Hosting"
-                      >
-                        Auto-Detect
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleResetDefaultKey}
-                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs cursor-pointer transition-colors"
-                        title="Reset to verified default key"
-                      >
-                        Reset Default
-                      </button>
-                    </div>
-                  </div>
-
-                  {keySaveMessage && (
-                    <div className="text-[11px] text-amber-300 font-medium">
-                      {keySaveMessage}
-                    </div>
-                  )}
-                </div>
-              )}
+              <button 
+                onClick={() => setErrorMessage(null)} 
+                className="text-rose-400 hover:text-white text-xs p-1 cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
           )}
 
@@ -447,59 +265,10 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           )}
         </div>
 
-        {/* Tab 1: Sign In */}
+        {/* Tab 1: Email & Password Sign In */}
         {activeTab === 'signin' && (
           <div className="p-6 overflow-y-auto space-y-5 flex-1">
-            {/* Primary: Google Sign In Button */}
-            <div className="space-y-2.5">
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                className="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-900 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-all cursor-pointer shadow-lg active:scale-[0.99] disabled:opacity-50"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-                <span>{isLoading ? 'Connecting to Google...' : 'Continue with Google Account'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const adminProfile = DEMO_PROFILES.find(p => p.role === 'admin') || DEMO_PROFILES[0];
-                  handleSelectQuickPersona(adminProfile);
-                }}
-                className="w-full py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
-              >
-                <Wrench className="w-4 h-4 text-emerald-400" />
-                <span>1-Click Sign In as Anthony Wrather (Administrator)</span>
-              </button>
-
-              <div className="flex items-center gap-3 my-2">
-                <div className="flex-1 h-px bg-slate-800" />
-                <span className="text-[11px] font-mono uppercase text-slate-500">or sign in with email</span>
-                <div className="flex-1 h-px bg-slate-800" />
-              </div>
-            </div>
-
-            {/* Email & Password Form */}
-            <form onSubmit={handleEmailSignIn} className="space-y-3.5">
+            <form onSubmit={handleEmailSignIn} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
                   <span>Email Address</span>
@@ -535,12 +304,20 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500 transition-colors"
+                    required
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500 transition-colors"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -552,13 +329,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-sky-500/30"
                   />
-                  <span>Keep me signed in on this vessel</span>
+                  <span>Keep me signed in</span>
                 </label>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('register')}
-                  className="text-sky-400 hover:underline"
+                  className="text-sky-400 hover:underline cursor-pointer"
                 >
                   Create boat account →
                 </button>
@@ -567,7 +344,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50"
+                className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50"
               >
                 <Key className="w-4 h-4" />
                 <span>{isLoading ? 'Verifying Credentials...' : 'Sign In to AJW Portal'}</span>
@@ -577,7 +354,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-2.5">
               <Shield className="w-4 h-4 text-sky-400 shrink-0" />
               <span>
-                Testing without an account? Use the <strong>1-Click Team Roles</strong> tab above to preview any role (Admin, Yacht Client, Tech, Dispatch).
+                Standard email and password authentication. Safe across all browsers, containers, and Firebase hosting domains.
               </span>
             </div>
           </div>
@@ -591,7 +368,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               <div>
                 <span className="font-bold block">Register Your Vessel with AJW Marine</span>
                 <span className="text-[11px] text-sky-300">
-                  Save your vessel's electrical logs, request on-vessel diagnostics at £25/hr, design custom laser-cut panels, and direct message Anthony aboard your yacht.
+                  Save your vessel's electrical specs, request diagnostic bookings (£25/hr), order custom panels, and direct message Anthony aboard your yacht.
                 </span>
               </div>
             </div>
@@ -606,7 +383,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Captain David Mercer"
+                    placeholder="David Mercer"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
                   />
                 </div>
@@ -622,6 +399,45 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     placeholder="d.mercer@solent-sail.co.uk"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Password * (min 6 characters)</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type={showRegPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full pl-9 pr-8 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Confirm Password *</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type={showRegPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={regConfirmPassword}
+                    onChange={(e) => setRegConfirmPassword(e.target.value)}
+                    placeholder="••••••••••••"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
                   />
                 </div>
@@ -760,7 +576,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <Shield className="w-3.5 h-3.5 text-sky-400" />
-            <span>Encrypted Firebase Authentication</span>
+            <span>Encrypted Email &amp; Password Authentication</span>
           </div>
 
           <button

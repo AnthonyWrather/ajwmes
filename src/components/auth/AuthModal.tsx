@@ -3,7 +3,7 @@ import { UserRole, UserProfile } from '../../types';
 import { 
   ROLE_CONFIGS, 
   DEMO_PROFILES, 
-  signInWithGoogle, 
+  signInWithEmailOrAccount, 
   signOutUser 
 } from '../../lib/auth';
 import { 
@@ -45,17 +45,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onUpdateUserProfile,
   onOpenPermissionsMatrix
 }) => {
-  const [activeTab, setActiveTab] = useState<'roles' | 'google' | 'blueprint'>('roles');
+  const [activeTab, setActiveTab] = useState<'roles' | 'email' | 'blueprint'>('roles');
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authFeedback, setAuthFeedback] = useState<string | null>(null);
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
 
   if (!isOpen) return null;
 
-  const handleGoogleSignIn = async () => {
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim()) {
+      setAuthFeedback('Please enter an email address.');
+      return;
+    }
     setIsSigningIn(true);
     setAuthFeedback(null);
     try {
-      const result = await signInWithGoogle();
+      const result = await signInWithEmailOrAccount(emailInput, passwordInput);
       if (result.success && result.profile) {
         onUpdateUserProfile(result.profile);
         onSelectRole(result.profile.role);
@@ -137,13 +144,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             Switch Active Role ({currentUserRole.toUpperCase()})
           </button>
           <button
-            onClick={() => setActiveTab('google')}
+            onClick={() => setActiveTab('email')}
             className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'google' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              activeTab === 'email' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Key className="w-3.5 h-3.5" />
-            <span>Firebase Google Sign-In</span>
+            <span>Email Sign-In</span>
           </button>
           <button
             onClick={() => setActiveTab('blueprint')}
@@ -291,8 +298,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {/* Tab 2: Firebase Google Sign-In */}
-        {activeTab === 'google' && (
+        {/* Tab 2: Email & Password Sign-In */}
+        {activeTab === 'email' && (
           <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
             <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
@@ -317,11 +324,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               {currentUserProfile.id.startsWith('demo-') ? (
                 <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300">
-                  Currently running in <strong>Instant Sandbox Mode</strong> with simulated profile ({currentUserProfile.name}). You can also sign in with a real Google account below.
+                  Currently running in <strong>Instant Sandbox Mode</strong> with simulated profile ({currentUserProfile.name}). Sign in with a registered email and password below.
                 </div>
               ) : (
                 <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 flex items-center justify-between">
-                  <span>Authenticated via Firebase User ID: <code className="font-mono text-white">{currentUserProfile.id}</code></span>
+                  <span>Authenticated User ID: <code className="font-mono text-white">{currentUserProfile.id}</code></span>
                   <button
                     onClick={handleSignOut}
                     className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
@@ -333,29 +340,57 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               )}
             </div>
 
-            {/* Google Login Action */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 space-y-4 text-center">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
-                <Key className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-white">
-                  Connect Live Google Account
-                </h4>
-                <p className="text-slate-400 max-w-md mx-auto mt-1">
-                  Authenticate using Firebase Authentication. If signing in with <code className="text-sky-300">anthonywrather@gmail.com</code>, master Admin privileges are automatically assigned.
-                </p>
+            {/* Email Login Form */}
+            <form onSubmit={handleEmailSignIn} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3.5">
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-sky-400" />
+                <h4 className="text-sm font-bold text-white">Email &amp; Password Sign In</h4>
               </div>
 
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={isSigningIn}
-                className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center gap-2 mx-auto shadow-lg shadow-sky-600/30 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-              >
-                <Key className="w-4 h-4" />
-                <span>{isSigningIn ? 'Connecting to Google...' : 'Sign In with Google'}</span>
-              </button>
-            </div>
+              <div className="space-y-1">
+                <label className="text-xs text-slate-300 font-semibold">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="anthonywrather@gmail.com"
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-slate-300 font-semibold">Password</label>
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="pt-1 flex items-center gap-2">
+                <button
+                  type="submit"
+                  disabled={isSigningIn}
+                  className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>{isSigningIn ? 'Verifying...' : 'Sign In with Email'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmailInput('anthonywrather@gmail.com');
+                    setPasswordInput('ajwmarine2026');
+                  }}
+                  className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Fill Admin
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
