@@ -510,7 +510,7 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
           <div className="bg-white text-slate-900 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-5 print:shadow-none font-sans">
             <div className="flex items-center justify-between border-b pb-3">
               <div>
-                <h3 className="font-black text-lg tracking-tight">AJW MARINE ELECTRICAL</h3>
+                <h3 className="font-black text-lg tracking-tight">AJW MARINE ELECTRICAL SERVICES</h3>
                 <p className="text-xs text-slate-600">Gosport Workshop · Solent Marine Postal Dispatch</p>
               </div>
               <button

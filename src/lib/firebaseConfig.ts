@@ -135,7 +135,7 @@ export function setStoredProjectOverride(projectId: string | null) {
 export async function tryAutoFetchHostingConfig(): Promise<Partial<FirebaseAppConfig> | null> {
   if (typeof window === 'undefined') return null;
   const host = window.location.hostname;
-  const isHostingDomain = host.includes('web.app') || host.includes('firebaseapp.com');
+  const isHostingDomain = host.includes('web.app') || host.includes('firebaseapp.com') || host.includes('ajwmes.co.uk');
   if (!isHostingDomain) return null;
 
   try {

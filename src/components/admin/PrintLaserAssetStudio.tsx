@@ -244,7 +244,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
                   <div className="space-y-1 text-xs">
                     <p className="text-slate-300">📞 07700 900142</p>
                     <p className="text-slate-300">✉ anthonywrather@gmail.com</p>
-                    <p className="text-slate-300">🌐 ajwmarine.co.uk</p>
+                    <p className="text-slate-300">🌐 ajwmes.co.uk</p>
                   </div>
 
                   <div className="pt-2 border-t border-slate-700/60 text-[10px] text-slate-400 flex items-center justify-between">
@@ -324,7 +324,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
                 <div>
                   <p className="text-xs font-bold text-white">Anthony Wrather</p>
                   <p className="text-[10px] text-slate-400">Call / WhatsApp: 07700 900142</p>
-                  <p className="text-[10px] text-slate-400">ajwmarine.co.uk</p>
+                  <p className="text-[10px] text-slate-400">ajwmes.co.uk</p>
                 </div>
                 <div className="w-12 h-12 bg-white rounded-lg p-1 flex items-center justify-center shrink-0">
                   <QrCode className="w-10 h-10 text-slate-900" />

@@ -37,7 +37,7 @@ export function trackPageView(pagePath: string, pageTitle?: string) {
       const fullPath = pagePath.startsWith('/') ? pagePath : `/${pagePath}`;
       window.gtag('event', 'page_view', {
         page_path: fullPath,
-        page_title: pageTitle || `AJW Marine - ${pagePath}`,
+        page_title: pageTitle || `AJWMES - ${pagePath}`,
         page_location: window.location.origin + fullPath,
         send_to: GA_MEASUREMENT_ID
       });

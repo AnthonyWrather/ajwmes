@@ -63,8 +63,8 @@ export function detectEnvironment(): EnvironmentInfo {
     } else if (hostname.includes('--') && (hostname.includes('web.app') || hostname.includes('firebaseapp.com'))) {
       // Firebase Hosting preview channel (e.g. pr-12--project.web.app)
       envCode = 'github-preview';
-    } else if (hostname.includes('web.app') || hostname.includes('firebaseapp.com') || !hostname.includes('run.app')) {
-      // Production or custom domain deployment through GitHub
+    } else if (hostname.includes('web.app') || hostname.includes('firebaseapp.com') || hostname.includes('ajwmes.co.uk') || !hostname.includes('run.app')) {
+      // Production or custom domain deployment through GitHub / live domain
       envCode = 'github-deployed';
     } else {
       // Default to AI Studio dev if in Cloud Run without pre-
@@ -124,13 +124,13 @@ export function detectEnvironment(): EnvironmentInfo {
     default:
       return {
         envCode: 'github-deployed',
-        envName: 'GitHub Production / Deployed',
+        envName: 'Production Live (ajwmes.co.uk)',
         isAiStudio: false,
         isPreview: false,
         isGitHubDeployed: true,
         storageNamespace: 'ajwmes_github_live',
         firestoreCollectionPrefix: '', // Uses root production collections: jobs, catalog, postal_orders, users, etc.
-        dataDescription: 'Live production / staging deployment connected to primary Firestore database.',
+        dataDescription: 'Live production deployment connected to primary Firestore database at ajwmes.co.uk.',
         hasApiKey,
         hostname,
         isSimulatedOverride

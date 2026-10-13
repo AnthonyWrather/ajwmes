@@ -249,7 +249,7 @@ export const AI_STUDIO_DEV_VESSEL_SPEC: VesselSpec = {
   chartplotterModel: 'Dual Raymarine Axiom Pro 12S Touch Displays',
   vhfAisDetails: 'Raymarine Ray90 Modular VHF with Class B AIS Transponder',
   bilgePumpConfig: 'Dual Rule 2000 GPH Automatic Submersible with SuperSwitch',
-  switchPanelModel: 'AJWMES 8-Gang Custom Matte Black Marine Switch Panel',
+  switchPanelModel: 'AJWMES 8-Gang Custom Matte Black Switch Panel',
   generalNotes: 'Isolated bench test configuration inside AI Studio development environment.',
   lastInspectionDate: '2026-10-10',
   historyLog: []
@@ -388,7 +388,7 @@ export const AI_STUDIO_DEV_USERS: UserProfile[] = [
   {
     id: 'usr-tech-0000-0000-0000-000000000002',
     name: 'Jack Henderson',
-    email: 'jack.tech@ajwmarine.co.uk',
+    email: 'jack.tech@ajwmes.co.uk',
     role: 'technician',
     phone: '07700 900882',
     password: 'ajwmes2026',
@@ -408,7 +408,7 @@ export const AI_STUDIO_DEV_USERS: UserProfile[] = [
   {
     id: 'usr-postal-0000-0000-0000-000000000003',
     name: 'Sarah Miller',
-    email: 'sarah.postal@ajwmarine.co.uk',
+    email: 'sarah.postal@ajwmes.co.uk',
     role: 'postal',
     phone: '07700 900663',
     password: 'ajwmes2026',
@@ -528,7 +528,7 @@ export const AI_STUDIO_PREVIEW_USERS: UserProfile[] = [
   {
     id: 'usr-tech-0000-0000-0000-000000000002',
     name: 'Jack Henderson',
-    email: 'jack.tech@ajwmarine.co.uk',
+    email: 'jack.tech@ajwmes.co.uk',
     role: 'technician',
     phone: '07700 900882',
     password: 'ajwmes2026',
@@ -548,7 +548,7 @@ export const AI_STUDIO_PREVIEW_USERS: UserProfile[] = [
   {
     id: 'usr-postal-0000-0000-0000-000000000003',
     name: 'Sarah Miller',
-    email: 'sarah.postal@ajwmarine.co.uk',
+    email: 'sarah.postal@ajwmes.co.uk',
     role: 'postal',
     phone: '07700 900663',
     password: 'ajwmes2026',

@@ -412,8 +412,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { label: 'Admin', email: 'anthonywrather@gmail.com' },
-                    { label: 'Tech', email: 'jack.tech@ajwmarine.co.uk' },
-                    { label: 'Postal', email: 'sarah.postal@ajwmarine.co.uk' },
+                    { label: 'Tech', email: 'jack.tech@ajwmes.co.uk' },
+                    { label: 'Postal', email: 'sarah.postal@ajwmes.co.uk' },
                     { label: 'Client', email: 'd.mercer@solent-sail.co.uk' },
                     { label: 'Guest', email: 'guest@solent-visitor.co.uk' }
                   ].map(acc => (

@@ -137,7 +137,7 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
               Reorder from Marine Supplier
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Rapid procurement workflow for AJW Marine Electrical workshop restocking.
+              Rapid procurement workflow for AJWMES workshop restocking.
             </p>
           </div>
 

@@ -52,7 +52,7 @@ export const PWAInstallButton: React.FC = () => {
                 </button>
               </div>
               <p className="mt-3 text-xs text-slate-300 leading-relaxed">
-                Add AJW Marine Electrical to your home screen for offline access and quick booking:
+                Add AJWMES to your home screen for offline access and quick booking:
               </p>
               <div className="mt-3 space-y-2 bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 text-xs text-slate-300">
                 <p>1. Tap the <strong className="text-sky-400">Share</strong> icon at the bottom of Safari.</p>

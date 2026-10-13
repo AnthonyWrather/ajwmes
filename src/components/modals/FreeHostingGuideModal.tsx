@@ -49,7 +49,7 @@ firebase deploy --only hosting`;
 GitHub will automatically build and deploy your site on every push!`;
 
   const domainSteps = `1. In the Firebase Console, go to Build -> Hosting.
-2. Click "Add custom domain" (e.g. ajwmarine.co.uk or www.ajwmarine.co.uk).
+2. Click "Add custom domain" (e.g. ajwmes.co.uk or www.ajwmes.co.uk).
 3. Follow the DNS instructions to add the 2 A-records or TXT record with your domain provider.
 4. Firebase provisions your SSL certificate automatically within 24 hours.`;
 
@@ -61,7 +61,7 @@ VITE_FIREBASE_API_KEY = AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
 Add your custom or preview domain:
 - gen-lang-client-0618772940.web.app
 - gen-lang-client-0618772940.firebaseapp.com
-- yourdomain.co.uk`;
+- ajwmes.co.uk`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
@@ -166,7 +166,7 @@ Add your custom or preview domain:
         {activeTab === 'custom_domain' && (
           <div className="space-y-3 text-xs">
             <p className="text-slate-300 leading-relaxed">
-              Connect your branded business domain (e.g. <span className="text-white font-semibold">ajwmarine.co.uk</span>) with free automatic SSL:
+              Connect your branded business domain (e.g. <span className="text-white font-semibold">ajwmes.co.uk</span>) with free automatic SSL:
             </p>
             <div className="relative bg-slate-950 rounded-xl p-3.5 border border-slate-800 font-mono text-[11px] text-sky-300">
               <pre className="overflow-x-auto whitespace-pre-wrap">{domainSteps}</pre>

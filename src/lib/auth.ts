@@ -70,7 +70,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
       'Order custom switch panels and replica panels',
       'Record boat electrical specifications & equipment log',
       'Track ongoing diagnostic jobs & approve quotes',
-      'Direct messaging thread with AJW engineers aboard vessel',
+      'Direct messaging thread with AJWMES engineers aboard vessel',
       'Secure deposit payments via Stripe checkout'
     ],
     restrictedFeatures: [

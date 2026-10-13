@@ -335,7 +335,7 @@ export function createVesselPdfDoc(spec: VesselSpec, options: VesselPdfOptions =
       footY + 4
     );
     doc.text(
-      'Emergency Engineer Contact: anthonywrather@gmail.com · 07700 900142 · ajwmarine.co.uk',
+      'Emergency Engineer Contact: anthonywrather@gmail.com · 07700 900142 · ajwmes.co.uk',
       margin,
       footY + 7.5
     );

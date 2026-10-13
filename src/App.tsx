@@ -520,16 +520,16 @@ export default function App() {
   useEffect(() => {
     const tabTitles: Record<string, string> = {
       home: 'Home | AJW Marine Electrical Services',
-      store: 'Workshop Store & Cables | AJW Marine',
-      designer: 'Laser Switch Panel Designer | AJW Marine',
-      replica: 'Replica Boat Switch Panels | AJW Marine',
-      portal: 'Vessel Portal & Diagnostics | AJW Marine',
-      tracker: 'Track Postal Orders | AJW Marine',
-      admin: 'Workshop Admin Dashboard | AJW Marine',
-      technician: 'Field Technician Workspace | AJW Marine',
-      postal: 'Postal Dispatch Desk | AJW Marine',
+      store: 'Workshop Store & Cables | AJWMES',
+      designer: 'Laser Switch Panel Designer | AJWMES',
+      replica: 'Replica Boat Switch Panels | AJWMES',
+      portal: 'Vessel Portal & Diagnostics | AJWMES',
+      tracker: 'Track Postal Orders | AJWMES',
+      admin: 'Workshop Admin Dashboard | AJWMES',
+      technician: 'Field Technician Workspace | AJWMES',
+      postal: 'Postal Dispatch Desk | AJWMES',
     };
-    trackPageView(currentTab, tabTitles[currentTab] || `AJW Marine - ${currentTab}`);
+    trackPageView(currentTab, tabTitles[currentTab] || `AJWMES - ${currentTab}`);
   }, [currentTab]);
 
   // Automated Zero-Stock Alert Trigger (Fires when stockCount hits 0)
@@ -838,7 +838,7 @@ export default function App() {
                 {
                   id: `msg-${Date.now()}`,
                   sender: 'ajw',
-                  senderName: 'Anthony (AJW Marine)',
+                  senderName: 'Anthony (AJWMES)',
                   text: `Updated on-vessel job sheet: ${hours}h diagnostic labor logged (£${totalLabor}) + ${materials.length} material items (£${totalMaterials}).`,
                   timestamp: 'Just now'
                 }

@@ -90,7 +90,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
       onSendMessage(selectedJob.id, {
         id: `msg-tech-photo-${Date.now()}`,
         sender: 'ajw',
-        senderName: 'Solent Field Tech (AJW Marine)',
+        senderName: 'Solent Field Tech (AJWMES)',
         text: `🔧 [On-Vessel Work & Fitment Photo]\nTechnician uploaded diagnostic test photo (${uploaded.formattedSize}). Verified with Solent multimeter & test rig.`,
         timestamp: 'Just now',
         attachments: [uploaded.url]
@@ -124,7 +124,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
     onSendMessage(selectedJob.id, {
       id: `msg-status-${Date.now()}`,
       sender: 'ajw',
-      senderName: 'Solent Field Tech (AJW Marine)',
+      senderName: 'Solent Field Tech (AJWMES)',
       text: `📋 Technician updated job status to: ${statusLabels[newStatus]}.`,
       timestamp: 'Just now'
     });

@@ -1100,7 +1100,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                         </p>
                         <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 space-y-1">
                           <div>Bank: Lloyds Bank Marine Commercial</div>
-                          <div>Account Name: AJW Marine Electrical</div>
+                          <div>Account Name: AJW Marine Electrical Services (AJWMES)</div>
                           <div>Sort Code: 30-93-74</div>
                           <div>Account No: 41829012</div>
                         </div>

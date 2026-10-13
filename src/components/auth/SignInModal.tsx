@@ -196,7 +196,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <span>AJW Marine Portal Sign In</span>
+                <span>AJWMES Portal Sign In</span>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-500/30">
                   Solent Verified
                 </span>
@@ -302,8 +302,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               <div className="flex flex-wrap gap-1.5">
                 {[
                   { label: 'Admin (Anthony)', email: 'anthonywrather@gmail.com' },
-                  { label: 'Technician (Jack)', email: 'jack.tech@ajwmarine.co.uk' },
-                  { label: 'Postal (Sarah)', email: 'sarah.postal@ajwmarine.co.uk' },
+                  { label: 'Technician (Jack)', email: 'jack.tech@ajwmes.co.uk' },
+                  { label: 'Postal (Sarah)', email: 'sarah.postal@ajwmes.co.uk' },
                   { label: 'Client (David)', email: 'd.mercer@solent-sail.co.uk' },
                   { label: 'Guest', email: 'guest@solent-visitor.co.uk' }
                 ].map(acc => (
@@ -407,7 +407,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50"
               >
                 <Key className="w-4 h-4" />
-                <span>{isLoading ? 'Verifying Credentials...' : 'Sign In to AJW Portal'}</span>
+                <span>{isLoading ? 'Verifying Credentials...' : 'Sign In to AJWMES Portal'}</span>
               </button>
             </form>
 
@@ -426,7 +426,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             <div className="bg-sky-950/40 border border-sky-500/30 p-3.5 rounded-2xl text-xs text-sky-200 flex items-start gap-2.5">
               <Ship className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold block">Register Your Vessel with AJW Marine</span>
+                <span className="font-bold block">Register Your Vessel with AJWMES</span>
                 <span className="text-[11px] text-sky-300">
                   Save your vessel's electrical specs, request diagnostic bookings (£25/hr), order custom panels, and direct message Anthony aboard your yacht.
                 </span>

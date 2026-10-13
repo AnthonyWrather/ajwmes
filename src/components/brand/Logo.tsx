@@ -40,13 +40,10 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', showSubtitle = true }) 
           <span className={`font-extrabold tracking-tight text-white font-mono ${textSize}`}>
             AJWMES
           </span>
-          <span className="text-[10px] uppercase font-bold text-sky-400 bg-sky-950/80 border border-sky-500/30 px-1.5 py-0.5 rounded tracking-wider">
-            Marine
-          </span>
         </div>
         {showSubtitle && (
           <span className="text-[10px] text-slate-400 font-medium tracking-tight mt-0.5">
-            Electrical Services · Gosport & Solent
+            AJW Marine Electrical Services · Gosport &amp; Solent
           </span>
         )}
       </div>

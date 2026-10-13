@@ -113,7 +113,7 @@ export const OrderTrackingProgress: React.FC<OrderTrackingProgressProps> = ({
             statusBadge: 'Collected',
             badgeBg: 'bg-emerald-950 text-emerald-300 border-emerald-500/30',
             headline: 'Order Collected by Owner',
-            subhead: 'Thank you for supporting AJW Marine Electrical.',
+            subhead: 'Thank you for supporting AJWMES (AJW Marine Electrical Services).',
             etaText: 'Completed'
           };
       }

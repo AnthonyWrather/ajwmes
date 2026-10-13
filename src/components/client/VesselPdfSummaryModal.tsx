@@ -179,7 +179,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 leading-relaxed">
-                      Compact single-sheet overview with key DC battery capacities, emergency isolators, shore RCD, critical fuses, and AJW emergency engineer contacts. Ideal for laminating on board.
+                      Compact single-sheet overview with key DC battery capacities, emergency isolators, shore RCD, critical fuses, and AJWMES emergency engineer contacts. Ideal for laminating on board.
                     </p>
                   </div>
 

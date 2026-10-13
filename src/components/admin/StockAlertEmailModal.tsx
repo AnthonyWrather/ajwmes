@@ -65,7 +65,7 @@ export const StockAlertEmailModal: React.FC<StockAlertEmailModalProps> = ({
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-slate-800/80">
             <span className="text-slate-400">From:</span>
-            <span className="font-mono text-slate-300">inventory-alerts@ajwmarineelectrical.co.uk</span>
+            <span className="font-mono text-slate-300">inventory-alerts@ajwmes.co.uk</span>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <span className="text-slate-400">Subject:</span>

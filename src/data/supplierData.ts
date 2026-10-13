@@ -78,12 +78,12 @@ export function generateStockAlertEmail(item: CatalogItem, triggerSource: StockA
   const recommendedQty = item.category === 'cable' ? 50 : 10;
   const estimatedWholesale = (item.unitPrice * 0.65).toFixed(2);
 
-  const subject = `🚨 [ZERO STOCK ALERT] ${item.name} is at 0 units — AJW Marine Restock Needed`;
+  const subject = `🚨 [ZERO STOCK ALERT] ${item.name} is at 0 units — AJWMES Restock Needed`;
 
   const body = `URGENT WORKSHOP INVENTORY ALERT
 --------------------------------------------------
 To: anthonywrather@gmail.com
-From: AJW Marine Electrical Systems <inventory-alerts@ajwmarineelectrical.co.uk>
+From: AJWMES <inventory-alerts@ajwmes.co.uk>
 Timestamp: ${timeStr}
 Alert Level: CRITICAL (STOCK COUNT = 0)
 
@@ -105,7 +105,7 @@ Draft a trade replenishment order immediately to avoid job delays for Solent ves
 • Suggested Batch: ${recommendedQty} ${item.unit}(s)
 • Est. Trade Unit: £${estimatedWholesale} (ex VAT)
 
-Click "Reorder from Supplier" in your AJW dashboard to auto-generate the purchase order.
+Click "Reorder from Supplier" in your AJWMES dashboard to auto-generate the purchase order.
 `;
 
   return { subject, body };
@@ -138,7 +138,7 @@ Via: ${params.supplier.email}
 
 RE: TRADE PURCHASE ORDER ${params.poNumber}
 Date: ${dateStr}
-AJW Trade Account: ${params.supplier.accountNumber}
+AJWMES Trade Account: ${params.supplier.accountNumber}
 
 Dear ${params.supplier.name} Orders Team,
 
@@ -171,7 +171,7 @@ Anthony Wrather
 Owner & Marine Electrical Technician
 AJW Marine Electrical Services
 Email: anthonywrather@gmail.com | Phone: 07700 900224
-Web: ajwmarineelectrical.co.uk
+Web: ajwmes.co.uk
 `;
 
   return { subject, body };

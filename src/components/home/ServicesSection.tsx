@@ -372,7 +372,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
             "Repair First, Replace Second"
           </h3>
           <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-            Many boat owners get intimidated by big marina electrical firms quoting thousands of pounds to rip out entire dashboards. At AJW Marine, we test what you have first. If cleaning a terminal, fitting a new £8 breaker, or replacing an old fuse block gets you safely back on the water, that's exactly what we will do.
+            Many boat owners get intimidated by big marina electrical firms quoting thousands of pounds to rip out entire dashboards. At AJWMES, we test what you have first. If cleaning a terminal, fitting a new £8 breaker, or replacing an old fuse block gets you safely back on the water, that's exactly what we will do.
           </p>
         </div>
 

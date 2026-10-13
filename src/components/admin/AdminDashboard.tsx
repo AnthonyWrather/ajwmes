@@ -164,7 +164,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       onSendMessage(selectedJob.id, {
         id: `msg-proof-${Date.now()}`,
         sender: 'ajw',
-        senderName: 'Anthony (AJW Marine)',
+        senderName: 'Anthony (AJWMES)',
         text: `🔬 [Laser Cut Proof & Test Fitting Photo]\nUploaded to Firebase Cloud Storage (${uploaded.formattedSize}).`,
         timestamp: 'Just now',
         attachments: [uploaded.url]

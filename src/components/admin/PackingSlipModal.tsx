@@ -34,7 +34,7 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
 }) => {
   const [showPrices, setShowPrices] = useState(true);
   const [benchChecked, setBenchChecked] = useState(true);
-  const [packerName, setPackerName] = useState('Anthony Wrather (AJW Marine)');
+  const [packerName, setPackerName] = useState('Anthony Wrather (AJWMES)');
   const [specialNote, setSpecialNote] = useState('');
 
   // Handle escape key & print body classes
@@ -177,9 +177,9 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
                 <div className="flex items-center gap-3">
                   <span><strong>Tel:</strong> 07700 900142</span>
                   <span>·</span>
-                  <span><strong>Email:</strong> anthony@ajw-marine.co.uk</span>
+                  <span><strong>Email:</strong> anthony@ajwmes.co.uk</span>
                   <span>·</span>
-                  <span><strong>Web:</strong> ajw-marine.co.uk</span>
+                  <span><strong>Web:</strong> ajwmes.co.uk</span>
                 </div>
               </div>
             </div>

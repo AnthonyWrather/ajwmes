@@ -186,7 +186,7 @@ export function buildOrderTimelineHistory(order: PostalOrder): PostalOrderTimeli
       carrier: carrierName,
       trackingNumber: order.trackingNumber,
       completed: true,
-      operator: isPickup ? 'AJW Workshop Desk' : carrierName
+      operator: isPickup ? 'AJWMES Workshop Desk' : carrierName
     });
   }
 

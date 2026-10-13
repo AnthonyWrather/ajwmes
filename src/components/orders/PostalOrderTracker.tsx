@@ -788,7 +788,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
               <div className="relative">
                 <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-slate-600" />
                 <div className="text-xs font-bold text-white">Despatch Manifest Generated</div>
-                <div className="text-[11px] text-slate-400">AJW Marine Electrical Workshop (Gosport)</div>
+                <div className="text-[11px] text-slate-400">AJWMES Workshop (Gosport)</div>
                 <div className="text-[10px] font-mono text-slate-500">{currentOrder.createdAt}</div>
               </div>
             </div>

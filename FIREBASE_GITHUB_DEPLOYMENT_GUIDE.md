@@ -62,13 +62,13 @@ Every time you commit or merge changes into your GitHub repository, GitHub Actio
 
 ---
 
-## Connecting a Custom Domain (e.g. ajwmarine.co.uk)
+## Connecting a Custom Domain (e.g. ajwmes.co.uk)
 
 1. Open the [Firebase Console](https://console.firebase.google.com/).
 2. Select **AJW Marine Electrical Services**.
 3. In the left navigation, click **Build** -> **Hosting**.
 4. Click **Add custom domain**.
-5. Enter your domain name (e.g. `ajwmarine.co.uk` or `www.ajwmarine.co.uk`).
+5. Enter your domain name (e.g. `ajwmes.co.uk` or `www.ajwmes.co.uk`).
 6. Firebase will provide 2 A-records or TXT verification records to copy into your domain registrar (GoDaddy, Namecheap, Google Domains, Cloudflare, etc.).
 7. Firebase automatically provisions and renews a free SSL certificate for HTTPS.
 
@@ -123,10 +123,10 @@ This error occurs when Google Identity Services rejects the API key passed durin
   3. Push to `main` (or run workflow) to redeploy with the correct key.
 
 ### 2. "auth/unauthorized-domain" on Custom Domain
-If deploying to a custom domain (e.g. `ajwmarine.co.uk`) or PR preview URL:
+If deploying to a custom domain (e.g. `ajwmes.co.uk`) or PR preview URL:
 1. Open [Firebase Console](https://console.firebase.google.com/) -> Select your project.
 2. Go to **Build** -> **Authentication** -> **Settings** tab -> **Authorized domains**.
-3. Click **Add domain** and enter your custom domain (e.g. `ajwmarine.co.uk`).
+3. Click **Add domain** and enter your custom domain (e.g. `ajwmes.co.uk`).
 4. Both `<project>.web.app` and `<project>.firebaseapp.com` are authorized by default.
 
 ### 3. Enable Google Sign-In Provider in Firebase Console

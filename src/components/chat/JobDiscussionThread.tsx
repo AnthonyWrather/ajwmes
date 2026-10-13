@@ -54,9 +54,9 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
 
     const isStaff = currentUserRole === 'admin' || currentUserRole === 'technician';
     const senderName = currentUserRole === 'admin'
-      ? 'Anthony (AJW Marine)'
+      ? 'Anthony (AJWMES)'
       : currentUserRole === 'technician'
-      ? 'Solent Field Tech (AJW Marine)'
+      ? 'Solent Field Tech (AJWMES)'
       : job.clientName;
 
     const newMessage: MessageItem = {
@@ -99,9 +99,9 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
 
       const isStaff = currentUserRole === 'admin' || currentUserRole === 'technician';
       const senderName = currentUserRole === 'admin'
-        ? 'Anthony (AJW Marine)'
+        ? 'Anthony (AJWMES)'
         : currentUserRole === 'technician'
-        ? 'Solent Field Tech (AJW Marine)'
+        ? 'Solent Field Tech (AJWMES)'
         : job.clientName;
 
       const photoMessage: MessageItem = {
@@ -346,7 +346,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
 
             <input
               type="text"
-              placeholder={`Reply as ${currentUserRole === 'admin' ? 'Anthony (AJW Marine)' : job.clientName}...`}
+              placeholder={`Reply as ${currentUserRole === 'admin' ? 'Anthony (AJWMES)' : job.clientName}...`}
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               className="flex-1 bg-slate-950 border border-slate-800 text-xs px-3.5 py-2.5 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"

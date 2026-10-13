@@ -366,7 +366,7 @@ export const INITIAL_JOBS: JobRecord[] = [
       {
         id: 'msg-2',
         sender: 'ajw',
-        senderName: 'Anthony (AJW Marine)',
+        senderName: 'Anthony (AJWMES)',
         text: 'Hi David! Yes, I was on pontoon C yesterday. Moody 33s have a great engine bay for an Orion 30A DC-DC unit. I will test your alternator output first at our £25/hr rate and size the battery cables safely.',
         timestamp: '06 Oct 12:05'
       },
@@ -416,7 +416,7 @@ export const INITIAL_JOBS: JobRecord[] = [
       {
         id: 'msg-11',
         sender: 'ajw',
-        senderName: 'Anthony (AJW Marine)',
+        senderName: 'Anthony (AJWMES)',
         text: 'Hi Mark, I have the exact CAD outline template for the Westerly Konsort in my workshop library! I can laser cut it in 3mm UV-resistant matte black acrylic with crisp white engraved text. Quote sent for review.',
         timestamp: '07 Oct 10:02'
       }
@@ -456,7 +456,7 @@ export const INITIAL_JOBS: JobRecord[] = [
       {
         id: 'msg-21',
         sender: 'ajw',
-        senderName: 'Anthony (AJW Marine)',
+        senderName: 'Anthony (AJWMES)',
         text: 'Booked in for Thursday morning. I will bring the DC clamp meter and thermal imager to trace the leakage current wire by wire.',
         timestamp: '07 Oct 12:15'
       }
@@ -495,7 +495,7 @@ export const DEFAULT_VESSELS: VesselSpec[] = [
     chartplotterModel: 'Raymarine Axiom 9+ Touch MFD with Navionics UK+Ireland',
     vhfAisDetails: 'Standard Horizon Matrix GX2400GPS with NMEA 2000 AIS (MMSI: 235084129)',
     bilgePumpConfig: 'Rule 1100 GPH Automatic Submersible with SuperSwitch Float & Cockpit Audio Alarm',
-    switchPanelModel: 'AJWMES 6-Gang Replica/Custom Matte Black Marine Acrylic Switch Panel with Push Breakers',
+    switchPanelModel: 'AJWMES 6-Gang Replica/Custom Matte Black Acrylic Switch Panel with Push Breakers',
     generalNotes: 'Full DC negative distribution bus upgrade completed. Tinned 35mm² battery interconnects with MRBF terminal fuse protection.',
     lastInspectionDate: '2026-10-06',
     historyLog: [
@@ -872,7 +872,7 @@ export const DEFAULT_TEST_ACCOUNTS: UserProfile[] = [
   {
     id: 'usr-tech-0000-0000-0000-000000000002',
     name: 'Jack Henderson',
-    email: 'jack.tech@ajwmarine.co.uk',
+    email: 'jack.tech@ajwmes.co.uk',
     role: 'technician',
     phone: '07700 900882',
     password: 'ajwmes2026',
@@ -891,7 +891,7 @@ export const DEFAULT_TEST_ACCOUNTS: UserProfile[] = [
   {
     id: 'usr-postal-0000-0000-0000-000000000003',
     name: 'Sarah Miller',
-    email: 'sarah.postal@ajwmarine.co.uk',
+    email: 'sarah.postal@ajwmes.co.uk',
     role: 'postal',
     phone: '07700 900663',
     password: 'ajwmes2026',
