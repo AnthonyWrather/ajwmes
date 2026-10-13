@@ -7,6 +7,8 @@
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
         "reference": { "type": "string", "maxLength": 64 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "vesselId": { "type": "string", "maxLength": 128 },
         "clientName": { "type": "string", "maxLength": 128 },
         "clientEmail": { "type": "string", "maxLength": 128 },
         "clientPhone": { "type": "string", "maxLength": 64 },
@@ -65,6 +67,8 @@
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
         "orderNumber": { "type": "string", "maxLength": 64 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "vesselId": { "type": "string", "maxLength": 128 },
         "customerName": { "type": "string", "maxLength": 128 },
         "customerEmail": { "type": "string", "maxLength": 128 },
         "customerPhone": { "type": "string", "maxLength": 64 },
@@ -87,6 +91,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
         "vesselName": { "type": "string", "maxLength": 128 },
         "makeModel": { "type": "string", "maxLength": 128 },
         "year": { "type": "number" },

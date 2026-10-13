@@ -1,4 +1,5 @@
 import { JobRecord, PostalOrder, VesselSpec } from '../types';
+import { INITIAL_JOBS, INITIAL_POSTAL_ORDERS, DEFAULT_VESSELS } from './seedData';
 
 /**
  * Dedicated Test Datasets Partitioned by Environment
@@ -9,9 +10,12 @@ import { JobRecord, PostalOrder, VesselSpec } from '../types';
 
 // 1. AI STUDIO DEV TEST DATA (Bench Diagnostics & High-Voltage Solent Prototypes)
 export const AI_STUDIO_DEV_JOBS: JobRecord[] = [
+  ...INITIAL_JOBS,
   {
     id: 'ais-job-101',
     reference: 'AJW-AIS-001',
+    userId: 'usr-pendelton-0000-0000-0000-000000000010',
+    vesselId: 'ais-vessel-spec-1',
     vesselName: 'Solent Sovereign (AI Studio Dev Test)',
     vesselType: 'Oyster 495 Deck Saloon',
     clientName: 'Capt. Richard Pendelton',
@@ -58,6 +62,8 @@ export const AI_STUDIO_DEV_JOBS: JobRecord[] = [
   {
     id: 'ais-job-102',
     reference: 'AJW-AIS-002',
+    userId: 'usr-shaw-0000-0000-0000-000000000011',
+    vesselId: 'ais-vessel-spec-2',
     vesselName: 'Wight Phantom (AI Studio Dev Test)',
     vesselType: 'Axopar 37 Sun-Top',
     clientName: 'Dr. Jeremy Shaw',
@@ -89,6 +95,8 @@ export const AI_STUDIO_DEV_JOBS: JobRecord[] = [
   {
     id: 'ais-job-103',
     reference: 'AJW-AIS-003',
+    userId: 'usr-macintyre-0000-0000-0000-000000000012',
+    vesselId: 'ais-vessel-spec-3',
     vesselName: 'Solent Pioneer (AI Studio Dev Test)',
     vesselType: 'Hallberg-Rassy 372',
     clientName: 'Fiona MacIntyre',
@@ -120,9 +128,11 @@ export const AI_STUDIO_DEV_JOBS: JobRecord[] = [
 ];
 
 export const AI_STUDIO_DEV_POSTAL_ORDERS: PostalOrder[] = [
+  ...INITIAL_POSTAL_ORDERS,
   {
     id: 'ais-ord-101',
     orderNumber: 'AJW-AIS-10492',
+    userId: 'usr-vance-0000-0000-0000-000000000013',
     customerName: 'Marcus Vance',
     customerEmail: 'm.vance@solent-yachts.co.uk',
     customerPhone: '07700 900112',
@@ -172,6 +182,7 @@ export const AI_STUDIO_DEV_POSTAL_ORDERS: PostalOrder[] = [
   {
     id: 'ais-ord-102',
     orderNumber: 'AJW-AIS-10493',
+    userId: 'usr-rowe-0000-0000-0000-000000000014',
     customerName: 'Helena Rowe',
     customerEmail: 'h.rowe@portsmouth-sailing.co.uk',
     customerPhone: '07700 900113',
@@ -210,6 +221,7 @@ export const AI_STUDIO_DEV_POSTAL_ORDERS: PostalOrder[] = [
 
 export const AI_STUDIO_DEV_VESSEL_SPEC: VesselSpec = {
   id: 'ais-vessel-spec-1',
+  userId: 'usr-pendelton-0000-0000-0000-000000000010',
   vesselName: 'Solent Sovereign (AI Studio Dev Prototype)',
   makeModel: 'Oyster 495 Deck Saloon (2024)',
   year: 2024,
@@ -248,6 +260,8 @@ export const AI_STUDIO_PREVIEW_JOBS: JobRecord[] = [
   {
     id: 'pre-job-201',
     reference: 'AJW-PRE-001',
+    userId: 'usr-cole-0000-0000-0000-000000000015',
+    vesselId: 'pre-vessel-spec-1',
     vesselName: 'Solent Horizon (Preview Mode)',
     vesselType: 'Sunseeker Manhattan 52',
     clientName: 'Captain Edward Cole',
@@ -274,6 +288,7 @@ export const AI_STUDIO_PREVIEW_POSTAL_ORDERS: PostalOrder[] = [
   {
     id: 'pre-ord-201',
     orderNumber: 'AJW-PRE-8841',
+    userId: 'usr-evans-0000-0000-0000-000000000016',
     customerName: 'Gareth Evans',
     customerEmail: 'g.evans@solent-preview.co.uk',
     customerPhone: '07700 900114',
@@ -315,6 +330,7 @@ export const AI_STUDIO_PREVIEW_POSTAL_ORDERS: PostalOrder[] = [
 
 export const AI_STUDIO_PREVIEW_VESSEL_SPEC: VesselSpec = {
   id: 'pre-vessel-spec-1',
+  userId: 'usr-cole-0000-0000-0000-000000000015',
   vesselName: 'Solent Horizon (Preview Showcase)',
   makeModel: 'Sunseeker Manhattan 52 (2022)',
   year: 2022,

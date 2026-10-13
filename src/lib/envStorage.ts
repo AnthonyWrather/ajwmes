@@ -5,7 +5,8 @@ import {
   INITIAL_JOBS, 
   INITIAL_POSTAL_ORDERS, 
   INITIAL_VESSEL_SPEC, 
-  INITIAL_SAMPLE_PANEL
+  INITIAL_SAMPLE_PANEL,
+  DEFAULT_VESSELS
 } from '../data/seedData';
 import { DEMO_PROFILES } from './auth';
 import { 
@@ -117,6 +118,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         jobs: AI_STUDIO_DEV_JOBS,
         postalOrders: AI_STUDIO_DEV_POSTAL_ORDERS,
         vesselSpec: AI_STUDIO_DEV_VESSEL_SPEC,
+        vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
         users: DEMO_PROFILES
@@ -127,6 +129,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         jobs: AI_STUDIO_PREVIEW_JOBS,
         postalOrders: AI_STUDIO_PREVIEW_POSTAL_ORDERS,
         vesselSpec: AI_STUDIO_PREVIEW_VESSEL_SPEC,
+        vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
         users: DEMO_PROFILES
@@ -139,6 +142,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         jobs: INITIAL_JOBS,
         postalOrders: INITIAL_POSTAL_ORDERS,
         vesselSpec: INITIAL_VESSEL_SPEC,
+        vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
         users: DEMO_PROFILES
@@ -155,6 +159,7 @@ export function resetEnvironmentToTestData(envCode?: AppEnvironment): {
   categories: CategoryItem[];
   postalOrders: PostalOrder[];
   vesselSpec: VesselSpec;
+  vessels: VesselSpec[];
   users: UserProfile[];
 } {
   const seed = getEnvironmentSeedData(envCode);
@@ -163,6 +168,7 @@ export function resetEnvironmentToTestData(envCode?: AppEnvironment): {
   setEnvStorageItem('categories', seed.categories, envCode);
   setEnvStorageItem('postal_orders', seed.postalOrders, envCode);
   setEnvStorageItem('vessel_spec', seed.vesselSpec, envCode);
+  setEnvStorageItem('vessels', seed.vessels, envCode);
   setEnvStorageItem('users_list', seed.users, envCode);
   setEnvStorageItem('cart', [], envCode);
   return seed;

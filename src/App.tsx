@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState } from './types';
-import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS } from './data/seedData';
+import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS, DEFAULT_VESSELS } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
 import { FirestoreSyncBanner } from './components/common/FirestoreSyncBanner';
@@ -112,6 +112,11 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isEnvironmentModalOpen, setIsEnvironmentModalOpen] = useState(false);
 
+  const [vessels, setVessels] = useState<VesselSpec[]>(() => {
+    return getEnvStorageItem('vessels', (envSeed as any).vessels || DEFAULT_VESSELS);
+  });
+  const [activeVesselId, setActiveVesselId] = useState<string>('');
+
   const [vesselSpec, setVesselSpec] = useState<VesselSpec>(() => {
     return getEnvStorageItem('vessel_spec', envSeed.vesselSpec);
   });
@@ -179,16 +184,35 @@ export default function App() {
     setCurrentUserRole(newRole);
     saveCurrentRole(newRole);
     const demoProfile = DEMO_PROFILES.find(p => p.role === newRole);
+    let resolvedProfile: UserProfile;
     if (demoProfile) {
       const enriched = enrichUserProfile(demoProfile);
       setCurrentUserProfile(enriched);
       saveUserProfile(enriched);
       syncUserRoleToFirestore(demoProfile.id, newRole);
+      resolvedProfile = enriched;
     } else if (currentUserProfile) {
       const updated = enrichUserProfile({ ...currentUserProfile, role: newRole, updatedAt: new Date().toISOString() });
       setCurrentUserProfile(updated);
       saveAndSyncUserProfile(updated);
+      resolvedProfile = updated;
+    } else {
+      resolvedProfile = currentUserProfile;
     }
+
+    if (resolvedProfile) {
+      const userVessels = vessels.filter(v => 
+        (resolvedProfile.id && v.userId === resolvedProfile.id) || 
+        (resolvedProfile.email && v.userId && v.userId.toLowerCase() === resolvedProfile.email.toLowerCase())
+      );
+      if (userVessels.length > 0) {
+        setActiveVesselId(userVessels[0].id);
+        setVesselSpec(userVessels[0]);
+      } else {
+        setActiveVesselId('');
+      }
+    }
+
     // Automatically switch to the active workspace for this role
     setCurrentTab(getDefaultRouteForRole(newRole));
   };
@@ -199,6 +223,18 @@ export default function App() {
     setCurrentUserRole(enriched.role);
     saveUserProfile(enriched);
     saveAndSyncUserProfile(enriched);
+
+    const userVessels = vessels.filter(v => 
+      (enriched.id && v.userId === enriched.id) || 
+      (enriched.email && v.userId && v.userId.toLowerCase() === enriched.email.toLowerCase())
+    );
+    if (userVessels.length > 0) {
+      setActiveVesselId(userVessels[0].id);
+      setVesselSpec(userVessels[0]);
+    } else {
+      setActiveVesselId('');
+    }
+
     setAuthToast({
       title: `Welcome, ${enriched.name}`,
       message: `Signed in successfully with ${ROLE_CONFIGS[enriched.role].label} permissions. Active in Firestore database.`,
@@ -821,12 +857,14 @@ export default function App() {
     const fullJob: JobRecord = {
       id: `job-${Date.now()}`,
       reference: newJobData.reference || `AJW-2026-${Math.floor(100 + Math.random() * 900)}`,
-      clientName: newJobData.clientName || 'Boat Owner',
-      clientEmail: newJobData.clientEmail || 'client@example.co.uk',
-      clientPhone: newJobData.clientPhone || '07700 900000',
-      vesselName: newJobData.vesselName || 'Vessel',
-      vesselType: newJobData.vesselType || 'Sailing Yacht',
-      berthLocation: newJobData.berthLocation || 'Gosport',
+      userId: newJobData.userId || (currentUserRole !== 'guest' ? currentUserProfile.id : undefined),
+      vesselId: newJobData.vesselId || (activeVesselId || undefined),
+      clientName: newJobData.clientName || (currentUserRole !== 'guest' ? currentUserProfile.name : 'Boat Owner'),
+      clientEmail: newJobData.clientEmail || (currentUserRole !== 'guest' ? currentUserProfile.email : 'client@example.co.uk'),
+      clientPhone: newJobData.clientPhone || ((currentUserRole !== 'guest' && currentUserProfile.phone) ? currentUserProfile.phone : '07700 900000'),
+      vesselName: newJobData.vesselName || (vesselSpec?.vesselName || 'Vessel'),
+      vesselType: newJobData.vesselType || (vesselSpec?.makeModel || 'Sailing Yacht'),
+      berthLocation: newJobData.berthLocation || (vesselSpec?.homeMarina ? `${vesselSpec.homeMarina} (${vesselSpec.berthPontoon})` : 'Gosport'),
       serviceCategory: newJobData.serviceCategory || 'diagnostic',
       status: 'quote_requested',
       hourlyRate: 25,
@@ -870,9 +908,11 @@ export default function App() {
     const fullJob: JobRecord = {
       id: `job-${Date.now()}`,
       reference,
-      clientName: 'Replica Inquirer',
-      clientEmail: 'owner@westerly-owners.co.uk',
-      clientPhone: '07700 900331',
+      userId: currentUserRole !== 'guest' ? currentUserProfile.id : undefined,
+      vesselId: activeVesselId || undefined,
+      clientName: currentUserRole !== 'guest' ? currentUserProfile.name : 'Replica Inquirer',
+      clientEmail: currentUserRole !== 'guest' ? currentUserProfile.email : 'owner@westerly-owners.co.uk',
+      clientPhone: (currentUserRole !== 'guest' && currentUserProfile.phone) ? currentUserProfile.phone : '07700 900331',
       vesselName: `${data.boatMake} ${data.boatModel}`,
       vesselType: `${data.boatMake} Yacht`,
       berthLocation: 'Gosport Marina',
@@ -893,7 +933,7 @@ export default function App() {
         {
           id: `msg-${Date.now()}`,
           sender: 'client',
-          senderName: 'Boat Owner',
+          senderName: currentUserRole !== 'guest' ? currentUserProfile.name : 'Boat Owner',
           text: `Uploaded photos and measurements for a ${data.boatMake} ${data.boatModel} replacement switch panel.`,
           timestamp: 'Just now'
         }
@@ -979,13 +1019,18 @@ export default function App() {
   };
 
   const handleSubmitPostalOrder = (order: PostalOrder) => {
-    setPostalOrders(prev => [order, ...prev]);
-    syncPostalOrderToFirestore(order);
-    trackPurchase(order);
+    const userLinkedOrder: PostalOrder = {
+      ...order,
+      userId: order.userId || (currentUserRole !== 'guest' ? currentUserProfile.id : undefined),
+      vesselId: order.vesselId || (activeVesselId || undefined)
+    };
+    setPostalOrders(prev => [userLinkedOrder, ...prev]);
+    syncPostalOrderToFirestore(userLinkedOrder);
+    trackPurchase(userLinkedOrder);
     // Decrement stock from catalog and trigger alert if hits 0
     setCatalog(prev =>
       prev.map(catItem => {
-        const ordered = order.items.find(i => i.itemId === catItem.id);
+        const ordered = userLinkedOrder.items.find(i => i.itemId === catItem.id);
         if (ordered) {
           const newStock = Math.max(0, catItem.stockCount - ordered.quantity);
           const updatedItem = {
@@ -1115,12 +1160,40 @@ export default function App() {
     );
   };
 
+  const handleAddVessel = (newVessel: VesselSpec) => {
+    setVessels(prev => {
+      const updated = [newVessel, ...prev];
+      setEnvStorageItem('vessels', updated);
+      return updated;
+    });
+    setActiveVesselId(newVessel.id);
+    setVesselSpec(newVessel);
+    syncVesselSpecToFirestore(newVessel);
+
+    if (currentUserProfile) {
+      const currentVesselIds = currentUserProfile.vesselIds || [];
+      if (!currentVesselIds.includes(newVessel.id)) {
+        const updatedProfile = {
+          ...currentUserProfile,
+          vesselIds: [...currentVesselIds, newVessel.id]
+        };
+        setCurrentUserProfile(updatedProfile);
+        saveAndSyncUserProfile(updatedProfile);
+      }
+    }
+  };
+
   const handleUpdateVesselSpec = (newSpec: VesselSpec) => {
     enforceAction(
       currentUserRole,
       'edit_vessel_spec',
       () => {
         setVesselSpec(newSpec);
+        setVessels(prev => {
+          const updated = prev.map(v => v.id === newSpec.id ? newSpec : v);
+          setEnvStorageItem('vessels', updated);
+          return updated;
+        });
         syncVesselSpecToFirestore(newSpec);
       },
       (denial) => setActionDenial(denial)
@@ -1236,7 +1309,13 @@ export default function App() {
           {/* Tab 3: Postal Order Tracker */}
           {currentTab === 'tracker' && (
             <PostalOrderTracker
-              orders={postalOrders}
+              orders={currentUserRole === 'client'
+                ? postalOrders.filter(o => 
+                    (o.userId && o.userId === currentUserProfile.id) ||
+                    (o.customerEmail && o.customerEmail.toLowerCase() === currentUserProfile.email.toLowerCase())
+                  )
+                : postalOrders
+              }
               selectedOrderId={trackedOrderId}
               onSelectOrder={setTrackedOrderId}
               onUpdateOrderStatus={handleUpdateOrderStatus}
@@ -1267,6 +1346,16 @@ export default function App() {
             <ClientVesselPortal
               jobs={jobs}
               clientEmail={currentUserProfile.email}
+              clientUserId={currentUserProfile.id}
+              clientName={currentUserProfile.name}
+              vessels={vessels}
+              activeVesselId={activeVesselId}
+              onSelectVesselId={(id) => {
+                setActiveVesselId(id);
+                const match = vessels.find(v => v.id === id);
+                if (match) setVesselSpec(match);
+              }}
+              onAddVessel={handleAddVessel}
               vesselSpec={vesselSpec}
               postalOrders={postalOrders}
               activeSubTab={portalSubTab}

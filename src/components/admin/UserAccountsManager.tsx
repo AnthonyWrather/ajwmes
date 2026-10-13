@@ -85,7 +85,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
     setIsSaving(true);
     const now = new Date().toISOString();
     const newUser: UserProfile = {
-      id: `user-${Date.now()}`,
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? `usr-${crypto.randomUUID()}` : `usr-${Date.now()}`,
       name: newName.trim(),
       email: newEmail.trim().toLowerCase(),
       phone: newPhone.trim(),

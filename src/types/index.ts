@@ -29,6 +29,7 @@ export interface UserProfile {
   updatedAt?: string;
   password?: string;
   passwordHash?: string;
+  vesselIds?: string[];
 }
 
 export type ServiceType = 
@@ -84,6 +85,8 @@ export interface SwitchPanelConfig {
 export interface JobRecord {
   id: string;
   reference: string;
+  userId?: string;
+  vesselId?: string;
   clientName: string;
   clientEmail: string;
   clientPhone: string;
@@ -228,6 +231,8 @@ export interface PostalOrderTimelineEvent {
 export interface PostalOrder {
   id: string;
   orderNumber: string;
+  userId?: string;
+  vesselId?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -272,6 +277,7 @@ export interface ElectricalLogEntry {
 
 export interface VesselSpec {
   id: string;
+  userId?: string;
   vesselName: string;
   makeModel: string;
   year: number;

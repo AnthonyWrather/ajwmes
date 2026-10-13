@@ -3,13 +3,37 @@ import { JobRecord, MessageItem, VesselSpec, PostalOrder } from '../../types';
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { VesselSpecManager } from './VesselSpecManager';
 import { PostalOrderTracker } from '../orders/PostalOrderTracker';
-import { OrderTrackingProgress } from './OrderTrackingProgress';
 import { VesselPdfSummaryModal } from './VesselPdfSummaryModal';
-import { Anchor, Clock, Wrench, ShieldCheck, ChevronRight, Plus, AlertCircle, FileText, MessageSquare, ShoppingBag, Truck, Package, CheckCircle2, Printer, Download, User } from 'lucide-react';
+import { 
+  Anchor, 
+  Clock, 
+  Wrench, 
+  ChevronRight, 
+  Plus, 
+  AlertCircle, 
+  FileText, 
+  MessageSquare, 
+  ShoppingBag, 
+  Truck, 
+  Package, 
+  Printer, 
+  User, 
+  X, 
+  Ship, 
+  CheckCircle2,
+  Layers,
+  Compass
+} from 'lucide-react';
 
 interface ClientVesselPortalProps {
   jobs: JobRecord[];
   clientEmail: string;
+  clientUserId?: string;
+  clientName?: string;
+  vessels?: VesselSpec[];
+  activeVesselId?: string;
+  onSelectVesselId?: (vesselId: string) => void;
+  onAddVessel?: (newVessel: VesselSpec) => void;
   vesselSpec: VesselSpec;
   postalOrders?: PostalOrder[];
   activeSubTab?: 'specs' | 'jobs' | 'orders';
@@ -27,6 +51,12 @@ interface ClientVesselPortalProps {
 export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
   jobs,
   clientEmail,
+  clientUserId,
+  clientName,
+  vessels = [],
+  activeVesselId,
+  onSelectVesselId,
+  onAddVessel,
   vesselSpec,
   postalOrders = [],
   activeSubTab,
@@ -42,6 +72,22 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 }) => {
   const [internalTab, setInternalTab] = useState<'specs' | 'jobs' | 'orders'>('specs');
   const [showPdfSummaryModal, setShowPdfSummaryModal] = useState(false);
+  const [showAddBoatModal, setShowAddBoatModal] = useState(false);
+  const [vesselFilterId, setVesselFilterId] = useState<string>(activeVesselId || 'all');
+
+  // Add Boat Form State
+  const [boatForm, setBoatForm] = useState({
+    vesselName: '',
+    makeModel: '',
+    year: new Date().getFullYear() - 10,
+    systemVoltage: '12V' as '12V' | '24V',
+    homeMarina: 'Haslar Marina, Gosport',
+    berthPontoon: 'Berth 12',
+    houseBatteryType: 'LiFePO4 Lithium' as 'LiFePO4 Lithium' | 'AGM Deep Cycle' | 'Gel' | 'Flooded Lead-Acid',
+    houseCapacityAh: 200,
+    generalNotes: ''
+  });
+
   const portalTab = activeSubTab || internalTab;
 
   const handleTabChange = (tab: 'specs' | 'jobs' | 'orders') => {
@@ -51,35 +97,228 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
     }
   };
 
-  // Filter jobs for this client (or show sample client jobs)
-  const clientJobs = jobs.filter(j => j.clientEmail.toLowerCase() === clientEmail.toLowerCase() || clientEmail.includes('mercer') || clientEmail === 'demo');
-  const activeJobs = clientJobs.length > 0 ? clientJobs : jobs.slice(0, 2);
+  // 1. Resolve all vessels belonging to this user
+  const userVessels = vessels.filter(v => {
+    if (clientUserId && v.userId && v.userId === clientUserId) return true;
+    if (clientEmail && v.userId && v.userId.toLowerCase() === clientEmail.toLowerCase()) return true;
+    return false;
+  });
 
-  const [selectedJobId, setSelectedJobId] = useState<string>(activeJobs[0]?.id || '');
-  const activeJob = activeJobs.find(j => j.id === selectedJobId) || activeJobs[0];
+  // Include current vesselSpec ONLY if owned by this user and not yet in userVessels
+  const allUserVessels = [...userVessels];
+  if (
+    vesselSpec && 
+    vesselSpec.vesselName && 
+    (vesselSpec.userId === clientUserId || (clientEmail && vesselSpec.userId && vesselSpec.userId.toLowerCase() === clientEmail.toLowerCase())) &&
+    !allUserVessels.some(v => v.id === vesselSpec.id || v.vesselName.toLowerCase() === vesselSpec.vesselName.toLowerCase())
+  ) {
+    allUserVessels.unshift(vesselSpec);
+  }
 
-  // Active postal orders in fulfillment/transit
-  const activePostalOrders = postalOrders.filter(o => 
+  // Synchronize vesselFilterId when active vessel or signed-in user changes
+  React.useEffect(() => {
+    if (activeVesselId && allUserVessels.some(v => v.id === activeVesselId)) {
+      setVesselFilterId(activeVesselId);
+    } else {
+      setVesselFilterId('all');
+    }
+  }, [activeVesselId, clientUserId]);
+
+  // Active vessel to inspect in Technical Specs
+  const activeVessel = allUserVessels.find(v => v.id === (activeVesselId || vesselFilterId))
+    || allUserVessels[0]
+    || null;
+
+  const hasBoats = allUserVessels.length > 0 && Boolean(allUserVessels[0]?.vesselName?.trim());
+
+  // 2. Strict filtering for jobs belonging to signed-in user
+  const clientJobs = jobs.filter(j => {
+    if (clientUserId && j.userId && j.userId === clientUserId) return true;
+    if (clientEmail && j.clientEmail && j.clientEmail.toLowerCase() === clientEmail.toLowerCase()) return true;
+    return false;
+  });
+
+  // Filter jobs by selected vessel if a specific vessel is chosen (and not 'all')
+  const displayedJobs = vesselFilterId !== 'all'
+    ? clientJobs.filter(j => 
+        j.vesselId === vesselFilterId || 
+        (!j.vesselId && activeVessel && j.vesselName && j.vesselName.toLowerCase() === activeVessel.vesselName.toLowerCase())
+      )
+    : clientJobs;
+
+  const [selectedJobId, setSelectedJobId] = useState<string>(displayedJobs[0]?.id || '');
+  
+  React.useEffect(() => {
+    if (displayedJobs.length > 0 && !displayedJobs.some(j => j.id === selectedJobId)) {
+      setSelectedJobId(displayedJobs[0].id);
+    }
+  }, [displayedJobs, selectedJobId]);
+
+  const activeJob = displayedJobs.find(j => j.id === selectedJobId) || displayedJobs[0];
+
+  // 3. Strict filtering for postal orders belonging to signed-in user
+  const clientPostalOrders = postalOrders.filter(o => {
+    if (clientUserId && o.userId && o.userId === clientUserId) return true;
+    if (clientEmail && o.customerEmail && o.customerEmail.toLowerCase() === clientEmail.toLowerCase()) return true;
+    return false;
+  });
+
+  // Filter postal orders by selected vessel if chosen (and not 'all')
+  const displayedPostalOrders = vesselFilterId !== 'all'
+    ? clientPostalOrders.filter(o => 
+        o.vesselId === vesselFilterId || 
+        (!o.vesselId && activeVessel && o.shippingAddress?.berthNumber && o.shippingAddress.berthNumber.toLowerCase().includes(activeVessel.vesselName.toLowerCase()))
+      )
+    : clientPostalOrders;
+
+  // Active postal orders in fulfillment/transit for this user
+  const activePostalOrders = clientPostalOrders.filter(o => 
     o.orderStatus === 'received' || 
     o.orderStatus === 'packed' || 
-    o.orderStatus === 'dispatched' ||
+    o.orderStatus === 'dispatched' || 
     o.orderStatus === 'ready_for_pickup'
   );
+
+  const handleCreateVessel = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!boatForm.vesselName.trim()) return;
+
+    const newVessel: VesselSpec = {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? `vessel-${crypto.randomUUID()}` : `vessel-${Date.now()}`,
+      userId: clientUserId || clientEmail,
+      vesselName: boatForm.vesselName.trim(),
+      makeModel: boatForm.makeModel.trim() || 'Cruising Yacht',
+      year: Number(boatForm.year) || 2015,
+      hinNumber: `GB-AJW-${Math.floor(1000 + Math.random() * 9000)}`,
+      sailNumber: `GBR-${Math.floor(1000 + Math.random() * 9000)}K`,
+      homeMarina: boatForm.homeMarina.trim() || 'Solent Marina',
+      berthPontoon: boatForm.berthPontoon.trim() || 'Pontoon A',
+      systemVoltage: boatForm.systemVoltage,
+      houseBatteryType: boatForm.houseBatteryType,
+      houseCapacityAh: Number(boatForm.houseCapacityAh) || 200,
+      houseBankInstalled: '2026',
+      starterBatteryType: 'Heavy Duty Marine AGM',
+      starterCapacityAh: 85,
+      starterCca: 800,
+      alternatorRating: 'Standard Marine Engine Alternator',
+      dcDcCharger: 'Victron Orion-Tr Smart (Bluetooth)',
+      solarWatts: 200,
+      solarType: 'Rigid Monocrystalline Panels',
+      solarController: 'Victron SmartSolar MPPT',
+      batteryMonitor: 'Victron SmartShunt 500A',
+      shorePowerRating: '230V 16A Shore Connection',
+      hasGalvanicIsolator: true,
+      inverterModel: 'Victron Phoenix Pure Sine',
+      navigationNetwork: 'NMEA 2000 Micro-C',
+      chartplotterModel: 'Touch Screen MFD',
+      vhfAisDetails: 'DSC VHF with NMEA AIS',
+      bilgePumpConfig: 'Automatic Submersible with Float Switch',
+      switchPanelModel: 'AJWMES Custom Switchboard',
+      generalNotes: boatForm.generalNotes.trim() || 'Registered via Boat Owner Portal.',
+      lastInspectionDate: new Date().toISOString().slice(0, 10),
+      historyLog: []
+    };
+
+    if (onAddVessel) {
+      onAddVessel(newVessel);
+    }
+    if (onSelectVesselId) {
+      onSelectVesselId(newVessel.id);
+    }
+    setVesselFilterId(newVessel.id);
+    setShowAddBoatModal(false);
+    setBoatForm({
+      vesselName: '',
+      makeModel: '',
+      year: new Date().getFullYear() - 10,
+      systemVoltage: '12V',
+      homeMarina: 'Haslar Marina, Gosport',
+      berthPontoon: 'Berth 12',
+      houseBatteryType: 'LiFePO4 Lithium',
+      houseCapacityAh: 200,
+      generalNotes: ''
+    });
+  };
 
   return (
     <div className="w-full space-y-6 text-slate-100">
       {/* Portal Top Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 mb-1">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs font-semibold text-sky-400">
             <Anchor className="w-4 h-4" />
             <span>Boat Owner Vessel Portal</span>
+            {clientUserId && (
+              <span className="font-mono text-[10px] text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                UUID: {clientUserId.length > 18 ? `${clientUserId.slice(0, 14)}...` : clientUserId}
+              </span>
+            )}
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">
-            {vesselSpec.vesselName || (activeJob ? activeJob.vesselName : 'My Vessel')}
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {vesselSpec.makeModel} · {vesselSpec.homeMarina} ({vesselSpec.berthPontoon})
+
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
+              {hasBoats ? (activeVessel?.vesselName || 'My Vessel') : (clientName ? `${clientName}'s Account` : 'Boat Owner Portal')}
+            </h2>
+
+            {/* Vessel Switcher Dropdown */}
+            {allUserVessels.length > 1 && (
+              <div className="flex items-center gap-2">
+                <select
+                  value={vesselFilterId}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setVesselFilterId(id);
+                    if (id !== 'all' && onSelectVesselId) {
+                      onSelectVesselId(id);
+                    }
+                  }}
+                  className="bg-slate-950 border border-slate-700 hover:border-sky-500 text-sky-300 font-semibold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-sky-400 transition-colors cursor-pointer"
+                >
+                  <option value="all">🌐 All Boats ({allUserVessels.length} Registered)</option>
+                  {allUserVessels.map(v => (
+                    <option key={v.id} value={v.id}>
+                      ⛵ {v.vesselName} ({v.makeModel || 'Vessel'})
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => setShowAddBoatModal(true)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 text-sky-400 border border-slate-800 hover:border-sky-500/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  title="Register another boat to your account"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Add Boat</span>
+                </button>
+              </div>
+            )}
+
+            {allUserVessels.length === 1 && (
+              <button
+                onClick={() => setShowAddBoatModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 text-sky-400 border border-slate-800 hover:border-sky-500/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                title="Register another boat to your account"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Another Boat</span>
+              </button>
+            )}
+
+            {!hasBoats && (
+              <button
+                onClick={() => setShowAddBoatModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Register a Boat</span>
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-400">
+            {hasBoats && activeVessel
+              ? `${activeVessel.makeModel || 'Vessel'} · ${activeVessel.homeMarina} (${activeVessel.berthPontoon}) · ${activeVessel.systemVoltage} DC System`
+              : `${clientEmail} · Direct customer account (Boatless orders supported)`}
           </p>
         </div>
 
@@ -102,22 +341,16 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              <span>Jobs &amp; Activity Feed ({activeJobs.length})</span>
-              {activeJobs.some(j => j.messages.some(m => m.senderName.includes('Postal Dispatch') || m.text.includes('Postal Order'))) && (
-                <span className="flex h-2 w-2 relative ml-1">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400"></span>
-                </span>
-              )}
+              <span>Jobs &amp; Activity ({displayedJobs.length})</span>
             </button>
             <button
               onClick={() => handleTabChange('orders')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors relative ${
                 portalTab === 'orders' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Postal Orders ({postalOrders.length})</span>
+              <span>Postal Orders ({displayedPostalOrders.length})</span>
               {activePostalOrders.length > 0 && (
                 <span className="flex h-2 w-2 relative ml-1">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -128,14 +361,16 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
           </div>
 
           {/* Direct Option to Generate Visual On-Board Spec Summary PDF */}
-          <button
-            onClick={() => setShowPdfSummaryModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 hover:border-sky-400 rounded-xl text-xs font-semibold shadow-sm transition-all whitespace-nowrap cursor-pointer"
-            title="Generate a visual PDF summary of vessel electrical specifications suitable for on-board printing"
-          >
-            <Printer className="w-3.5 h-3.5 text-sky-400" />
-            <span>Print On-Board Spec (PDF)</span>
-          </button>
+          {hasBoats && (
+            <button
+              onClick={() => setShowPdfSummaryModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 hover:border-sky-400 rounded-xl text-xs font-semibold shadow-sm transition-all whitespace-nowrap cursor-pointer"
+              title="Generate a visual PDF summary of vessel electrical specifications suitable for on-board printing"
+            >
+              <Printer className="w-3.5 h-3.5 text-sky-400" />
+              <span>Print On-Board Spec (PDF)</span>
+            </button>
+          )}
 
           {onOpenAccountModal && (
             <button
@@ -150,7 +385,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
           <button
             onClick={onRequestNewService}
-            className="flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all whitespace-nowrap"
+            className="flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all whitespace-nowrap cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Book Service</span>
@@ -160,7 +395,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
       {/* Active Order Alert Banner if not already on the orders tab */}
       {activePostalOrders.length > 0 && portalTab !== 'orders' && (
-        <div className="bg-gradient-to-r from-sky-950/90 via-slate-900 to-slate-900 border border-sky-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-sky-950/30 animate-fadeIn">
+        <div className="bg-gradient-to-r from-sky-950/90 via-slate-900 to-slate-900 border border-sky-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-sky-950/30">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-sky-900/40 border border-sky-500/30 rounded-xl text-sky-400">
               <Truck className="w-5 h-5 animate-pulse" />
@@ -183,7 +418,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
           </div>
           <button
             onClick={() => handleTabChange('orders')}
-            className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-sky-600/20 whitespace-nowrap"
+            className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-sky-600/20 whitespace-nowrap cursor-pointer"
           >
             <span>View Real-Time Tracking Progress</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -193,48 +428,78 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
       {/* Tab 1: Vessel Technical Specifications & Electrical History */}
       {portalTab === 'specs' && (
-        <div className="space-y-6">
-          {/* On-Board Print Callout Card */}
-          <div className="bg-gradient-to-r from-sky-950/80 via-slate-900 to-slate-900 border border-sky-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl shadow-sky-950/20">
-            <div className="flex items-start gap-3.5">
-              <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-sky-400 shrink-0 mt-0.5 md:mt-0">
-                <Printer className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-sky-300 uppercase tracking-wide">
-                    On-Board Technical Print Station
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30">
-                    A4 Single-Page or Dossier
-                  </span>
+        hasBoats && activeVessel ? (
+          <div className="space-y-6">
+            {/* On-Board Print Callout Card */}
+            <div className="bg-gradient-to-r from-sky-950/80 via-slate-900 to-slate-900 border border-sky-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl shadow-sky-950/20">
+              <div className="flex items-start gap-3.5">
+                <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-sky-400 shrink-0 mt-0.5 md:mt-0">
+                  <Printer className="w-5 h-5" />
                 </div>
-                <h3 className="text-sm font-bold text-white mt-0.5">
-                  Visual Vessel Electrical Specification Summary (PDF)
-                </h3>
-                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                  Generate a high-contrast visual PDF summary of {vesselSpec.vesselName}'s {vesselSpec.systemVoltage} DC system, domestic battery capacity ({vesselSpec.houseCapacityAh}Ah {vesselSpec.houseBatteryType}), solar &amp; shore charging, emergency isolation checklist, and critical fuse amperages — formatted for local printing on board, helm laminating, and insurance surveys.
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-sky-300 uppercase tracking-wide">
+                      On-Board Technical Print Station
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30">
+                      A4 Single-Page or Dossier
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white mt-0.5">
+                    Visual Vessel Electrical Specification Summary (PDF)
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                    Generate a high-contrast visual PDF summary of {activeVessel.vesselName}'s {activeVessel.systemVoltage} DC system, domestic battery capacity ({activeVessel.houseCapacityAh}Ah {activeVessel.houseBatteryType}), solar &amp; shore charging, emergency isolation checklist, and critical fuse amperages — formatted for local printing on board, helm laminating, and insurance surveys.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-stretch md:self-auto shrink-0">
+                <button
+                  onClick={() => setShowPdfSummaryModal(true)}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/30 transition-all whitespace-nowrap cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Open Print &amp; PDF Station</span>
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-stretch md:self-auto shrink-0">
+            <VesselSpecManager
+              vesselSpec={activeVessel}
+              onUpdateVesselSpec={onUpdateVesselSpec}
+              onOpenPdfModal={() => setShowPdfSummaryModal(true)}
+            />
+          </div>
+        ) : (
+          <div className="p-12 text-center bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-sky-950/80 border border-sky-500/30 flex items-center justify-center mx-auto text-sky-400">
+              <Ship className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-bold text-white">No Vessel Registered Yet</h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              You are signed in with account UUID <span className="font-mono text-slate-300">{clientUserId || clientEmail}</span>. You can register your boat details (battery capacity, DC voltage, solar hardware) to maintain electrical audit records and print on-board PDF dossiers, or proceed directly to order cables and parts.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
-                onClick={() => setShowPdfSummaryModal(true)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/30 transition-all whitespace-nowrap"
+                onClick={() => setShowAddBoatModal(true)}
+                className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Open Print &amp; PDF Station</span>
+                <Plus className="w-4 h-4" />
+                <span>Register Your First Boat</span>
               </button>
+              {onNavigateToStore && (
+                <button
+                  onClick={onNavigateToStore}
+                  className="px-4 py-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <ShoppingBag className="w-4 h-4 text-sky-400" />
+                  <span>Order Parts from Workshop</span>
+                </button>
+              )}
             </div>
           </div>
-
-          <VesselSpecManager
-            vesselSpec={vesselSpec}
-            onUpdateVesselSpec={onUpdateVesselSpec}
-            onOpenPdfModal={() => setShowPdfSummaryModal(true)}
-          />
-        </div>
+        )
       )}
 
       {/* Tab 2: Postal Orders & Deliveries */}
@@ -242,18 +507,18 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
         <div className="space-y-6">
           {/* Main Visual Tracking Timeline Component */}
           <PostalOrderTracker
-            orders={postalOrders}
+            orders={displayedPostalOrders}
             onNavigateToStore={onNavigateToStore}
           />
 
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              All Orders &amp; Dispatches ({postalOrders.length})
+              Your Postal Orders &amp; Dispatches ({displayedPostalOrders.length})
             </span>
             {onNavigateToStore && (
               <button
                 onClick={onNavigateToStore}
-                className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1"
+                className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <span>Order Cables &amp; Parts from Workshop</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -261,17 +526,17 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
             )}
           </div>
 
-          {postalOrders.length === 0 ? (
+          {displayedPostalOrders.length === 0 ? (
             <div className="p-12 text-center bg-slate-900 border border-slate-800 rounded-3xl space-y-3">
               <Package className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-sm font-bold text-white">No Postal Orders Yet</h3>
+              <h3 className="text-sm font-bold text-white">No Postal Orders Placed Yet</h3>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Need marine-grade tinned wire, blade fuses, Carling switches, or Victron monitors for your boat? Order directly online from Anthony's workshop stock.
+                Need marine-grade tinned Oceanflex wire, blade fuse blocks, Carling switches, or Victron SmartShunts? Order online from Anthony's workshop stock with Royal Mail Tracked 24 delivery or Solent marina pickup.
               </p>
               {onNavigateToStore && (
                 <button
                   onClick={onNavigateToStore}
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/20"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/20 cursor-pointer"
                 >
                   Browse Workshop Stock
                 </button>
@@ -279,7 +544,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {postalOrders.map(order => {
+              {displayedPostalOrders.map(order => {
                 const stagePercent = 
                   order.orderStatus === 'received' ? 25 :
                   order.orderStatus === 'packed' ? 55 :
@@ -377,75 +642,242 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
       {/* Tab 3: Active Jobs, Quotes & Discussion Threads */}
       {portalTab === 'jobs' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Job Selector */}
-          <div className="lg:col-span-4 space-y-3">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-              Your Service History &amp; Orders ({activeJobs.length})
-            </span>
+        displayedJobs.length === 0 ? (
+          <div className="p-12 text-center bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-sky-950/80 border border-sky-500/30 flex items-center justify-center mx-auto text-sky-400">
+              <Wrench className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-white">No Service Jobs or Quotes Recorded</h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              No active diagnostic jobs or custom switch panel quotes are registered for this account. Book an on-board electrical diagnostic (£25/hr flat rate) or request a laser-engraved replacement panel quote.
+            </p>
+            <button
+              onClick={onRequestNewService}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Book Service or Request Quote</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left Column: Job Selector */}
+            <div className="lg:col-span-4 space-y-3">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                Your Service History &amp; Orders ({displayedJobs.length})
+              </span>
 
-            <div className="space-y-2.5">
-              {activeJobs.map(job => (
-                <div
-                  key={job.id}
-                  onClick={() => setSelectedJobId(job.id)}
-                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                    selectedJobId === job.id
-                      ? 'bg-slate-900 border-sky-500 shadow-md shadow-sky-950/40'
-                      : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="font-mono text-sky-400 font-bold">{job.reference}</span>
-                    <span className="text-[10px] font-mono capitalize px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300">
-                      {job.status.replace('_', ' ')}
-                    </span>
-                  </div>
-
-                  <p className="text-xs font-bold text-white line-clamp-1">{job.notes}</p>
-                  
-                  <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{job.diagnosticHours}h Labor</span>
+              <div className="space-y-2.5">
+                {displayedJobs.map(job => (
+                  <div
+                    key={job.id}
+                    onClick={() => setSelectedJobId(job.id)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      selectedJobId === job.id
+                        ? 'bg-slate-900 border-sky-500 shadow-md shadow-sky-950/40'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-mono text-sky-400 font-bold">{job.reference}</span>
+                      <span className="text-[10px] font-mono capitalize px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300">
+                        {job.status.replace('_', ' ')}
+                      </span>
                     </div>
-                    <span className="font-mono font-bold text-white tabular-nums">
-                      £{(job.totalLabor + job.totalMaterials).toFixed(2)}
-                    </span>
+
+                    <p className="text-xs font-bold text-white line-clamp-1">{job.notes}</p>
+                    
+                    <div className="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+                      <span className="text-sky-300 font-medium">⛵ {job.vesselName}</span>
+                      <span className="text-slate-500">{job.berthLocation?.split('(')[0]?.trim()}</span>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{job.diagnosticHours}h Labor</span>
+                      </div>
+                      <span className="font-mono font-bold text-white tabular-nums">
+                        £{(job.totalLabor + job.totalMaterials).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column: Discussion Thread & Billing */}
+            <div className="lg:col-span-8">
+              {activeJob ? (
+                <JobDiscussionThread
+                  job={activeJob}
+                  currentUserRole="client"
+                  onSendMessage={onSendMessage}
+                  onApproveQuote={onApproveQuote}
+                  onPayDeposit={onPayDeposit}
+                  onNavigateToTracker={onNavigateToTracker}
+                />
+              ) : (
+                <div className="h-64 bg-slate-900/60 border border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                  <AlertCircle className="w-8 h-8 text-slate-500 mb-2" />
+                  <p className="text-sm font-semibold text-white">No active job selected</p>
+                  <p className="text-xs text-slate-500 mt-1">Select a job from the left or book a new service.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
-
-          {/* Right Column: Discussion Thread & Billing */}
-          <div className="lg:col-span-8">
-            {activeJob ? (
-              <JobDiscussionThread
-                job={activeJob}
-                currentUserRole="client"
-                onSendMessage={onSendMessage}
-                onApproveQuote={onApproveQuote}
-                onPayDeposit={onPayDeposit}
-                onNavigateToTracker={onNavigateToTracker}
-              />
-            ) : (
-              <div className="h-64 bg-slate-900/60 border border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center p-6 text-slate-400">
-                <AlertCircle className="w-8 h-8 text-slate-500 mb-2" />
-                <p className="text-sm font-semibold text-white">No active job selected</p>
-                <p className="text-xs text-slate-500 mt-1">Book a service or request a quote to open your discussion thread.</p>
-              </div>
-            )}
-          </div>
-        </div>
+        )
       )}
 
       {/* Visual PDF Summary Modal for On-Board Printing */}
-      <VesselPdfSummaryModal
-        isOpen={showPdfSummaryModal}
-        onClose={() => setShowPdfSummaryModal(false)}
-        vesselSpec={vesselSpec}
-      />
+      {hasBoats && activeVessel && (
+        <VesselPdfSummaryModal
+          isOpen={showPdfSummaryModal}
+          onClose={() => setShowPdfSummaryModal(false)}
+          vesselSpec={activeVessel}
+        />
+      )}
+
+      {/* Register New Boat Modal */}
+      {showAddBoatModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-sky-950 border border-sky-500/30 rounded-xl text-sky-400">
+                  <Ship className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Register a Vessel</h3>
+                  <p className="text-xs text-slate-400">Linked to UUID: {clientUserId || clientEmail}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddBoatModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateVessel} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Vessel Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Windbird III, Sea Sprite, Solent Skiff"
+                  value={boatForm.vesselName}
+                  onChange={e => setBoatForm(prev => ({ ...prev, vesselName: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Make &amp; Model
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Moody 33, Westerly 29"
+                    value={boatForm.makeModel}
+                    onChange={e => setBoatForm(prev => ({ ...prev, makeModel: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Year Built
+                  </label>
+                  <input
+                    type="number"
+                    value={boatForm.year}
+                    onChange={e => setBoatForm(prev => ({ ...prev, year: Number(e.target.value) }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    DC System Voltage
+                  </label>
+                  <select
+                    value={boatForm.systemVoltage}
+                    onChange={e => setBoatForm(prev => ({ ...prev, systemVoltage: e.target.value as any }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
+                  >
+                    <option value="12V">12V DC (Standard)</option>
+                    <option value="24V">24V DC (Commercial/Heavy)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Battery Bank Type
+                  </label>
+                  <select
+                    value={boatForm.houseBatteryType}
+                    onChange={e => setBoatForm(prev => ({ ...prev, houseBatteryType: e.target.value as any }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
+                  >
+                    <option value="LiFePO4 Lithium">LiFePO4 Lithium</option>
+                    <option value="AGM Deep Cycle">AGM Deep Cycle</option>
+                    <option value="Gel">Gel</option>
+                    <option value="Flooded Lead-Acid">Flooded Lead-Acid</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Home Marina
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Haslar Marina, Gosport Marina"
+                    value={boatForm.homeMarina}
+                    onChange={e => setBoatForm(prev => ({ ...prev, homeMarina: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Berth / Pontoon
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Pontoon C14"
+                    value={boatForm.berthPontoon}
+                    onChange={e => setBoatForm(prev => ({ ...prev, berthPontoon: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBoatModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30"
+                >
+                  Save Vessel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

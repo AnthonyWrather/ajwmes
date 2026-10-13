@@ -186,13 +186,15 @@ export function getSavedUserProfile(): UserProfile {
       const isAnthony = saved.email?.toLowerCase() === 'anthonywrather@gmail.com';
       return {
         ...saved,
+        id: saved.id || demoFallback?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? `usr-${crypto.randomUUID()}` : `usr-${Date.now()}`),
         name: saved.name || demoFallback?.name || (isAnthony ? 'Anthony Wrather' : (saved.email ? saved.email.split('@')[0] : 'Marine User')),
         phone: saved.phone || demoFallback?.phone || (isAnthony ? '07700 900551' : ''),
         vesselName: saved.vesselName || demoFallback?.vesselName || (isAnthony ? 'AJW Solent Response' : ''),
         vesselType: saved.vesselType || demoFallback?.vesselType || (isAnthony ? 'Workboat / Fast Tender' : 'Sailing Yacht'),
         marinaBerth: saved.marinaBerth || demoFallback?.marinaBerth || (isAnthony ? 'Gosport Marina (HQ Workshop)' : ''),
         avatarUrl: saved.avatarUrl || saved.photoURL || demoFallback?.avatarUrl || '',
-        systemVoltage: saved.systemVoltage || demoFallback?.systemVoltage || '12V'
+        systemVoltage: saved.systemVoltage || demoFallback?.systemVoltage || '12V',
+        vesselIds: saved.vesselIds || demoFallback?.vesselIds || []
       };
     }
   } catch (e) {
@@ -206,13 +208,15 @@ export function enrichUserProfile(profile: UserProfile): UserProfile {
   const isAnthony = profile.email?.toLowerCase() === 'anthonywrather@gmail.com';
   return {
     ...profile,
+    id: profile.id || demoFallback?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? `usr-${crypto.randomUUID()}` : `usr-${Date.now()}`),
     name: profile.name || demoFallback?.name || (isAnthony ? 'Anthony Wrather' : (profile.email ? profile.email.split('@')[0] : 'Marine User')),
     phone: profile.phone || demoFallback?.phone || (isAnthony ? '07700 900551' : ''),
     vesselName: profile.vesselName || demoFallback?.vesselName || (isAnthony ? 'AJW Solent Response' : ''),
     vesselType: profile.vesselType || demoFallback?.vesselType || (isAnthony ? 'Workboat / Fast Tender' : 'Sailing Yacht'),
     marinaBerth: profile.marinaBerth || demoFallback?.marinaBerth || (isAnthony ? 'Gosport Marina (HQ Workshop)' : ''),
     avatarUrl: profile.avatarUrl || profile.photoURL || demoFallback?.avatarUrl || '',
-    systemVoltage: profile.systemVoltage || demoFallback?.systemVoltage || '12V'
+    systemVoltage: profile.systemVoltage || demoFallback?.systemVoltage || '12V',
+    vesselIds: profile.vesselIds || demoFallback?.vesselIds || []
   };
 }
 
@@ -283,7 +287,7 @@ export async function registerVesselAccount(details: {
   }
 
   const assignedRole: UserRole = cleanEmail === 'anthonywrather@gmail.com' ? 'admin' : 'client';
-  const id = `user-${Date.now()}`;
+  const id = typeof crypto !== 'undefined' && crypto.randomUUID ? `usr-${crypto.randomUUID()}` : `usr-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   const now = new Date().toISOString();
   const rawPwd = details.password || 'ajwmes2026';
   const pwdHash = encodePassword(rawPwd);

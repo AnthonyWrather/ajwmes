@@ -21,6 +21,11 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showInternalPdfModal, setShowInternalPdfModal] = useState(false);
 
+  // Synchronize internal form data when active vessel changes from parent selector
+  React.useEffect(() => {
+    setFormData(vesselSpec);
+  }, [vesselSpec]);
+
   // New Log Entry Modal State
   const [showAddLogModal, setShowAddLogModal] = useState(false);
   const [newLogTitle, setNewLogTitle] = useState('');

@@ -150,15 +150,15 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
 
   const roleConfig = ROLE_CONFIGS[currentUserRole] || ROLE_CONFIGS.guest;
 
-  // Filter jobs and orders for this user
+  // Filter jobs and orders for this user strictly by UUID / email
   const userJobs = jobs.filter(j => 
-    j.clientEmail.toLowerCase() === currentUserProfile.email.toLowerCase() ||
-    j.clientName.toLowerCase() === currentUserProfile.name.toLowerCase()
+    (j.userId && currentUserProfile.id && j.userId === currentUserProfile.id) ||
+    (j.clientEmail && currentUserProfile.email && j.clientEmail.toLowerCase() === currentUserProfile.email.toLowerCase())
   );
 
   const userOrders = postalOrders.filter(o =>
-    o.customerEmail.toLowerCase() === currentUserProfile.email.toLowerCase() ||
-    o.customerName.toLowerCase() === currentUserProfile.name.toLowerCase()
+    (o.userId && currentUserProfile.id && o.userId === currentUserProfile.id) ||
+    (o.customerEmail && currentUserProfile.email && o.customerEmail.toLowerCase() === currentUserProfile.email.toLowerCase())
   );
 
   return (

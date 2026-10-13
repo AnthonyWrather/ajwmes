@@ -1,0 +1,6 @@
+{
+  "summary": "Architectural blueprint for UUID-based user identity, multi-vessel management per user, boat-associated orders, boatless user order support, and strict owner isolation for Jobs & Activity and Postal Orders.",
+  "updatedAt": "2026-10-13T20:08:16.326350625Z",
+  "requestFeedback": true,
+  "userFacing": true
+}
