@@ -208,6 +208,21 @@ export type PostalOrderStatus =
   | 'dispatched'
   | 'delivered';
 
+export interface PostalOrderTimelineEvent {
+  id: string;
+  status: PostalOrderStatus;
+  title: string;
+  description: string;
+  timestamp: string;
+  location?: string;
+  carrier?: string;
+  trackingNumber?: string;
+  completed: boolean;
+  isCurrent?: boolean;
+  operator?: string;
+  notes?: string;
+}
+
 export interface PostalOrder {
   id: string;
   orderNumber: string;
@@ -225,10 +240,13 @@ export interface PostalOrder {
   orderStatus: PostalOrderStatus;
   trackingNumber?: string;
   trackingCarrier?: string;
+  carrier?: string;
   createdAt: string;
+  packedAt?: string;
   dispatchedAt?: string;
   deliveredAt?: string;
   notes?: string;
+  timeline?: PostalOrderTimelineEvent[];
 }
 
 export interface CatalogSnapshot {

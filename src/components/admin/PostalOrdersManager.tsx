@@ -15,6 +15,8 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
+import { OrderProgressTimeline } from '../postal/OrderProgressTimeline';
+import { OrderMiniProgressBar } from '../postal/OrderMiniProgressBar';
 
 interface PostalOrdersManagerProps {
   orders: PostalOrder[];
@@ -202,6 +204,11 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                     {order.items.map(i => `${i.quantity}x ${i.name.split(' ')[0]}`).join(', ')}
                   </div>
 
+                  {/* Mini Step-by-Step Progress Bar */}
+                  <div className="pt-2 border-t border-slate-800/80">
+                    <OrderMiniProgressBar order={order} />
+                  </div>
+
                   <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
                     <span className="font-mono text-emerald-400 font-bold">
                       £{order.total.toFixed(2)}
@@ -295,6 +302,21 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Step-by-Step Progress Timeline & Lifecycle */}
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Order Lifecycle &amp; Progress Timeline</span>
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-mono">Receipt to Delivery</span>
+                </div>
+                <OrderProgressTimeline 
+                  order={selectedOrder}
+                  onUpdateStatus={onUpdateOrderStatus}
+                />
               </div>
 
               {/* Items Pack List */}

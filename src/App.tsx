@@ -988,8 +988,9 @@ export default function App() {
               orderStatus: status,
               trackingNumber: resolvedTracking || o.trackingNumber,
               trackingCarrier: resolvedCarrier || o.trackingCarrier,
-              dispatchedAt: status === 'dispatched' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.dispatchedAt,
-              deliveredAt: status === 'delivered' ? new Date().toISOString().slice(0, 16).replace('T', ' ') : o.deliveredAt
+              packedAt: (status === 'packed' || status === 'ready_for_pickup' || status === 'dispatched' || status === 'delivered') ? (o.packedAt || new Date().toISOString().slice(0, 16).replace('T', ' ')) : o.packedAt,
+              dispatchedAt: (status === 'dispatched' || status === 'delivered') ? (o.dispatchedAt || new Date().toISOString().slice(0, 16).replace('T', ' ')) : o.dispatchedAt,
+              deliveredAt: status === 'delivered' ? (o.deliveredAt || new Date().toISOString().slice(0, 16).replace('T', ' ')) : o.deliveredAt
             };
             syncPostalOrderToFirestore(updatedOrder);
             return updatedOrder;
