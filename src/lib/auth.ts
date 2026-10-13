@@ -18,6 +18,7 @@ import {
 import { auth, db, handleFirestoreError, OperationType, syncUserToFirestore, getScopedCollection } from './firebase';
 import { firebaseConfig } from './firebaseConfig';
 import { getEnvStorageItem, setEnvStorageItem } from './envStorage';
+import { detectEnvironment } from './environment';
 import { UserRole, UserProfile } from '../types';
 
 export interface RoleConfig {
@@ -216,7 +217,8 @@ export function enrichUserProfile(profile: UserProfile): UserProfile {
     marinaBerth: profile.marinaBerth || demoFallback?.marinaBerth || (isAnthony ? 'Gosport Marina (HQ Workshop)' : ''),
     avatarUrl: profile.avatarUrl || profile.photoURL || demoFallback?.avatarUrl || '',
     systemVoltage: profile.systemVoltage || demoFallback?.systemVoltage || '12V',
-    vesselIds: profile.vesselIds || demoFallback?.vesselIds || []
+    vesselIds: profile.vesselIds || demoFallback?.vesselIds || [],
+    environment: profile.environment || demoFallback?.environment || detectEnvironment().envCode
   };
 }
 
@@ -307,7 +309,8 @@ export async function registerVesselAccount(details: {
     lastLoginAt: now,
     updatedAt: now,
     password: rawPwd,
-    passwordHash: pwdHash
+    passwordHash: pwdHash,
+    environment: detectEnvironment().envCode
   };
 
   await saveAndSyncUserProfile(profile);

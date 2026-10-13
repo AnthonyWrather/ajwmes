@@ -83,8 +83,8 @@ export function detectEnvironment(): EnvironmentInfo {
         isPreview: false,
         isGitHubDeployed: false,
         storageNamespace: 'ajwmes_aistudio_dev',
-        firestoreCollectionPrefix: '',
-        dataDescription: 'Connected to live Firestore database (ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a).',
+        firestoreCollectionPrefix: 'ais_dev_',
+        dataDescription: 'Connected to live Firestore database (ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a) under [ais_dev_*] collections.',
         hasApiKey,
         hostname,
         isSimulatedOverride
@@ -98,8 +98,8 @@ export function detectEnvironment(): EnvironmentInfo {
         isPreview: true,
         isGitHubDeployed: false,
         storageNamespace: 'ajwmes_aistudio_pre',
-        firestoreCollectionPrefix: '',
-        dataDescription: 'Connected to live Firestore database (ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a).',
+        firestoreCollectionPrefix: 'ais_pre_',
+        dataDescription: 'Connected to live Firestore database (ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a) under [ais_pre_*] collections.',
         hasApiKey,
         hostname,
         isSimulatedOverride
@@ -113,8 +113,8 @@ export function detectEnvironment(): EnvironmentInfo {
         isPreview: true,
         isGitHubDeployed: true,
         storageNamespace: 'ajwmes_github_pre',
-        firestoreCollectionPrefix: '',
-        dataDescription: 'GitHub Actions PR preview channel connected to Firestore database.',
+        firestoreCollectionPrefix: 'gh_pre_',
+        dataDescription: 'GitHub Actions PR preview channel connected to Firestore database under [gh_pre_*] collections.',
         hasApiKey,
         hostname,
         isSimulatedOverride
@@ -129,7 +129,7 @@ export function detectEnvironment(): EnvironmentInfo {
         isPreview: false,
         isGitHubDeployed: true,
         storageNamespace: 'ajwmes_github_live',
-        firestoreCollectionPrefix: '', // Uses root production collections: jobs, catalog, postal_orders, etc.
+        firestoreCollectionPrefix: '', // Uses root production collections: jobs, catalog, postal_orders, users, etc.
         dataDescription: 'Live production / staging deployment connected to primary Firestore database.',
         hasApiKey,
         hostname,

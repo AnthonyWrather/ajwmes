@@ -177,7 +177,8 @@
         "lastLoginAt": { "type": "string", "maxLength": 64 },
         "updatedAt": { "type": "string", "maxLength": 64 },
         "password": { "type": "string", "maxLength": 128 },
-        "passwordHash": { "type": "string", "maxLength": 128 }
+        "passwordHash": { "type": "string", "maxLength": 128 },
+        "environment": { "type": "string", "maxLength": 64 }
       },
       "required": ["uid", "email", "role"]
     }

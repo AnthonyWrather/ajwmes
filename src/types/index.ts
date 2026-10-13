@@ -30,6 +30,7 @@ export interface UserProfile {
   password?: string;
   passwordHash?: string;
   vesselIds?: string[];
+  environment?: string;
 }
 
 export type ServiceType = 

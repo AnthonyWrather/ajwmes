@@ -591,7 +591,8 @@ export function subscribeUsers(onUpdate: (users: UserProfile[]) => void) {
             lastLoginAt: data.lastLoginAt || '',
             updatedAt: data.updatedAt || '',
             password: data.password || 'ajwmes2026',
-            passwordHash: data.passwordHash || ''
+            passwordHash: data.passwordHash || '',
+            environment: data.environment || detectEnvironment().envCode
           } as UserProfile;
         });
         onUpdate(users);
@@ -635,7 +636,8 @@ export function subscribeUserProfile(userId: string, onUpdate: (user: UserProfil
           lastLoginAt: data.lastLoginAt || '',
           updatedAt: data.updatedAt || '',
           password: data.password || 'ajwmes2026',
-          passwordHash: data.passwordHash || ''
+          passwordHash: data.passwordHash || '',
+          environment: data.environment || detectEnvironment().envCode
         };
         onUpdate(profile);
       } else {
@@ -674,7 +676,8 @@ export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
       lastLoginAt: profile.lastLoginAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       password: profile.password || 'ajwmes2026',
-      passwordHash: profile.passwordHash || ''
+      passwordHash: profile.passwordHash || '',
+      environment: profile.environment || detectEnvironment().envCode
     };
     await setDoc(doc(db, colPath, docId), cleanForFirestore(payload), { merge: true });
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -718,7 +721,8 @@ export async function seedUsersToFirestore(defaultProfiles: UserProfile[]): Prom
         lastLoginAt: p.lastLoginAt || '2026-10-10T10:00:00Z',
         updatedAt: new Date().toISOString(),
         password: rawPassword,
-        passwordHash: passwordHash
+        passwordHash: passwordHash,
+        environment: p.environment || detectEnvironment().envCode
       };
 
       if (!existingData) {

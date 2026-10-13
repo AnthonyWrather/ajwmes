@@ -307,7 +307,7 @@ export default function App() {
     // Seed default baseline catalog & initial user accounts if remote collections are empty
     seedCatalogToFirestore(DEFAULT_CATALOG).catch(err => console.warn('Catalog seeding skipped or cached:', err));
     seedCategoriesToFirestore(DEFAULT_CATEGORIES).catch(err => console.warn('Categories seeding skipped or cached:', err));
-    seedUsersToFirestore(DEMO_PROFILES).catch(err => console.warn('Users seeding skipped or cached:', err));
+    seedUsersToFirestore(envSeed.users).catch(err => console.warn('Users seeding skipped or cached:', err));
 
     const unsubJobs = subscribeJobs((remoteJobs) => {
       if (remoteJobs && remoteJobs.length > 0) {
@@ -1399,7 +1399,7 @@ export default function App() {
               onSaveUser={handleSaveUserToDatabase}
               onUpdateUserRole={handleUpdateUserRoleInDatabase}
               onDeleteUser={handleDeleteUserFromDatabase}
-              onRefreshUsers={() => seedUsersToFirestore(DEMO_PROFILES)}
+              onRefreshUsers={() => seedUsersToFirestore(envSeed.users)}
               onAddCatalogItem={handleAddItem}
               onEditCatalogItem={handleEditItem}
               onDeleteCatalogItem={handleDeleteItem}

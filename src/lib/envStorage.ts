@@ -13,9 +13,11 @@ import {
   AI_STUDIO_DEV_JOBS, 
   AI_STUDIO_DEV_POSTAL_ORDERS, 
   AI_STUDIO_DEV_VESSEL_SPEC,
+  AI_STUDIO_DEV_USERS,
   AI_STUDIO_PREVIEW_JOBS,
   AI_STUDIO_PREVIEW_POSTAL_ORDERS,
-  AI_STUDIO_PREVIEW_VESSEL_SPEC
+  AI_STUDIO_PREVIEW_VESSEL_SPEC,
+  AI_STUDIO_PREVIEW_USERS
 } from '../data/environmentTestData';
 import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, CartItem, UserProfile } from '../types';
 
@@ -121,7 +123,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
-        users: DEMO_PROFILES
+        users: AI_STUDIO_DEV_USERS
       };
 
     case 'aistudio-preview':
@@ -132,7 +134,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
-        users: DEMO_PROFILES
+        users: AI_STUDIO_PREVIEW_USERS
       };
 
     case 'github-preview':
@@ -145,7 +147,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
-        users: DEMO_PROFILES
+        users: DEMO_PROFILES.map(u => ({ ...u, environment: 'github-deployed' }))
       };
   }
 }

@@ -1,118 +1,109 @@
-# Multi-Vessel Identity & Scoped Activity Architecture
+# Environment-Scoped Firestore Collections & User Account Isolation
 
-A unified UUID-based identity model enabling users to manage multiple boats, link jobs and postal orders to specific boats or direct user accounts, and strictly isolate user portal records.
+Investigate and fix the issue where the Administrator's Operations Dashboard displays user accounts from all environments instead of isolating records to the active environment.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> **Key Architecture Decisions for Review:**
-> - **UUID User Identity**: Every user profile receives a persistent, unique UUID (`userId`), synchronized across Firebase Auth, local accounts, and session profiles.
-> - **Multi-Boat Support**: Users can register zero, one, or multiple vessels (`VesselRecord`). A clean boat switcher in the portal allows filtering activity by boat or viewing the consolidated fleet.
-> - **Order Association Flexibility**: Postal orders and diagnostic jobs store `userId` and an optional `vesselId`. Users without boats can seamlessly place and track orders with standard delivery.
-> - **Strict Isolation**: Eliminates hardcoded filters (such as `clientEmail.includes('mercer')` and `jobs.slice(0, 2)` fallbacks) so Boat Owners see only their own jobs and postal orders.
+> The following architectural decisions were confirmed:
+> - **Partitioning Strategy**: Dedicated Firestore collection per environment (`ais_dev_users`, `ais_pre_users`, `gh_pre_users`, `users`) with `environment` metadata embedded on each document.
+> - **Operations Dashboard View**: Strictly display user accounts belonging to the current environment only.
+> - **Scope of Prefixes**: Apply environment collection prefixes to all Firestore collections (including `jobs`, `postal_orders`, `catalog`, `categories`, `vessel_specs`, and `stock_alerts`).
+
+- **Confirmed Decision 1**: Set `firestoreCollectionPrefix` in `src/lib/environment.ts` to `'ais_dev_'`, `'ais_pre_'`, `'gh_pre_'`, and `''` (production).
+- **Confirmed Decision 2**: Ensure user profile documents embed the active environment code (`environment: 'aistudio-dev' | 'aistudio-preview' | ...`).
+- **Confirmed Decision 3**: Operations Dashboard user list strictly filters to the active environment.
 
 ---
 
 ## 1. Overview & Core Concept
 
-- **What It Does**: Upgrades AJW Marine's user architecture from a flat single-vessel model to a relational UUID model. Each user has a unique ID, can own multiple boats (or zero boats), and can associate service jobs and postal parts orders to either a specific boat or their direct account.
-- **Target Audience**: Boat owners with one or multiple yachts/cruisers, marine DIYers without vessels ordering workshop supplies, and Gosport workshop technicians/dispatchers managing jobs and deliveries.
-- **Key Value**: Guarantees total data privacy and isolation in the Boat Owner Vessel Portal while enabling fleet management and seamless checkout for boatless customers.
+### What It Does
+Ensures strict environment isolation between AI Studio Development, AI Studio Shared Preview, GitHub PR Previews, and Live Production. Each environment will read from and write to its own dedicated Firestore collection partition (e.g. `ais_dev_users` vs `ais_pre_users` vs production `users`), and all user profiles will carry explicit environment metadata.
+
+### Root Cause Analysis
+1. `src/lib/environment.ts` returned `firestoreCollectionPrefix: ''` for all environments.
+2. `getScopedCollection('users')` evaluated to `'users'` across all instances, causing all environments to share a single unpartitioned collection in Firestore.
+3. On application startup, `usersList` was momentarily initialized from environment-namespaced localStorage (`ajwmes_aistudio_dev_users_list`), which made it temporarily look like only local accounts were present.
+4. As soon as Firestore connected or a new user registered, the real-time `onSnapshot` listener (`subscribeUsers`) fired and replaced local state with every record in the shared `'users'` collection.
 
 ---
 
 ## 2. User Experience & Visual Design
 
-- **Vessel Selector & Fleet Header**:
-  - In the Vessel Portal header, a segmented dropdown/switcher allows the owner to toggle between registered vessels (e.g., *Windbird III*, *Solent Skiff*) or select "All Vessels (Fleet View)".
-  - An "Add Another Vessel" action opens an inline modal to register additional boats with custom electrical specs.
-  - For users with zero registered boats, the header displays an informative zero-vessel banner with quick actions: "Register a Vessel" or "Order Marine Cables & Hardware".
-- **Jobs & Activity Feed Tab**:
-  - Displays exclusively jobs matching the signed-in user's `userId` (with fallback to verified email).
-  - When a specific vessel is selected, jobs filter to that vessel; in Fleet View, jobs show a subtle vessel badge.
-  - Zero-job state: Displays an invitation to book diagnostic services or request a switchboard quote, with zero leakage of other users' jobs.
-- **Postal Orders Tab**:
-  - Displays exclusively postal orders matching the signed-in user's `userId` (or customer email).
-  - Highlights whether an order was placed for a specific boat (marina pontoon delivery) or as a personal home order.
-  - Zero-order state: Displays a direct shortcut to the online parts catalog.
-- **Checkout Experience**:
-  - During checkout in the online store, logged-in users can choose:
-    - *Associate with a vessel*: Auto-populates marina berth and delivery notes from their registered boats.
-    - *No vessel (Direct delivery)*: Enters standard residential/commercial postal delivery.
+### Key User Flows
+1. **Admin Navigates to Operations Dashboard -> User Accounts**:
+   - The dashboard header displays the active environment badge (e.g., `AI Studio Dev Workspace [ais_dev_users]`).
+   - The user accounts table only shows users belonging to that specific environment.
+   - When a new client registers in the current environment, the record is immediately created in `ais_dev_users`, synchronized to Firestore, and displayed without pulling in users from Preview or Production.
+2. **Environment Switching / Simulation**:
+   - If an administrator switches environments via the Environment Settings Modal, the dashboard immediately pivots to the corresponding partition (`ais_pre_users`, `gh_pre_users`, or production `users`).
+
+### Visual Identity & Feedback
+- Active environment indicator chip in `UserAccountsManager` (e.g., `Active Partition: ais_dev_users`).
+- Clear record count specific to the active environment (e.g., `3 Dev Accounts`).
 
 ---
 
 ## 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Relational Linkage via `userId` and optional `vesselId`**
-  - *Chosen Approach*: Every `JobRecord` and `PostalOrder` stores mandatory `userId` and optional `vesselId`. Legacy records without `userId` are automatically linked during data bootstrap by matching client/customer email to known UUIDs.
-  - *Why*: Supports users with zero boats while allowing rich vessel-specific maintenance logs and expense histories.
-  - *Alternatives Considered*: Subcollections under vessels (would make boatless orders impossible and prevent multi-boat consolidated billing).
-- **Decision 2: Migration & Backward Compatibility**
-  - *Chosen Approach*: Seed data and existing local storage will be automatically migrated to assign deterministic UUIDs to test accounts (`usr-mercer-uuid`, `usr-jenkins-uuid`, `usr-bennett-uuid`, etc.), and existing jobs/orders are backfilled with appropriate `userId` and `vesselId` references.
-  - *Why*: Prevents breaking existing demo sessions or wiping offline environment storage.
+- **Decision 1: Collection-Level Prefixing vs Single Collection with Queries**
+  - *Chosen Approach*: Environment-scoped collection names (`ais_dev_users`, `ais_pre_users`, `gh_pre_users`, `users`) as already configured in `firestore.rules`.
+  - *Why*: Provides hard physical separation in Firestore, preventing cross-environment quota pollution, accidental data overwrites during test runs, and test data leaking into production.
+- **Decision 2: Defensive Client-Side Filtering**
+  - *Chosen Approach*: Even within the scoped collection, add an explicit check to ensure records match the active environment, guarding against edge cases during migrations or imports.
+- **Decision 3: Anthony Wrather Master Admin Seeding**
+  - *Chosen Approach*: Seed Anthony's master administrator account (`anthonywrather@gmail.com`) into each environment partition so admin access is seamless across dev, preview, and deployed environments.
 
 ---
 
 ## 4. Technical Architecture & Data Strategy
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      UserProfile (UUID)                     │
-│               userId: "usr-8a21-99c0-..."                   │
-└──────────────┬──────────────────────────────┬───────────────┘
-               │ 1:N                          │ 1:N
-               ▼                              │
-┌──────────────────────────────┐              │
-│      VesselRecord (UUID)     │              │
-│  id: "ves-b421-..."          │              │
-│  userId: "usr-8a21-..."      │              │
-│  vesselName: "Windbird III"  │              │
-└──────────────┬───────────────┘              │
-               │ 1:N (Optional)               │
-               ▼                              ▼
-┌──────────────────────────────┐ ┌──────────────────────────────┐
-│          JobRecord           │ │         PostalOrder          │
-│  id: "job-101"               │ │  id: "ord-103"               │
-│  userId: "usr-8a21-..."      │ │  userId: "usr-8a21-..."      │
-│  vesselId: "ves-b421-..."    │ │  vesselId?: "ves-b421-..."   │
-│  serviceCategory: "lithium"  │ │  items: [cable, fuses]       │
-└──────────────────────────────┘ └──────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                   detectEnvironment()                  │
+│       Returns envCode & firestoreCollectionPrefix      │
+│  dev: 'ais_dev_' │ preview: 'ais_pre_' │ live: ''      │
+└───────────────────────────┬────────────────────────────┘
+                            │
+            ┌───────────────┴───────────────┐
+            ▼                               ▼
+┌───────────────────────────────┐ ┌───────────────────────────────┐
+│     getScopedCollection()     │ │     Environment Metadata      │
+│   e.g. 'ais_dev_users'        │ │   profile.environment =       │
+│   e.g. 'ais_dev_jobs'         │ │   'aistudio-dev'              │
+└───────────────┬───────────────┘ └───────────────┬───────────────┘
+                │                                 │
+                ▼                                 ▼
+┌────────────────────────────────────────────────────────┐
+│                     Firestore DB                       │
+│   ais_dev_users / ais_pre_users / gh_pre_users / users  │
+│   ais_dev_jobs  / ais_pre_jobs  / gh_pre_jobs  / jobs   │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│           Admin Operations Dashboard                   │
+│   UserAccountsManager: strictly shows active partition  │
+└────────────────────────────────────────────────────────┘
 ```
 
-### Data Model Additions & Updates
-
-1. **`VesselRecord` Interface & Store**:
-   - `id`: string (UUID)
-   - `userId`: string (owner's UUID)
-   - `vesselName`: string
-   - `makeModel`: string
-   - `year`: number
-   - `systemVoltage`: '12V' | '24V'
-   - `homeMarina`: string
-   - `berthPontoon`: string
-   - `houseBatteryType`: string
-   - `houseCapacityAh`: number
-   - `createdAt`: string
-2. **`JobRecord` Updates**:
-   - Add `userId`: string
-   - Add `vesselId?`: string
-3. **`PostalOrder` Updates**:
-   - Add `userId?`: string
-   - Add `vesselId?`: string
-4. **`UserProfile` Updates**:
-   - Ensure `id` / `uid` represents a persistent UUID
-   - Support `vesselIds?: string[]` or query vessels by `userId`
-5. **`firebase-blueprint.json` & `firestore.rules`**:
-   - Add `userId` and `vesselId` optional properties to `Job`, `PostalOrder`, and `VesselSpec` entities.
-
-### Interactive Component & State Mapping
-
-- **`ClientVesselPortal.tsx`**:
-  - Filter jobs: `jobs.filter(j => (j.userId && j.userId === currentUser.id) || j.clientEmail.toLowerCase() === clientEmail.toLowerCase())`
-  - Filter postal orders: `postalOrders.filter(o => (o.userId && o.userId === currentUser.id) || o.customerEmail.toLowerCase() === clientEmail.toLowerCase())`
-  - When active vessel is selected, optionally refine by `vesselId`.
-- **`StoreFront.tsx` Checkout**:
-  - Auto-assign current `userId` to created postal orders; if user has vessels, provide a quick selector to attach order to a boat.
-- **`BookingQuoteModal.tsx`**:
-  - Attaches current `userId` and selected `vesselId` to submitted diagnostic and switchboard quotes.
+### Files to Update
+1. `src/lib/environment.ts`:
+   - Set `firestoreCollectionPrefix: 'ais_dev_'` for `aistudio-dev`.
+   - Set `firestoreCollectionPrefix: 'ais_pre_'` for `aistudio-preview`.
+   - Set `firestoreCollectionPrefix: 'gh_pre_'` for `github-preview`.
+   - Keep `firestoreCollectionPrefix: ''` for `github-deployed`.
+2. `src/types/index.ts`:
+   - Add `environment?: AppEnvironment` to `UserProfile`.
+3. `src/lib/auth.ts`:
+   - Attach `environment: detectEnvironment().envCode` in `registerVesselAccount` and `DEMO_PROFILES`.
+4. `src/lib/firebase.ts`:
+   - Ensure `syncUserToFirestore` and `seedUsersToFirestore` persist the `environment` attribute.
+   - Ensure all collections respect `getScopedCollection()`.
+5. `src/components/admin/UserAccountsManager.tsx`:
+   - Filter `users` list to the current environment and display the partition name.
+6. `firebase-blueprint.json`:
+   - Update `User` entity to include `environment` property.
+7. Verification:
+   - Run `compile_applet` and test environment isolation.

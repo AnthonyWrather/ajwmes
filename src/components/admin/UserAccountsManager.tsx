@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, UserRole } from '../../types';
 import { ROLE_CONFIGS } from '../../lib/auth';
+import { detectEnvironment } from '../../lib/environment';
 import { 
   Users, 
   UserPlus, 
@@ -59,8 +60,15 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
   const [newMarinaBerth, setNewMarinaBerth] = useState('Haslar Marina');
   const [newSystemVoltage, setNewSystemVoltage] = useState<'12V' | '24V'>('12V');
 
-  // Filtered users
-  const filteredUsers = users.filter((u) => {
+  const currentEnv = detectEnvironment();
+
+  // Strict environment isolation: only display accounts belonging to the active environment
+  const environmentUsers = users.filter((u) => {
+    return !u.environment || u.environment === currentEnv.envCode;
+  });
+
+  // Filtered users within current environment partition
+  const filteredUsers = environmentUsers.filter((u) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
       u.name.toLowerCase().includes(term) ||
@@ -94,6 +102,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       vesselType: newVesselType.trim() || undefined,
       marinaBerth: newMarinaBerth.trim() || undefined,
       systemVoltage: newSystemVoltage,
+      environment: currentEnv.envCode,
       notifyJobUpdates: true,
       notifyDispatchSms: true,
       createdAt: now,
@@ -128,6 +137,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
     setIsSaving(true);
     const updated: UserProfile = {
       ...editingUser,
+      environment: editingUser.environment || currentEnv.envCode,
       updatedAt: new Date().toISOString()
     };
 
@@ -165,11 +175,11 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
     }
   };
 
-  // Stats calculation
-  const adminCount = users.filter((u) => u.role === 'admin').length;
-  const clientCount = users.filter((u) => u.role === 'client').length;
-  const techCount = users.filter((u) => u.role === 'technician').length;
-  const postalCount = users.filter((u) => u.role === 'postal').length;
+  // Stats calculation - strictly within current environment partition
+  const adminCount = environmentUsers.filter((u) => u.role === 'admin').length;
+  const clientCount = environmentUsers.filter((u) => u.role === 'client').length;
+  const techCount = environmentUsers.filter((u) => u.role === 'technician').length;
+  const postalCount = environmentUsers.filter((u) => u.role === 'postal').length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -190,18 +200,18 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 mb-1">
               <Database className="w-4 h-4" />
-              <span>Firestore Collection: /users/{'{userId}'}</span>
+              <span>Firestore Collection: /{currentEnv.firestoreCollectionPrefix}users/{'{userId}'}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span className="text-emerald-400 font-mono text-[11px]">Database Active</span>
+              <span className="text-emerald-400 font-mono text-[11px]">{currentEnv.envName} Active</span>
             </div>
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <span>User Accounts &amp; Access Control</span>
               <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-500/30">
-                {users.length} Database Records
+                {environmentUsers.length} {currentEnv.envName} Records
               </span>
             </h3>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              All client boat specifications, technician access rights, postal fulfillment roles, and master admin profiles are persistently stored in the Firestore database.
+              Displaying user accounts scoped strictly to the <span className="text-sky-300 font-semibold">{currentEnv.envName}</span> partition (collection <code className="text-emerald-400 font-mono bg-slate-950 px-1 py-0.5 rounded">{currentEnv.firestoreCollectionPrefix}users</code>). Cross-environment accounts are completely isolated.
             </p>
           </div>
 
@@ -210,7 +220,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               <button
                 onClick={onRefreshUsers}
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="Refresh user accounts from database"
+                title={`Refresh ${currentEnv.envName} user accounts from database`}
               >
                 <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
                 <span>Refresh DB</span>
@@ -338,6 +348,10 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                         <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
                           id: {user.id}
                         </span>
+                        <span className="text-[10px] font-mono text-sky-300 bg-sky-950/80 px-2 py-0.5 rounded-md border border-sky-500/30 flex items-center gap-1">
+                          <Globe className="w-2.5 h-2.5 text-sky-400" />
+                          <span>env: {user.environment || currentEnv.envCode}</span>
+                        </span>
                         <span className="text-[10px] font-mono text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
                           <Key className="w-2.5 h-2.5 text-amber-400" />
                           <span>Password: {user.password || 'ajwmes2026'}</span>
@@ -414,7 +428,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
 
                   <div className="flex items-center justify-end gap-1.5 text-emerald-400">
                     <Database className="w-3.5 h-3.5" />
-                    <span>Firestore Document Synced</span>
+                    <span>Synced: /{currentEnv.firestoreCollectionPrefix}users/{user.id}</span>
                   </div>
                 </div>
               </div>

@@ -31,6 +31,7 @@ import {
   Users
 } from 'lucide-react';
 import { uploadSwitchPanelImage, isFirebaseStorageUrl, formatFileSize } from '../../lib/storage';
+import { detectEnvironment } from '../../lib/environment';
 
 interface AdminDashboardProps {
   jobs: JobRecord[];
@@ -101,6 +102,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const proofInputRef = useRef<HTMLInputElement>(null);
 
   const selectedJob = jobs.find(j => j.id === selectedJobId) || jobs[0];
+
+  const currentEnv = detectEnvironment();
+  const envUsers = users.filter(u => !u.environment || u.environment === currentEnv.envCode);
 
   // Top Metrics
   const totalBilled = jobs.reduce((sum, j) => sum + j.totalLabor + j.totalMaterials, 0);
@@ -268,7 +272,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>User Accounts ({users.length})</span>
+            <span>User Accounts ({envUsers.length})</span>
           </button>
 
           <button
