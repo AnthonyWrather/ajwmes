@@ -239,6 +239,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                             )}
                           </div>
                           <p className="text-xs text-slate-400 mt-0.5">{config.tagline}</p>
+                          {demoProfile && (
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono mt-1">
+                              <span className="text-slate-400">{demoProfile.email}</span>
+                              <span className="text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30 text-[10px]">
+                                Password: ajwmes2026
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -360,7 +368,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-300 font-semibold">Password</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-slate-300 font-semibold">Password</label>
+                  <span className="text-[10px] text-amber-300 font-mono">
+                    Test Password: <strong>ajwmes2026</strong>
+                  </span>
+                </div>
                 <input
                   type="password"
                   value={passwordInput}
@@ -370,7 +383,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
               </div>
 
-              <div className="pt-1 flex items-center gap-2">
+              {/* 1-click test fill chips */}
+              <div className="pt-1 space-y-1.5">
+                <span className="text-[10px] text-slate-400 font-mono block">1-Click Test Credentials (Password: ajwmes2026):</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Admin', email: 'anthonywrather@gmail.com' },
+                    { label: 'Tech', email: 'jack.tech@ajwmarine.co.uk' },
+                    { label: 'Postal', email: 'sarah.postal@ajwmarine.co.uk' },
+                    { label: 'Client', email: 'd.mercer@solent-sail.co.uk' },
+                    { label: 'Guest', email: 'guest@solent-visitor.co.uk' }
+                  ].map(acc => (
+                    <button
+                      key={acc.email}
+                      type="button"
+                      onClick={() => {
+                        setEmailInput(acc.email);
+                        setPasswordInput('ajwmes2026');
+                      }}
+                      className="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-sky-500/50 rounded-lg text-[10px] text-slate-300 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {acc.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
                 <button
                   type="submit"
                   disabled={isSigningIn}
@@ -383,7 +422,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   type="button"
                   onClick={() => {
                     setEmailInput('anthonywrather@gmail.com');
-                    setPasswordInput('ajwmarine2026');
+                    setPasswordInput('ajwmes2026');
                   }}
                   className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
                 >

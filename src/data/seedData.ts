@@ -1,4 +1,4 @@
-import { CatalogItem, CategoryItem, JobRecord, SwitchPanelConfig, VesselSpec, PostalOrder } from '../types';
+import { CatalogItem, CategoryItem, JobRecord, SwitchPanelConfig, VesselSpec, PostalOrder, UserProfile } from '../types';
 
 export const DEFAULT_CATEGORIES: CategoryItem[] = [
   {
@@ -751,4 +751,98 @@ export const INITIAL_POSTAL_ORDERS: PostalOrder[] = [
     notes: 'Delivered safely and signed for at Port Solent marina office.'
   }
 ];
+
+export const DEFAULT_TEST_ACCOUNTS: UserProfile[] = [
+  {
+    id: 'demo-admin',
+    name: 'Anthony Wrather',
+    email: 'anthonywrather@gmail.com',
+    role: 'admin',
+    phone: '07700 900551',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'AJW Solent Response',
+    vesselType: 'Workboat / Fast Tender',
+    marinaBerth: 'Gosport Marina (HQ Workshop)',
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: true,
+    createdAt: '2026-01-15T09:00:00Z',
+    lastLoginAt: '2026-10-10T16:45:00Z'
+  },
+  {
+    id: 'demo-tech',
+    name: 'Jack Henderson',
+    email: 'jack.tech@ajwmarine.co.uk',
+    role: 'technician',
+    phone: '07700 900882',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/marine_helm_navigation_1791400844235.jpg',
+    vesselName: 'Solent Diagnostic Van 1',
+    vesselType: 'Mobile Marine Unit',
+    marinaBerth: 'Portsmouth & Gosport',
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: false,
+    createdAt: '2026-02-01T10:00:00Z',
+    lastLoginAt: '2026-10-10T14:30:00Z'
+  },
+  {
+    id: 'demo-postal',
+    name: 'Sarah Miller',
+    email: 'sarah.postal@ajwmarine.co.uk',
+    role: 'postal',
+    phone: '07700 900663',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'Workshop Packing Station',
+    vesselType: 'Dispatch Facility',
+    marinaBerth: 'Gosport Workshop E-Bay',
+    systemVoltage: '12V',
+    notifyJobUpdates: false,
+    notifyDispatchSms: true,
+    createdAt: '2026-02-15T11:00:00Z',
+    lastLoginAt: '2026-10-10T15:20:00Z'
+  },
+  {
+    id: 'demo-client',
+    name: 'David Mercer',
+    email: 'd.mercer@solent-sail.co.uk',
+    role: 'client',
+    phone: '07700 900114',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/budget_small_cruiser_boat_1791420135992.jpg',
+    vesselName: 'Westerly Discus 33',
+    vesselType: 'Sailing Yacht',
+    marinaBerth: 'Haslar Marina (Berth E-14)',
+    systemVoltage: '12V',
+    notifyJobUpdates: true,
+    notifyDispatchSms: true,
+    createdAt: '2026-03-10T14:15:00Z',
+    lastLoginAt: '2026-10-10T12:00:00Z'
+  },
+  {
+    id: 'demo-guest',
+    name: 'Guest Browser',
+    email: 'guest@solent-visitor.co.uk',
+    role: 'guest',
+    phone: '',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    vesselName: 'Unregistered Vessel',
+    vesselType: 'Cruiser',
+    marinaBerth: 'Solent Waters',
+    systemVoltage: '12V',
+    notifyJobUpdates: false,
+    notifyDispatchSms: false,
+    createdAt: '2026-10-01T08:00:00Z',
+    lastLoginAt: '2026-10-10T16:00:00Z'
+  }
+];
+
+export const INITIAL_TEST_ACCOUNTS = DEFAULT_TEST_ACCOUNTS;
 

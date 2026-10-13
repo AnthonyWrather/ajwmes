@@ -590,6 +590,7 @@ export function subscribeUsers(onUpdate: (users: UserProfile[]) => void) {
             createdAt: data.createdAt || '',
             lastLoginAt: data.lastLoginAt || '',
             updatedAt: data.updatedAt || '',
+            password: data.password || 'ajwmes2026',
             passwordHash: data.passwordHash || ''
           } as UserProfile;
         });
@@ -633,6 +634,7 @@ export function subscribeUserProfile(userId: string, onUpdate: (user: UserProfil
           createdAt: data.createdAt || '',
           lastLoginAt: data.lastLoginAt || '',
           updatedAt: data.updatedAt || '',
+          password: data.password || 'ajwmes2026',
           passwordHash: data.passwordHash || ''
         };
         onUpdate(profile);
@@ -671,6 +673,7 @@ export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
       createdAt: profile.createdAt || new Date().toISOString(),
       lastLoginAt: profile.lastLoginAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      password: profile.password || 'ajwmes2026',
       passwordHash: profile.passwordHash || ''
     };
     await setDoc(doc(db, colPath, docId), cleanForFirestore(payload), { merge: true });
@@ -686,40 +689,54 @@ export async function seedUsersToFirestore(defaultProfiles: UserProfile[]): Prom
   const colPath = getScopedCollection('users');
   try {
     const existing = await getDocs(collection(db, colPath));
-    const existingIds = new Set(existing.docs.map(d => d.id));
+    const existingMap = new Map(existing.docs.map(d => [d.id, d.data()]));
     const batch = writeBatch(db);
     let countToSeed = 0;
 
     for (const p of defaultProfiles) {
-      if (!existingIds.has(p.id)) {
-        const payload = {
-          uid: p.id,
-          id: p.id,
-          displayName: p.name,
-          name: p.name,
-          email: p.email,
-          phone: p.phone || '',
-          role: p.role,
-          avatarUrl: p.avatarUrl || '',
-          photoURL: p.photoURL || p.avatarUrl || '',
-          vesselName: p.vesselName || '',
-          vesselType: p.vesselType || '',
-          marinaBerth: p.marinaBerth || '',
-          systemVoltage: p.systemVoltage || '12V',
-          notifyJobUpdates: p.notifyJobUpdates ?? true,
-          notifyDispatchSms: p.notifyDispatchSms ?? true,
-          createdAt: p.createdAt || '2026-10-01T08:00:00Z',
-          lastLoginAt: p.lastLoginAt || '2026-10-10T10:00:00Z',
-          updatedAt: new Date().toISOString()
-        };
+      const existingData = existingMap.get(p.id);
+      const rawPassword = p.password || 'ajwmes2026';
+      const passwordHash = p.passwordHash || 'YWp3bWVzMjAyNg==';
+
+      const payload = {
+        uid: p.id,
+        id: p.id,
+        displayName: p.name,
+        name: p.name,
+        email: p.email,
+        phone: p.phone || '',
+        role: p.role,
+        avatarUrl: p.avatarUrl || '',
+        photoURL: p.photoURL || p.avatarUrl || '',
+        vesselName: p.vesselName || '',
+        vesselType: p.vesselType || '',
+        marinaBerth: p.marinaBerth || '',
+        systemVoltage: p.systemVoltage || '12V',
+        notifyJobUpdates: p.notifyJobUpdates ?? true,
+        notifyDispatchSms: p.notifyDispatchSms ?? true,
+        createdAt: p.createdAt || '2026-10-01T08:00:00Z',
+        lastLoginAt: p.lastLoginAt || '2026-10-10T10:00:00Z',
+        updatedAt: new Date().toISOString(),
+        password: rawPassword,
+        passwordHash: passwordHash
+      };
+
+      if (!existingData) {
         batch.set(doc(db, colPath, p.id), cleanForFirestore(payload));
+        countToSeed++;
+      } else if (!existingData.password || existingData.password !== rawPassword || !existingData.passwordHash) {
+        batch.set(doc(db, colPath, p.id), cleanForFirestore({
+          password: rawPassword,
+          passwordHash: passwordHash,
+          updatedAt: new Date().toISOString()
+        }), { merge: true });
         countToSeed++;
       }
     }
 
     if (countToSeed > 0) {
       await batch.commit();
-      console.log(`Seeded ${countToSeed} user accounts to Firestore database.`);
+      console.log(`Seeded/Updated ${countToSeed} user accounts with ajwmes2026 passwords to Firestore database.`);
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, colPath);

@@ -27,6 +27,7 @@ export interface UserProfile {
   createdAt?: string;
   lastLoginAt?: string;
   updatedAt?: string;
+  password?: string;
   passwordHash?: string;
 }
 

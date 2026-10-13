@@ -311,6 +311,7 @@ export const RBACPermissionsModal: React.FC<RBACPermissionsModalProps> = ({
               {roles.map(r => {
                 const conf = ROLE_CONFIGS[r];
                 const isCurrent = currentUserRole === r;
+                const demoProfile = DEMO_PROFILES.find(p => p.role === r);
                 return (
                   <div 
                     key={r}
@@ -340,6 +341,13 @@ export const RBACPermissionsModal: React.FC<RBACPermissionsModalProps> = ({
                       <p className="text-[11px] text-slate-400 leading-relaxed">
                         {conf.description}
                       </p>
+
+                      {demoProfile && (
+                        <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono space-y-0.5">
+                          <div className="text-slate-400">Test Account: <span className="text-white font-medium">{demoProfile.email}</span></div>
+                          <div className="text-slate-400">Password: <span className="text-amber-300 font-bold">ajwmes2026</span></div>
+                        </div>
+                      )}
 
                       <div className="pt-2 space-y-1">
                         <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase block">

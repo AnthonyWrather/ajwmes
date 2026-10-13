@@ -170,7 +170,9 @@
         "notifyDispatchSms": { "type": "boolean" },
         "createdAt": { "type": "string", "maxLength": 64 },
         "lastLoginAt": { "type": "string", "maxLength": 64 },
-        "updatedAt": { "type": "string", "maxLength": 64 }
+        "updatedAt": { "type": "string", "maxLength": 64 },
+        "password": { "type": "string", "maxLength": 128 },
+        "passwordHash": { "type": "string", "maxLength": 128 }
       },
       "required": ["uid", "email", "role"]
     }

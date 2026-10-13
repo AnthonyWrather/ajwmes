@@ -23,7 +23,8 @@ import {
   Package,
   Wrench,
   Globe,
-  Anchor
+  Anchor,
+  Key
 } from 'lucide-react';
 
 interface UserAccountsManagerProps {
@@ -97,7 +98,9 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       notifyDispatchSms: true,
       createdAt: now,
       lastLoginAt: now,
-      updatedAt: now
+      updatedAt: now,
+      password: 'ajwmes2026',
+      passwordHash: 'YWp3bWVzMjAyNg=='
     };
 
     try {
@@ -334,6 +337,10 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                         </span>
                         <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
                           id: {user.id}
+                        </span>
+                        <span className="text-[10px] font-mono text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
+                          <Key className="w-2.5 h-2.5 text-amber-400" />
+                          <span>Password: {user.password || 'ajwmes2026'}</span>
                         </span>
                       </div>
 

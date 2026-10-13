@@ -268,6 +268,38 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {/* Tab 1: Email & Password Sign In */}
         {activeTab === 'signin' && (
           <div className="p-6 overflow-y-auto space-y-5 flex-1">
+            {/* Quick Test Accounts Filler */}
+            <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Test Accounts &amp; Roles (Password: <code className="text-amber-300 font-mono font-bold bg-amber-950/60 px-1 py-0.5 rounded border border-amber-500/30">ajwmes2026</code>)</span>
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">1-click fill</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: 'Admin (Anthony)', email: 'anthonywrather@gmail.com' },
+                  { label: 'Technician (Jack)', email: 'jack.tech@ajwmarine.co.uk' },
+                  { label: 'Postal (Sarah)', email: 'sarah.postal@ajwmarine.co.uk' },
+                  { label: 'Client (David)', email: 'd.mercer@solent-sail.co.uk' },
+                  { label: 'Guest', email: 'guest@solent-visitor.co.uk' }
+                ].map(acc => (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    onClick={() => {
+                      setEmail(acc.email);
+                      setPassword('ajwmes2026');
+                    }}
+                    className="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-sky-500/50 rounded-lg text-[11px] text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {acc.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <form onSubmit={handleEmailSignIn} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
@@ -290,16 +322,12 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-300">Password / Access Passphrase</label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail('anthonywrather@gmail.com');
-                      setPassword('ajwmarine2026');
-                    }}
-                    className="text-[11px] text-sky-400 hover:underline cursor-pointer"
-                  >
-                    Fill Admin Sample
-                  </button>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <span className="text-slate-500">Test Password:</span>
+                    <code className="text-amber-300 font-mono font-bold bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">
+                      ajwmes2026
+                    </code>
+                  </div>
                 </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -551,7 +579,12 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                             {config.badge}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 font-mono">{profile.email}</p>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-mono mt-0.5">
+                          <span className="text-slate-400">{profile.email}</span>
+                          <span className="text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30 text-[10px]">
+                            Password: {profile.password || 'ajwmes2026'}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
