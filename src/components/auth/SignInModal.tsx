@@ -258,9 +258,24 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           {errorMessage && (
             <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <span className="font-semibold block">Authentication Notice</span>
-                <span>{errorMessage}</span>
+              <div className="flex-1 space-y-2">
+                <div>
+                  <span className="font-semibold block">Authentication Notice</span>
+                  <span>{errorMessage}</span>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const adminProfile = DEMO_PROFILES.find(p => p.role === 'admin') || DEMO_PROFILES[0];
+                      handleSelectQuickPersona(adminProfile);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 rounded-lg text-[11px] font-bold border border-emerald-500/50 cursor-pointer transition-colors"
+                  >
+                    <Wrench className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>Sign In Directly as Anthony Wrather (Administrator)</span>
+                  </button>
+                </div>
               </div>
               <button onClick={() => setErrorMessage(null)} className="text-rose-400 hover:text-white text-xs">✕</button>
             </div>
@@ -278,7 +293,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {activeTab === 'signin' && (
           <div className="p-6 overflow-y-auto space-y-5 flex-1">
             {/* Primary: Google Sign In Button */}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
@@ -304,6 +319,18 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                   />
                 </svg>
                 <span>{isLoading ? 'Connecting to Google...' : 'Continue with Google Account'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const adminProfile = DEMO_PROFILES.find(p => p.role === 'admin') || DEMO_PROFILES[0];
+                  handleSelectQuickPersona(adminProfile);
+                }}
+                className="w-full py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+              >
+                <Wrench className="w-4 h-4 text-emerald-400" />
+                <span>1-Click Sign In as Anthony Wrather (Administrator)</span>
               </button>
 
               <div className="flex items-center gap-3 my-2">

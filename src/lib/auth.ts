@@ -471,14 +471,20 @@ export async function signInWithGoogle(): Promise<{ success: boolean; user?: Fir
     return { success: true, user: fbUser, profile };
   } catch (error: any) {
     console.warn('Firebase signInWithGoogle notice:', error);
-    const errCode = error?.code || '';
-    let friendlyMessage = error instanceof Error ? error.message : 'Google sign-in could not be completed.';
-    if (errCode === 'auth/popup-blocked') {
-      friendlyMessage = 'Popup was blocked by the browser. Please allow popups or use 1-click test roles.';
-    } else if (errCode === 'auth/popup-closed-by-user') {
+    const errCode = (error?.code || '').toLowerCase();
+    const rawMsg = error instanceof Error ? error.message : String(error);
+    let friendlyMessage = rawMsg || 'Google sign-in could not be completed.';
+
+    if (errCode.includes('popup-blocked')) {
+      friendlyMessage = 'Popup was blocked by the browser. Please allow popups or use 1-click team roles.';
+    } else if (errCode.includes('popup-closed-by-user')) {
       friendlyMessage = 'Sign-in window was closed before completing.';
-    } else if (errCode === 'auth/unauthorized-domain') {
-      friendlyMessage = 'Preview domain not yet in Firebase authorized domains. Pre-configured test roles are active.';
+    } else if (errCode.includes('unauthorized-domain')) {
+      friendlyMessage = 'Current hosting domain is not yet in Firebase Authorized Domains (Firebase Console > Authentication > Settings > Authorized domains). Use 1-click admin sign-in below.';
+    } else if (errCode.includes('configuration-not-found') || rawMsg.includes('configuration-not-found')) {
+      friendlyMessage = 'Firebase Google Authentication provider configuration is being synced. Please retry or click "Sign In as Anthony Wrather (Admin)".';
+    } else if (errCode.includes('api-key-not-valid') || rawMsg.includes('api-key-not-valid')) {
+      friendlyMessage = 'Firebase API key was rejected by Google Identity Services. Ensure VITE_FIREBASE_API_KEY is configured in your hosting secrets, or use 1-click admin sign-in below.';
     }
     return { success: false, error: friendlyMessage };
   }

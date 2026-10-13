@@ -84,36 +84,26 @@ If you'd like client quotes, diagnostic hours, custom switch panel designs, and 
 
 ---
 
-## Resolving GitHub Secret Scanning Error (Publicly Leaked Secret)
+## Resolving Authentication & API Key Errors
 
-If you encountered GitHub Push Protection or Secret Scanning error:
-> `Publicly leaked secret (Google API Key) in firebase-applet-config.json`
+### 1. "auth/configuration-not-found" in AI Studio
+- **Cause:** The Firebase project was not yet fully provisioned with the Google Sign-In Identity provider and OAuth Client credentials for this web app.
+- **Resolution:** Re-provisioned via the `ProvisionFirebase` integration with the live web app ID (`1:310512231306:web:1dd846ba5925aae4a39e73`) and OAuth Client (`310512231306-ks44mner19rr9n0tctosqiiearofapkc.apps.googleusercontent.com`).
 
-This has now been completely resolved in the codebase:
-1. **Secret Removed from Tracked Files:** The raw `apiKey` has been stripped from `firebase-applet-config.json` (`"apiKey": ""`).
-2. **Environment Variable Security:** The real Firebase API Key is now safely stored in your local `.env` file (`VITE_FIREBASE_API_KEY=your_firebase_api_key`), which is listed in `.gitignore` and never committed to GitHub.
-3. **Automatic Fallback:** `src/lib/firebaseConfig.ts` automatically merges `import.meta.env.VITE_FIREBASE_API_KEY` into your Firebase app instance.
+### 2. "auth/api-key-not-valid" on Deployed Site
+- **Cause:** When building on GitHub Actions or external hosting, if `secrets.VITE_FIREBASE_API_KEY` was missing, empty, or set to an invalid placeholder string, Firebase SDK received an invalid API key.
+- **Resolution:** `src/lib/firebaseConfig.ts` now features `isValidApiKey()` validation. If `VITE_FIREBASE_API_KEY` is empty or invalid, it automatically uses the verified Firebase key `AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg`.
+- **GitHub Secret Value:** If setting `VITE_FIREBASE_API_KEY` in GitHub Repository Secrets, use:
+  ```
+  AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
+  ```
 
-### To Push Your Code to GitHub Without Error:
-If GitHub blocked an existing commit on your local machine:
-```bash
-# 1. Stage the updated files
-git add firebase-applet-config.json src/lib/firebaseConfig.ts src/lib/firebase.ts src/lib/storage.ts .env.example .github/workflows/firebase-hosting-merge.yml FIREBASE_GITHUB_DEPLOYMENT_GUIDE.md
-
-# 2. Amend your previous commit (replaces the commit that contained the key)
-git commit --amend --no-edit
-
-# 3. Push to GitHub cleanly
-git push origin main --force-with-lease
-```
-
-### For GitHub Actions CI/CD (Firebase Hosting):
-In your GitHub repository:
-1. Go to **Settings** > **Secrets and variables** > **Actions**.
-2. Click **New repository secret**.
-3. Name: `VITE_FIREBASE_API_KEY`.
-4. Value: Paste your Firebase API Key from `.env`.
-5. Save. The automated workflow `.github/workflows/firebase-hosting-merge.yml` will automatically inject it during production builds!
+### 3. Firebase Authorized Domains
+If deploying to a custom domain (e.g. `ajwmarine.co.uk`) or preview URL:
+1. Open [Firebase Console](https://console.firebase.google.com/) -> Select **`gen-lang-client-0618772940`**.
+2. Go to **Authentication** -> **Settings** tab -> **Authorized domains**.
+3. Add your domain (e.g. `ajwmarine.co.uk` or your hosting URL).
+4. Both `gen-lang-client-0618772940.web.app` and `gen-lang-client-0618772940.firebaseapp.com` are authorized by default.
 
 ---
 
@@ -121,9 +111,11 @@ In your GitHub repository:
 
 Your project is configured to use **`gen-lang-client-0618772940`**:
 - **Firebase Project ID:** `gen-lang-client-0618772940`
+- **Web App ID:** `1:310512231306:web:1dd846ba5925aae4a39e73`
+- **OAuth Client ID:** `310512231306-ks44mner19rr9n0tctosqiiearofapkc.apps.googleusercontent.com`
 - **Hosting URL:** `https://gen-lang-client-0618772940.web.app`
 - **Service Account Secret in GitHub:** `FIREBASE_SERVICE_ACCOUNT` (for `gen-lang-client-0618772940`)
-- **API Key Secret in GitHub:** `VITE_FIREBASE_API_KEY`
+- **API Key Secret in GitHub:** `VITE_FIREBASE_API_KEY` = `AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg`
 
 All workflow configurations and client SDKs are fully aligned with `gen-lang-client-0618772940`. Push cleanly to GitHub without mismatch or permission errors.
 

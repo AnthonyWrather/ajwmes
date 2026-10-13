@@ -13,18 +13,35 @@ export interface FirebaseAppConfig {
   recaptchaSiteKey?: string;
 }
 
+export function isValidApiKey(key: unknown): boolean {
+  if (typeof key !== 'string') return false;
+  const trimmed = key.trim();
+  return (
+    trimmed.startsWith('AIza') &&
+    trimmed.length >= 35 &&
+    !trimmed.includes(' ') &&
+    !trimmed.includes('<') &&
+    !trimmed.toLowerCase().includes('your_') &&
+    !trimmed.toLowerCase().includes('placeholder')
+  );
+}
+
+const DEFAULT_API_KEY = 'AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg';
+
 export const KNOWN_FIREBASE_PROJECTS: Record<string, FirebaseAppConfig> = {
   'gen-lang-client-0618772940': {
     projectId: 'gen-lang-client-0618772940',
-    appId: '1:310512231306:web:35ac83e7f7f56d49a39e73',
-    apiKey: (import.meta.env.VITE_FIREBASE_API_KEY as string) || rawConfig.apiKey || 'AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg',
-    authDomain: 'gen-lang-client-0618772940.firebaseapp.com',
-    firestoreDatabaseId: 'ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a',
-    storageBucket: 'gen-lang-client-0618772940.firebasestorage.app',
-    messagingSenderId: '310512231306',
-    measurementId: 'G-3S81J5JS3L',
-    oAuthClientId: '310512231306-client.apps.googleusercontent.com',
-    recaptchaSiteKey: ''
+    appId: rawConfig.appId || '1:310512231306:web:1dd846ba5925aae4a39e73',
+    apiKey: isValidApiKey(import.meta.env.VITE_FIREBASE_API_KEY)
+      ? (import.meta.env.VITE_FIREBASE_API_KEY as string).trim()
+      : (isValidApiKey(rawConfig.apiKey) ? rawConfig.apiKey.trim() : DEFAULT_API_KEY),
+    authDomain: rawConfig.authDomain || 'gen-lang-client-0618772940.firebaseapp.com',
+    firestoreDatabaseId: rawConfig.firestoreDatabaseId || 'ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a',
+    storageBucket: rawConfig.storageBucket || 'gen-lang-client-0618772940.firebasestorage.app',
+    messagingSenderId: rawConfig.messagingSenderId || '310512231306',
+    measurementId: rawConfig.measurementId || '',
+    oAuthClientId: rawConfig.oAuthClientId || '310512231306-ks44mner19rr9n0tctosqiiearofapkc.apps.googleusercontent.com',
+    recaptchaSiteKey: rawConfig.recaptchaSiteKey || ''
   }
 };
 
@@ -58,35 +75,35 @@ export function setStoredProjectOverride(projectId: string | null) {
 }
 
 function resolveActiveConfig(): FirebaseAppConfig {
-  const override = getStoredProjectOverride();
-  if (override && KNOWN_FIREBASE_PROJECTS[override]) {
-    return { ...KNOWN_FIREBASE_PROJECTS[override] };
-  }
-
-  // Next check env var or rawConfig
   const envProject = (import.meta.env.VITE_FIREBASE_PROJECT_ID as string)?.trim();
-  const rawProject = rawConfig.projectId?.trim();
+  const projectId = envProject || rawConfig.projectId || 'gen-lang-client-0618772940';
 
-  if (envProject) {
-    return {
-      projectId: envProject,
-      appId: (import.meta.env.VITE_FIREBASE_APP_ID as string) || KNOWN_FIREBASE_PROJECTS['gen-lang-client-0618772940'].appId,
-      apiKey: (import.meta.env.VITE_FIREBASE_API_KEY as string) || rawConfig.apiKey || KNOWN_FIREBASE_PROJECTS['gen-lang-client-0618772940'].apiKey,
-      authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string) || KNOWN_FIREBASE_PROJECTS['gen-lang-client-0618772940'].authDomain,
-      firestoreDatabaseId: (import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID as string) || 'ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a',
-      storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string) || KNOWN_FIREBASE_PROJECTS['gen-lang-client-0618772940'].storageBucket,
-      messagingSenderId: (import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string) || KNOWN_FIREBASE_PROJECTS['gen-lang-client-0618772940'].messagingSenderId,
-      measurementId: (import.meta.env.VITE_FIREBASE_MEASUREMENT_ID as string) || 'G-3S81J5JS3L',
-      oAuthClientId: (import.meta.env.VITE_FIREBASE_OAUTH_CLIENT_ID as string) || KNOWN_FIREBASE_PROJECTS['gen-lang-client-0618772940'].oAuthClientId,
-      recaptchaSiteKey: rawConfig.recaptchaSiteKey || '',
-    };
+  const envApiKey = (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined)?.trim();
+  const rawApiKey = (rawConfig.apiKey as string | undefined)?.trim();
+
+  // For gen-lang-client-0618772940, DEFAULT_API_KEY is the authentic Firebase Identity Platform Web API key.
+  // Prevent mistyped AI Studio Gemini keys from overriding the verified Firebase key.
+  let resolvedApiKey = DEFAULT_API_KEY;
+  if (projectId === 'gen-lang-client-0618772940') {
+    resolvedApiKey = DEFAULT_API_KEY;
+  } else if (isValidApiKey(envApiKey)) {
+    resolvedApiKey = envApiKey!;
+  } else if (isValidApiKey(rawApiKey)) {
+    resolvedApiKey = rawApiKey!;
   }
 
-  if (rawProject && KNOWN_FIREBASE_PROJECTS[rawProject]) {
-    return { ...KNOWN_FIREBASE_PROJECTS[rawProject] };
-  }
-
-  return { ...KNOWN_FIREBASE_PROJECTS['gen-lang-client-0618772940'] };
+  return {
+    projectId,
+    appId: rawConfig.appId || '1:310512231306:web:1dd846ba5925aae4a39e73',
+    apiKey: resolvedApiKey,
+    authDomain: rawConfig.authDomain || `${projectId}.firebaseapp.com`,
+    firestoreDatabaseId: rawConfig.firestoreDatabaseId || 'ai-studio-ajwmarineelectri-be2decfb-0082-454a-a2d9-7ac36c33620a',
+    storageBucket: rawConfig.storageBucket || `${projectId}.firebasestorage.app`,
+    messagingSenderId: rawConfig.messagingSenderId || '310512231306',
+    measurementId: rawConfig.measurementId || '',
+    oAuthClientId: rawConfig.oAuthClientId || '310512231306-ks44mner19rr9n0tctosqiiearofapkc.apps.googleusercontent.com',
+    recaptchaSiteKey: rawConfig.recaptchaSiteKey || ''
+  };
 }
 
 export const firebaseConfig: FirebaseAppConfig = resolveActiveConfig();
