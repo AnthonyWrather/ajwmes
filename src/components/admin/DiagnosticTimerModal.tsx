@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { JobRecord, MaterialLineItem, CatalogItem } from '../../types';
 import { Play, Pause, RotateCcw, Plus, Trash2, Check, Clock, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { calculateDiagnosticTotal, formatStopwatchTime } from '../../utils/electricalCalculations';
 
 interface DiagnosticTimerModalProps {
   job: JobRecord;
@@ -33,17 +34,13 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
     };
   }, [isRunning]);
 
-  const hoursLogged = Number((seconds / 3600).toFixed(2));
-  const laborCost = Number((hoursLogged * job.hourlyRate).toFixed(2));
-  const materialsCost = materials.reduce((sum, m) => sum + m.quantity * m.unitPrice, 0);
-  const totalCost = Number((laborCost + materialsCost).toFixed(2));
+  const { hoursLogged, laborCost, materialsCost, totalCost } = calculateDiagnosticTotal(
+    seconds,
+    job.hourlyRate,
+    materials
+  );
 
-  const formatStopwatch = (totalSecs: number) => {
-    const hrs = Math.floor(totalSecs / 3600);
-    const mins = Math.floor((totalSecs % 3600) / 60);
-    const secs = totalSecs % 60;
-    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
+  const formatStopwatch = formatStopwatchTime;
 
   const handleAddMaterial = () => {
     const item = catalog.find(c => c.id === selectedCatalogId);

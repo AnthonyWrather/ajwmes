@@ -24,6 +24,7 @@ import {
 } from '../../lib/storage';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
 import { trackPanelDesignCustomized } from '../../lib/analytics';
+import { calculateSwitchPanelPrice, calculateMinimumPanelWidth } from '../../utils/electricalCalculations';
 
 interface SwitchPanelDesignerProps {
   onOrderPanel?: (config: SwitchPanelConfig) => void;
@@ -51,27 +52,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Recalculate estimated pricing based on options
-  const calculatePrice = (cfg: SwitchPanelConfig) => {
-    let base = 35; // base laser cut & setup
-    // Material factor
-    if (cfg.material === 'wood_teak') base += 25;
-    if (cfg.material === 'wood_birch') base += 15;
-    // Gang count
-    base += cfg.gangCount * 2.5;
-    // Add-on cutouts
-    if (cfg.hasVoltmeter) base += 8;
-    if (cfg.hasUsbCharger) base += 10;
-    if (cfg.has12vSocket) base += 6;
-
-    // Package multiplier
-    if (cfg.packageOption === 'faceplate_only') {
-      return Math.round(base);
-    } else if (cfg.packageOption === 'diy_kit') {
-      return Math.round(base + cfg.gangCount * 8 + 12);
-    } else {
-      return Math.round(base + cfg.gangCount * 12 + 35);
-    }
-  };
+  const calculatePrice = calculateSwitchPanelPrice;
 
   const updateConfig = (updated: Partial<SwitchPanelConfig>) => {
     const next = { ...config, ...updated };
@@ -101,7 +82,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
       }
     }
 
-    let minWidth = Math.max(160, Math.ceil(count / 2) * 55 + (config.hasVoltmeter ? 45 : 0));
+    let minWidth = calculateMinimumPanelWidth(count, config.hasVoltmeter);
     updateConfig({
       gangCount: count,
       switches: newSwitches,

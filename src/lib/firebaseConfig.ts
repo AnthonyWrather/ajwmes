@@ -164,7 +164,7 @@ function resolveActiveConfig(): FirebaseAppConfig {
   const customConfig = getCustomFirebaseConfig();
   const customApiKey = getCustomApiKey();
 
-  const envProject = (import.meta.env.VITE_FIREBASE_PROJECT_ID as string)?.trim();
+  const envProject = (import.meta.env?.VITE_FIREBASE_PROJECT_ID as string | undefined)?.trim();
   const projectId = 
     customConfig?.projectId || 
     getStoredProjectOverride() || 
@@ -172,7 +172,7 @@ function resolveActiveConfig(): FirebaseAppConfig {
     rawConfig.projectId || 
     'gen-lang-client-0618772940';
 
-  const envApiKey = (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined)?.trim();
+  const envApiKey = (import.meta.env?.VITE_FIREBASE_API_KEY as string | undefined)?.trim();
   const rawApiKey = (rawConfig.apiKey as string | undefined)?.trim();
 
   // API Key priority:
@@ -192,28 +192,28 @@ function resolveActiveConfig(): FirebaseAppConfig {
     resolvedApiKey = rawApiKey!;
   }
 
-  const envAppId = (import.meta.env.VITE_FIREBASE_APP_ID as string | undefined)?.trim();
+  const envAppId = (import.meta.env?.VITE_FIREBASE_APP_ID as string | undefined)?.trim();
   const resolvedAppId = 
     customConfig?.appId || 
     envAppId || 
     rawConfig.appId || 
     '1:310512231306:web:35ac83e7f7f56d49a39e73';
 
-  const envAuthDomain = (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined)?.trim();
+  const envAuthDomain = (import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN as string | undefined)?.trim();
   const resolvedAuthDomain = 
     customConfig?.authDomain || 
     envAuthDomain || 
     rawConfig.authDomain || 
     `${projectId}.firebaseapp.com`;
 
-  const envStorageBucket = (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined)?.trim();
+  const envStorageBucket = (import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET as string | undefined)?.trim();
   const resolvedStorageBucket = 
     customConfig?.storageBucket || 
     envStorageBucket || 
     rawConfig.storageBucket || 
     `${projectId}.firebasestorage.app`;
 
-  const envDbId = (import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID as string | undefined)?.trim();
+  const envDbId = (import.meta.env?.VITE_FIREBASE_FIRESTORE_DATABASE_ID as string | undefined)?.trim();
   const resolvedDbId = 
     customConfig?.firestoreDatabaseId || 
     envDbId || 

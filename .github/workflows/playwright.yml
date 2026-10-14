@@ -51,6 +51,11 @@ jobs:
         run: npx playwright install-deps
         if: steps.playwright-cache.outputs.cache-hit == 'true'
 
+      - name: Run Unit Tests (Auth, Electrical Calculations, Form Validation)
+        run: npm run test:unit
+        env:
+          CI: true
+
       - name: Run Playwright E2E tests
         run: npm run test:e2e
         env:

@@ -218,14 +218,17 @@ export function getSavedUserProfile(): UserProfile {
   return demoMatch;
 }
 
-export function enrichUserProfile(profile: UserProfile): UserProfile {
+export function enrichUserProfile(profile: Partial<UserProfile>): UserProfile {
+  const role: UserRole = profile.role || 'guest';
   const activeProfiles = getActiveDemoProfiles();
-  const demoFallback = activeProfiles.find(p => p.email.toLowerCase() === profile.email?.toLowerCase()) || DEMO_PROFILES.find(p => p.email.toLowerCase() === profile.email?.toLowerCase());
+  const demoFallback = activeProfiles.find(p => p.email?.toLowerCase() === profile.email?.toLowerCase()) || DEMO_PROFILES.find(p => p.email?.toLowerCase() === profile.email?.toLowerCase());
   const isAnthony = profile.email?.toLowerCase() === 'anthonywrather@gmail.com' || profile.email?.toLowerCase() === 'admin@ajwmes.co.uk';
   return {
     ...profile,
+    role,
     id: profile.id || demoFallback?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? `usr-${crypto.randomUUID()}` : `usr-${Date.now()}`),
     name: profile.name || demoFallback?.name || (isAnthony ? 'Anthony Wrather' : (profile.email ? profile.email.split('@')[0] : 'Marine User')),
+    email: profile.email || demoFallback?.email || '',
     phone: profile.phone || demoFallback?.phone || (isAnthony ? '07700 900551' : ''),
     vesselName: profile.vesselName || demoFallback?.vesselName || (isAnthony ? 'AJW Solent Response' : ''),
     vesselType: profile.vesselType || demoFallback?.vesselType || (isAnthony ? 'Workboat / Fast Tender' : 'Sailing Yacht'),
@@ -601,3 +604,13 @@ export async function syncUserRoleToFirestore(userId: string, newRole: UserRole)
     handleFirestoreError(err, OperationType.WRITE, `${colPath}/${userId}`);
   }
 }
+
+// Re-export RBAC helpers for convenience and scaling
+export {
+  canAccessRoute,
+  checkRouteAccess,
+  getAccessibleRoutes,
+  canPerformAction,
+  checkActionPermission,
+  enforceAction
+} from './rbac';

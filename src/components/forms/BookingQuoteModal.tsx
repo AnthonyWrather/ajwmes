@@ -15,6 +15,7 @@ import {
   Trash2 
 } from 'lucide-react';
 import { uploadSwitchPanelImage, deleteSwitchPanelImage } from '../../lib/storage';
+import { validateBookingQuoteForm } from '../../utils/formValidation';
 
 interface BookingQuoteModalProps {
   initialService?: ServiceType;
@@ -41,6 +42,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
   const [berthLocation, setBerthLocation] = useState('Haslar Marina, Gosport');
   const [notes, setNotes] = useState('');
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Switch Panel / Electrical Photos State (Firebase Storage)
   const [attachedPhotos, setAttachedPhotos] = useState<Array<{ url: string; name: string; storagePath?: string }>>([]);
@@ -94,6 +96,21 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = validateBookingQuoteForm({
+      clientName,
+      clientEmail,
+      clientPhone,
+      vesselName,
+      berthLocation
+    });
+
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+    setFormErrors({});
+
     const reference = `AJW-2026-${Math.floor(100 + Math.random() * 900)}`;
 
     const newJob: Partial<JobRecord> = {
@@ -199,6 +216,15 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                 Transparent flat rate of £25 / hour labor + materials. Serving Gosport &amp; Solent marinas.
               </p>
             </div>
+
+            {Object.keys(formErrors).length > 0 && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs space-y-1">
+                <span className="font-semibold block text-rose-200">Please correct the following before submitting:</span>
+                {Object.values(formErrors).map((err, i) => (
+                  <p key={i}>• {err}</p>
+                ))}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
               {/* Service Selection */}

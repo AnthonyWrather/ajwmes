@@ -12,6 +12,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "test:unit": "tsx --test src/lib/auth.test.ts src/utils/electricalCalculations.test.ts src/utils/formValidation.test.ts",
+    "test": "npm run test:unit",
     "test:e2e": "playwright test"
   },
   "dependencies": {
