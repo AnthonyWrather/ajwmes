@@ -406,7 +406,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                   ACTIVE POSTAL DISPATCH: {activePostalOrders[0].orderNumber}
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 uppercase">
-                  {activePostalOrders[0].orderStatus.replace('_', ' ')}
+                  {(activePostalOrders[0].orderStatus || '').replace(/_/g, ' ')}
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-0.5">
@@ -568,7 +568,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                           ? 'bg-sky-950 text-sky-300 border-sky-500/30'
                           : 'bg-amber-950 text-amber-300 border-amber-500/30'
                       }`}>
-                        {order.orderStatus === 'received' ? 'Order Received (Packing)' : order.orderStatus.replace('_', ' ')}
+                        {order.orderStatus === 'received' ? 'Order Received (Packing)' : (order.orderStatus || '').replace(/_/g, ' ')}
                       </span>
                     </div>
 
@@ -681,7 +681,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="font-mono text-sky-400 font-bold">{job.reference}</span>
                       <span className="text-[10px] font-mono capitalize px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300">
-                        {job.status.replace('_', ' ')}
+                        {(job.status || 'quote_requested').replace(/_/g, ' ')}
                       </span>
                     </div>
 
@@ -695,10 +695,10 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-slate-500" />
-                        <span>{job.diagnosticHours}h Labor</span>
+                        <span>{job.diagnosticHours ?? 0}h Labor</span>
                       </div>
                       <span className="font-mono font-bold text-white tabular-nums">
-                        £{(job.totalLabor + job.totalMaterials).toFixed(2)}
+                        £{((job.totalLabor ?? 0) + (job.totalMaterials ?? 0)).toFixed(2)}
                       </span>
                     </div>
                   </div>

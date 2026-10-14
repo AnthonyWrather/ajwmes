@@ -458,7 +458,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                           ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
                           : 'bg-slate-950 text-slate-300 border-slate-800'
                       }`}>
-                        {job.status.replace('_', ' ')}
+                        {(job.status || 'quote_requested').replace(/_/g, ' ')}
                       </span>
                     </div>
                   </div>
@@ -513,7 +513,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                   <div>
                     <span className="font-mono text-xs text-amber-400 font-bold uppercase tracking-wider block">
-                      {selectedJob.reference} · {selectedJob.serviceCategory.replace('_', ' ').toUpperCase()}
+                      {selectedJob.reference} · {(selectedJob.serviceCategory || '').replace(/_/g, ' ').toUpperCase()}
                     </span>
                     <h3 className="text-lg font-bold text-white mt-0.5">
                       {selectedJob.vesselName} ({selectedJob.vesselType})

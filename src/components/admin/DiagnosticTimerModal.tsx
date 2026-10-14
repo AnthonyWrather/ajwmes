@@ -36,7 +36,7 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
 
   const { hoursLogged, laborCost, materialsCost, totalCost } = calculateDiagnosticTotal(
     seconds,
-    job.hourlyRate,
+    job.hourlyRate ?? 25,
     materials
   );
 
@@ -85,7 +85,7 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
 
           <div className="text-right">
             <span className="text-xs text-slate-400 block">Rate</span>
-            <span className="text-base font-bold text-white font-mono">£{job.hourlyRate}/hr</span>
+            <span className="text-base font-bold text-white font-mono">£{job.hourlyRate ?? 25}/hr</span>
           </div>
         </div>
 

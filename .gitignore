@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Playwright test artifacts & reports
+playwright-report/
+test-results/
+blob-report/

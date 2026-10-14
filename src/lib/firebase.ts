@@ -321,13 +321,14 @@ export function subscribeJobs(onUpdate: (jobs: JobRecord[]) => void) {
         const remoteJobs = snapshot.docs.map((docSnap) => {
           const data = docSnap.data();
           return {
-            id: docSnap.id,
-            hourlyRate: 25,
-            diagnosticHours: 0,
-            totalLabor: 0,
-            totalMaterials: 0,
-            totalEstimated: 0,
             ...data,
+            id: docSnap.id,
+            status: data.status || 'quote_requested',
+            hourlyRate: typeof data.hourlyRate === 'number' ? data.hourlyRate : 25,
+            diagnosticHours: typeof data.diagnosticHours === 'number' ? data.diagnosticHours : 0,
+            totalLabor: typeof data.totalLabor === 'number' ? data.totalLabor : 0,
+            totalMaterials: typeof data.totalMaterials === 'number' ? data.totalMaterials : 0,
+            totalEstimated: typeof data.totalEstimated === 'number' ? data.totalEstimated : 0,
             messages: Array.isArray(data.messages) ? data.messages : [],
             materialsUsed: Array.isArray(data.materialsUsed) ? data.materialsUsed : []
           } as JobRecord;

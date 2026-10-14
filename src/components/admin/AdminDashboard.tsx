@@ -108,8 +108,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const envUsers = users.filter(u => !u.environment || u.environment === currentEnv.envCode);
 
   // Top Metrics
-  const totalBilled = jobs.reduce((sum, j) => sum + j.totalLabor + j.totalMaterials, 0);
-  const totalHours = jobs.reduce((sum, j) => sum + j.diagnosticHours, 0);
+  const totalBilled = jobs.reduce((sum, j) => sum + (j.totalLabor ?? 0) + (j.totalMaterials ?? 0), 0);
+  const totalHours = jobs.reduce((sum, j) => sum + (j.diagnosticHours ?? 0), 0);
   const inProgressCount = jobs.filter(j => j.status === 'in_progress').length;
   const quotePendingCount = jobs.filter(j => j.status === 'quote_requested' || j.status === 'quote_sent').length;
   const pendingOrdersCount = postalOrders.filter(o => o.orderStatus === 'received').length;
@@ -406,7 +406,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ? 'bg-amber-950 text-amber-300 border-amber-500/30'
                         : 'bg-slate-950 text-slate-300 border-slate-800'
                     }`}>
-                      {job.status.replace('_', ' ')}
+                      {(job.status || 'quote_requested').replace(/_/g, ' ')}
                     </span>
                   </div>
 
@@ -429,10 +429,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-slate-400">{job.diagnosticHours}h Logged</span>
+                      <span className="font-mono text-slate-400">{job.diagnosticHours ?? 0}h Logged</span>
                       <span>·</span>
                       <span className="font-mono text-sky-400 font-bold">
-                        £{(job.totalLabor + job.totalMaterials).toFixed(2)}
+                        £{((job.totalLabor ?? 0) + (job.totalMaterials ?? 0)).toFixed(2)}
                       </span>
                     </div>
 
