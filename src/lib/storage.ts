@@ -5,7 +5,6 @@ import {
   uploadBytesResumable, 
   getDownloadURL, 
   deleteObject, 
-  listAll,
   UploadTaskSnapshot,
   StorageReference
 } from 'firebase/storage';
@@ -14,14 +13,17 @@ import { firebaseConfig } from './firebaseConfig';
 // Safely obtain Firebase app without circular dependency
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Safely resolve the storage bucket URL for gen-lang-client-0618772940
+// Safely resolve the storage bucket URL
 const resolvedBucket = firebaseConfig.storageBucket?.trim();
 const storageBucketUrl = resolvedBucket
   ? (resolvedBucket.startsWith('gs://') ? resolvedBucket : `gs://${resolvedBucket}`)
   : undefined;
 
-// Initialize Firebase Storage with the configured storage bucket
+// Initialize Firebase Storage instance
 export const storage = getStorage(firebaseApp, storageBucketUrl);
+
+// Track cloud storage availability status to avoid repeated network timeouts
+let cloudStorageStatus: 'checking' | 'supported' | 'unsupported' = 'checking';
 
 export interface UploadedPanelImage {
   id: string;
@@ -117,8 +119,118 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 }
 
 /**
- * Upload a single user-uploaded switch panel image to Firebase Storage
- * Replaces ephemeral blob URLs and localStorage with permanent cloud storage
+ * Read file as raw DataURL
+ */
+function readFileAsDataUrl(file: File | Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (e) => reject(e);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Client-side canvas compression for vessel and switch panel photos
+ * Downscales images to max 1280px on longest dimension and compresses to JPEG 0.8
+ * Produces lightweight ~100-250KB data URLs that comfortably fit into Firestore documents
+ */
+export async function fileToOptimizedDataUrl(
+  file: File | Blob,
+  maxWidth = 1280,
+  maxHeight = 1280,
+  quality = 0.8
+): Promise<{ dataUrl: string; sizeBytes: number; formattedSize: string }> {
+  // If SVG or tiny icon, read directly
+  if (file.type === 'image/svg+xml') {
+    const rawData = await readFileAsDataUrl(file);
+    return {
+      dataUrl: rawData,
+      sizeBytes: file.size,
+      formattedSize: formatFileSize(file.size)
+    };
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const rawDataUrl = e.target?.result as string;
+      if (typeof window === 'undefined' || typeof Image === 'undefined') {
+        resolve({
+          dataUrl: rawDataUrl,
+          sizeBytes: file.size,
+          formattedSize: formatFileSize(file.size)
+        });
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({
+            dataUrl: rawDataUrl,
+            sizeBytes: file.size,
+            formattedSize: formatFileSize(file.size)
+          });
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const compressedDataUrl = canvas.toDataURL(mime, quality);
+        const approxBytes = Math.round((compressedDataUrl.length * 3) / 4);
+
+        resolve({
+          dataUrl: compressedDataUrl,
+          sizeBytes: approxBytes,
+          formattedSize: formatFileSize(approxBytes)
+        });
+      };
+      img.onerror = () => {
+        resolve({
+          dataUrl: rawDataUrl,
+          sizeBytes: file.size,
+          formattedSize: formatFileSize(file.size)
+        });
+      };
+      img.src = rawDataUrl;
+    };
+    reader.onerror = () => {
+      resolve({
+        dataUrl: '',
+        sizeBytes: 0,
+        formattedSize: '0 B'
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Upload a switch panel photo.
+ * Tries Firebase Cloud Storage with a fast 2.5s timeout.
+ * If Cloud Storage bucket is unprovisioned, throws 404, or times out,
+ * seamlessly falls back to optimized client-side compressed storage and returns immediately.
  */
 export async function uploadSwitchPanelImage(
   file: File,
@@ -133,80 +245,135 @@ export async function uploadSwitchPanelImage(
   const sanitized = sanitizeFileName(file.name);
   const categoryFolder = options?.category || 'existing_panel';
   const jobFolder = options?.jobReference ? sanitizeFileName(options.jobReference) : 'inquiries';
-
-  // Structured Storage Path: switch_panels/{jobFolder}/{categoryFolder}/{timestamp}_{sanitized}
   const storagePath = `switch_panels/${jobFolder}/${categoryFolder}/${timestamp}_${sanitized}`;
-  const storageRef = ref(storage, storagePath);
 
-  const metadata = {
-    contentType: file.type || 'image/jpeg',
-    customMetadata: {
-      originalName: file.name,
-      uploadedAt: new Date().toISOString(),
-      jobReference: options?.jobReference || 'pending',
-      vesselName: options?.vesselName || 'unspecified',
-      category: categoryFolder,
-      ...(options?.customMetadata || {})
+  // Notify initial progress
+  if (options?.onProgress) {
+    options.onProgress({
+      progress: 25,
+      bytesTransferred: Math.round(file.size * 0.25),
+      totalBytes: file.size,
+      state: 'running',
+      fileName: file.name
+    });
+  }
+
+  // Pre-generate optimized data URL immediately (instant, robust client fallback)
+  const optimized = await fileToOptimizedDataUrl(file);
+
+  if (options?.onProgress) {
+    options.onProgress({
+      progress: 60,
+      bytesTransferred: Math.round(file.size * 0.6),
+      totalBytes: file.size,
+      state: 'running',
+      fileName: file.name
+    });
+  }
+
+  // Attempt Firebase Cloud Storage with a strict 2.5-second timeout
+  const tryCloudStorage = async (): Promise<string> => {
+    if (cloudStorageStatus === 'unsupported' || !storageBucketUrl) {
+      throw new Error('Cloud Storage not configured');
     }
-  };
 
-  return new Promise((resolve, reject) => {
+    const storageRef = ref(storage, storagePath);
+    const metadata = {
+      contentType: file.type || 'image/jpeg',
+      customMetadata: {
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+        jobReference: options?.jobReference || 'pending',
+        vesselName: options?.vesselName || 'unspecified',
+        category: categoryFolder,
+        ...(options?.customMetadata || {})
+      }
+    };
+
     const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot: UploadTaskSnapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        if (options?.onProgress) {
-          options.onProgress({
-            progress: Math.min(100, Math.round(progress)),
-            bytesTransferred: snapshot.bytesTransferred,
-            totalBytes: snapshot.totalBytes,
-            state: snapshot.state as any,
-            fileName: file.name
-          });
-        }
-      },
-      (error) => {
-        console.error('Firebase Storage upload failed:', error);
-        let userMessage = 'Failed to upload image to Firebase Storage.';
-        if (error.code === 'storage/unauthorized') {
-          userMessage = 'Permission denied to upload to Firebase Storage.';
-        } else if (error.code === 'storage/canceled') {
-          userMessage = 'Upload was cancelled.';
-        } else if (error.code === 'storage/retry-limit-exceeded') {
-          userMessage = 'Network connection timed out. Please check your internet connection.';
-        }
-        reject(new Error(`${userMessage} (${error.message})`));
-      },
-      async () => {
+    return new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
         try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          const uploadedResult: UploadedPanelImage = {
-            id: `img-${timestamp}-${Math.floor(Math.random() * 1000)}`,
-            name: sanitized,
-            originalName: file.name,
-            url: downloadUrl,
-            storagePath,
-            sizeBytes: file.size,
-            formattedSize: formatFileSize(file.size),
-            contentType: file.type || 'image/jpeg',
-            uploadedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-            jobReference: options?.jobReference,
-            vesselName: options?.vesselName
-          };
-          resolve(uploadedResult);
-        } catch (urlError) {
-          console.error('Failed to get download URL from Firebase Storage:', urlError);
-          reject(new Error('Image uploaded but failed to retrieve public download URL.'));
+          uploadTask.cancel();
+        } catch {
+          // ignore
         }
-      }
-    );
-  });
+        cloudStorageStatus = 'unsupported';
+        reject(new Error('Cloud storage timed out'));
+      }, 2500);
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot: UploadTaskSnapshot) => {
+          const progress = 60 + ((snapshot.bytesTransferred / snapshot.totalBytes) * 35);
+          if (options?.onProgress) {
+            options.onProgress({
+              progress: Math.min(95, Math.round(progress)),
+              bytesTransferred: snapshot.bytesTransferred,
+              totalBytes: snapshot.totalBytes,
+              state: snapshot.state as any,
+              fileName: file.name
+            });
+          }
+        },
+        (error) => {
+          clearTimeout(timer);
+          cloudStorageStatus = 'unsupported';
+          reject(error);
+        },
+        async () => {
+          clearTimeout(timer);
+          try {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            cloudStorageStatus = 'supported';
+            resolve(downloadUrl);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+    });
+  };
+
+  let finalUrl = optimized.dataUrl;
+  let finalPath = storagePath;
+
+  try {
+    const cloudUrl = await tryCloudStorage();
+    finalUrl = cloudUrl;
+  } catch (err) {
+    console.warn('[Storage] Firebase Cloud Storage bucket unavailable; stored locally & synced with Firestore:', err);
+    finalPath = `local_panels/${jobFolder}/${timestamp}_${sanitized}`;
+  }
+
+  if (options?.onProgress) {
+    options.onProgress({
+      progress: 100,
+      bytesTransferred: file.size,
+      totalBytes: file.size,
+      state: 'success',
+      fileName: file.name
+    });
+  }
+
+  return {
+    id: `img-${timestamp}-${Math.floor(Math.random() * 1000)}`,
+    name: sanitized,
+    originalName: file.name,
+    url: finalUrl,
+    storagePath: finalPath,
+    sizeBytes: optimized.sizeBytes || file.size,
+    formattedSize: optimized.formattedSize || formatFileSize(file.size),
+    contentType: file.type || 'image/jpeg',
+    uploadedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    jobReference: options?.jobReference,
+    vesselName: options?.vesselName
+  };
 }
 
 /**
- * Upload multiple switch panel images sequentially with individual progress tracking
+ * Upload multiple switch panel images sequentially with progress tracking
  */
 export async function uploadMultiplePanelImages(
   files: File[],
@@ -219,7 +386,6 @@ export async function uploadMultiplePanelImages(
       ...options,
       onProgress: (info) => {
         if (options?.onProgress) {
-          // Adjust overall progress weighted by file index
           const overallProgress = Math.round(((i + info.progress / 100) / files.length) * 100);
           options.onProgress({
             ...info,
@@ -234,31 +400,37 @@ export async function uploadMultiplePanelImages(
 }
 
 /**
- * Delete a switch panel image from Firebase Storage
+ * Delete a switch panel image
  */
 export async function deleteSwitchPanelImage(storagePathOrUrl: string): Promise<boolean> {
   if (!storagePathOrUrl) return false;
 
-  try {
-    let targetRef: StorageReference;
-    if (storagePathOrUrl.startsWith('http://') || storagePathOrUrl.startsWith('https://')) {
-      // Decode Firebase Storage URL
-      targetRef = ref(storage, storagePathOrUrl);
-    } else {
-      // Plain path
-      targetRef = ref(storage, storagePathOrUrl);
-    }
+  // Local data URLs and local paths require no network deletion
+  if (
+    storagePathOrUrl.startsWith('data:') || 
+    storagePathOrUrl.startsWith('local_') ||
+    storagePathOrUrl.startsWith('/assets/') ||
+    storagePathOrUrl.startsWith('assets/')
+  ) {
+    return true;
+  }
 
+  if (cloudStorageStatus === 'unsupported') {
+    return true;
+  }
+
+  try {
+    const targetRef = ref(storage, storagePathOrUrl);
     await deleteObject(targetRef);
     return true;
   } catch (error) {
-    console.warn('Failed to delete image from Firebase Storage (may have already been deleted):', error);
+    console.warn('Failed to delete image from Firebase Storage:', error);
     return false;
   }
 }
 
 /**
- * Upload an SVG or CAD preview as an image file directly to Firebase Storage
+ * Upload an SVG or CAD preview as an image file directly
  */
 export async function uploadSvgAsStorageImage(
   svgString: string,
@@ -293,15 +465,6 @@ export interface UploadedCatalogImage {
   contentType: string;
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (e) => reject(e);
-    reader.readAsDataURL(file);
-  });
-}
-
 /**
  * Upload a product image when creating or maintaining catalog items
  */
@@ -320,7 +483,13 @@ export async function uploadCatalogItemImage(
   const itemFolder = itemId ? sanitizeFileName(itemId) : 'new_items';
   const storagePath = `catalog_items/${itemFolder}/${timestamp}_${sanitized}`;
 
-  try {
+  const optimized = await fileToOptimizedDataUrl(file);
+
+  const tryCloud = async (): Promise<string> => {
+    if (cloudStorageStatus === 'unsupported' || !storageBucketUrl) {
+      throw new Error('Cloud Storage not configured');
+    }
+
     const storageRef = ref(storage, storagePath);
     const metadata = {
       contentType: file.type || 'image/jpeg',
@@ -334,7 +503,13 @@ export async function uploadCatalogItemImage(
 
     const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
-    const downloadUrl = await new Promise<string>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        try { uploadTask.cancel(); } catch {}
+        cloudStorageStatus = 'unsupported';
+        reject(new Error('Cloud storage timed out'));
+      }, 2500);
+
       uploadTask.on(
         'state_changed',
         (snapshot: UploadTaskSnapshot) => {
@@ -350,12 +525,15 @@ export async function uploadCatalogItemImage(
           }
         },
         (error) => {
-          console.warn('Firebase Storage upload failed, switching to client storage:', error);
+          clearTimeout(timer);
+          cloudStorageStatus = 'unsupported';
           reject(error);
         },
         async () => {
+          clearTimeout(timer);
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
+            cloudStorageStatus = 'supported';
             resolve(url);
           } catch (err) {
             reject(err);
@@ -363,9 +541,12 @@ export async function uploadCatalogItemImage(
         }
       );
     });
+  };
 
+  try {
+    const cloudUrl = await tryCloud();
     return {
-      url: downloadUrl,
+      url: cloudUrl,
       storagePath,
       fileName: file.name,
       sizeBytes: file.size,
@@ -373,21 +554,20 @@ export async function uploadCatalogItemImage(
       contentType: file.type || 'image/jpeg'
     };
   } catch (error) {
-    console.warn('Falling back to local DataURL for catalog item image upload:', error);
-    const dataUrl = await readFileAsDataUrl(file);
+    console.warn('[Storage] Catalog image stored locally with instant Firestore persistence:', error);
     return {
-      url: dataUrl,
+      url: optimized.dataUrl,
       storagePath: `local_catalog/${timestamp}_${sanitized}`,
       fileName: file.name,
-      sizeBytes: file.size,
-      formattedSize: formatFileSize(file.size),
+      sizeBytes: optimized.sizeBytes || file.size,
+      formattedSize: optimized.formattedSize || formatFileSize(file.size),
       contentType: file.type || 'image/jpeg'
     };
   }
 }
 
 /**
- * Delete a catalog item image from Firebase Storage
+ * Delete a catalog item image
  */
 export async function deleteCatalogItemImage(storagePathOrUrl?: string): Promise<boolean> {
   if (!storagePathOrUrl) return false;
@@ -402,23 +582,20 @@ export async function deleteCatalogItemImage(storagePathOrUrl?: string): Promise
   }
 
   // Handle local data URLs
-  if (storagePathOrUrl.startsWith('data:') || storagePathOrUrl.startsWith('local_catalog/')) {
+  if (storagePathOrUrl.startsWith('data:') || storagePathOrUrl.startsWith('local_')) {
+    return true;
+  }
+
+  if (cloudStorageStatus === 'unsupported') {
     return true;
   }
 
   try {
-    let targetRef: StorageReference;
-    if (storagePathOrUrl.startsWith('http://') || storagePathOrUrl.startsWith('https://')) {
-      targetRef = ref(storage, storagePathOrUrl);
-    } else {
-      targetRef = ref(storage, storagePathOrUrl);
-    }
-
+    const targetRef = ref(storage, storagePathOrUrl);
     await deleteObject(targetRef);
     return true;
   } catch (error) {
-    console.warn('Failed to delete catalog item image from Firebase Storage (may have already been deleted or unauthenticated):', error);
+    console.warn('Failed to delete catalog item image from Firebase Storage:', error);
     return false;
   }
 }
-

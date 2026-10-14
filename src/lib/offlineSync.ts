@@ -6,6 +6,11 @@ import {
   JobRecord 
 } from '../types';
 import { uploadSwitchPanelImage } from './storage';
+import { 
+  syncJobSignOffToFirestore, 
+  syncJobWorkPhotoToFirestore, 
+  syncJobSheetToFirestore 
+} from './firebase';
 
 export type { OfflineSyncQueueStatus };
 
@@ -91,8 +96,8 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_WIDTH = 1600;
-        const MAX_HEIGHT = 1600;
+        const MAX_WIDTH = 1400;
+        const MAX_HEIGHT = 1400;
         let width = img.width;
         let height = img.height;
 
@@ -123,13 +128,15 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, width, height);
 
+        // Generate persistent Base64 DataURL
+        const previewUrl = canvas.toDataURL('image/jpeg', 0.82);
+
         canvas.toBlob(
           (blob) => {
             if (!blob) {
               reject(new Error('Canvas compression to blob failed'));
               return;
             }
-            const previewUrl = URL.createObjectURL(blob);
             resolve({ blob, previewUrl });
           },
           'image/jpeg',
@@ -340,7 +347,7 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
 
     let processedItems = 0;
 
-    // 1. Process Photos to Firebase Cloud Storage
+    // 1. Process Photos to Storage & Firestore
     for (const photo of photos) {
       try {
         const fileObj = new File([photo.blob], photo.fileName, { type: photo.blob.type || 'image/jpeg' });
@@ -350,7 +357,14 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
           category: 'cad_export'
         });
 
-        // Notify chat/job thread
+        // Directly persist work photo into Firestore
+        await syncJobWorkPhotoToFirestore(
+          photo.jobId,
+          uploaded.url,
+          `🔧 [Synced Pontoon Work Photo]\nTechnician photo captured aboard ${photo.vesselName} (${photo.jobReference}) at ${new Date(photo.capturedAt).toLocaleTimeString('en-GB')}.`
+        );
+
+        // Notify chat/job thread in-memory
         if (activeCallbacks.onPostMessage) {
           activeCallbacks.onPostMessage(
             photo.jobId,
@@ -359,7 +373,7 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
           );
         }
 
-        // Remove from DB
+        // Remove from IndexedDB queue
         await deleteQueuedItem(STORE_MEDIA, photo.id);
         syncedCount++;
       } catch (err: any) {
@@ -379,6 +393,9 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
           signedAtSynced: new Date().toISOString(),
           synced: true
         };
+
+        // Directly persist signature into Firestore
+        await syncJobSignOffToFirestore(sig.jobId, updatedSig);
 
         if (activeCallbacks.onJobUpdated) {
           activeCallbacks.onJobUpdated(
@@ -410,6 +427,8 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
     // 3. Process Job Sheet Updates
     for (const jobUp of jobUpdates) {
       try {
+        await syncJobSheetToFirestore(jobUp.jobId, jobUp.hours, jobUp.materials);
+
         if (activeCallbacks.onJobUpdated) {
           activeCallbacks.onJobUpdated(jobUp.jobId, jobUp.hours, jobUp.materials);
         }

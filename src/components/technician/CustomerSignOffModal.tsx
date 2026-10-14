@@ -134,7 +134,8 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const signatureDataUrl = canvas.toDataURL('image/png');
+      // Generate clean, compact data URL for instant Firestore synchronization
+      const signatureDataUrl = canvas.toDataURL('image/jpeg', 0.85);
       const nowIso = new Date().toISOString();
 
       const record: CustomerSignOffRecord = {

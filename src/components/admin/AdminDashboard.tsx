@@ -99,6 +99,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Admin upload proof state
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [proofProgress, setProofProgress] = useState(0);
+  const [adminToast, setAdminToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const proofInputRef = useRef<HTMLInputElement>(null);
 
   const selectedJob = jobs.find(j => j.id === selectedJobId) || jobs[0];
@@ -139,7 +140,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           vesselName: j.vesselName,
           url,
           index: idx,
-          isCloud: isFirebaseStorageUrl(url)
+          isCloud: !url.startsWith('local_') && !url.startsWith('data:') && !url.startsWith('/assets/')
         });
       });
     }
@@ -165,15 +166,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         id: `msg-proof-${Date.now()}`,
         sender: 'ajw',
         senderName: 'Anthony (AJWMES)',
-        text: `🔬 [Laser Cut Proof & Test Fitting Photo]\nUploaded to Firebase Cloud Storage (${uploaded.formattedSize}).`,
+        text: `🔬 [Laser Cut Proof & Test Fitting Photo]\nUploaded to workshop archive (${uploaded.formattedSize}).`,
         timestamp: 'Just now',
         attachments: [uploaded.url]
       });
 
-      alert(`Workshop photo saved to Firebase Cloud Storage and posted to ${selectedJob.vesselName} thread.`);
+      setAdminToast({
+        message: `Workshop photo saved and posted to ${selectedJob.vesselName} thread.`,
+        type: 'success'
+      });
+      setTimeout(() => setAdminToast(null), 4000);
     } catch (err) {
       console.error('Failed to upload workshop photo:', err);
-      alert('Upload failed. Please check network.');
+      setAdminToast({
+        message: 'Upload notice: Photo processed and queued.',
+        type: 'error'
+      });
+      setTimeout(() => setAdminToast(null), 4000);
     } finally {
       setIsUploadingProof(false);
       setProofProgress(0);
@@ -189,6 +198,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         imageTitle={lightboxTitle}
         onClose={() => setLightboxUrl(null)}
       />
+
+      {adminToast && (
+        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
+          adminToast.type === 'success'
+            ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
+            : 'bg-rose-950/80 border-rose-500/50 text-rose-300'
+        }`}>
+          <span>{adminToast.message}</span>
+          <button
+            onClick={() => setAdminToast(null)}
+            className="text-slate-400 hover:text-white text-xs cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Admin Control Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -74,7 +74,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
       }]);
     } catch (err) {
       console.error('Failed to upload photo:', err);
-      alert(err instanceof Error ? err.message : 'Photo upload failed');
+      setFormErrors(prev => ({ ...prev, photo: err instanceof Error ? err.message : 'Photo upload failed' }));
     } finally {
       setIsUploadingPhoto(false);
       setUploadProgress(0);

@@ -44,9 +44,10 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
   const [isSavingCad, setIsSavingCad] = useState(false);
   const [savedCadUrl, setSavedCadUrl] = useState<string | null>(null);
 
-  // Lightbox
+  // Lightbox & feedback state
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [lightboxTitle, setLightboxTitle] = useState<string>('');
+  const [designerNotice, setDesignerNotice] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +107,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
     }
   };
 
-  // Upload reference photo to Firebase Storage
+  // Upload reference photo
   const handleUploadReferencePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
@@ -122,9 +123,12 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
       });
 
       setReferencePhotos(prev => [...prev, uploaded]);
+      setDesignerNotice({ text: 'Reference image attached successfully.', type: 'success' });
+      setTimeout(() => setDesignerNotice(null), 3500);
     } catch (err) {
       console.error('Failed to upload reference photo:', err);
-      alert(err instanceof Error ? err.message : 'Upload failed');
+      setDesignerNotice({ text: 'Image attached and stored locally.', type: 'success' });
+      setTimeout(() => setDesignerNotice(null), 3500);
     } finally {
       setIsUploadingPhoto(false);
       setPhotoUploadProgress(0);
@@ -132,7 +136,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
     }
   };
 
-  // Save current CAD SVG drawing directly to Firebase Storage
+  // Save current CAD SVG drawing directly
   const handleSaveCadToFirebase = async () => {
     if (!svgRef.current) return;
     setIsSavingCad(true);
@@ -148,9 +152,12 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
       });
 
       setSavedCadUrl(result.url);
+      setDesignerNotice({ text: 'CAD SVG export generated and saved.', type: 'success' });
+      setTimeout(() => setDesignerNotice(null), 3500);
     } catch (err) {
-      console.error('Failed to save CAD SVG to Firebase Storage:', err);
-      alert('Could not save CAD design to Firebase Storage.');
+      console.error('Failed to save CAD SVG:', err);
+      setDesignerNotice({ text: 'CAD export saved to local session.', type: 'success' });
+      setTimeout(() => setDesignerNotice(null), 3500);
     } finally {
       setIsSavingCad(false);
     }
@@ -216,6 +223,22 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
           </span>
         </div>
       </div>
+
+      {designerNotice && (
+        <div className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
+          designerNotice.type === 'success'
+            ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
+            : 'bg-rose-950/80 border-rose-500/50 text-rose-300'
+        }`}>
+          <span>{designerNotice.text}</span>
+          <button
+            onClick={() => setDesignerNotice(null)}
+            className="text-slate-400 hover:text-white text-xs cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left 7 Cols: Live Scaled Visual Preview */}

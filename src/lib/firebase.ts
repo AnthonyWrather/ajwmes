@@ -350,6 +350,81 @@ export async function syncJobToFirestore(job: JobRecord) {
   }
 }
 
+export async function syncJobSignOffToFirestore(jobId: string, signOff: CustomerSignOffRecord) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('jobs');
+  const docPath = `${colPath}/${jobId}`;
+  try {
+    await setDoc(doc(db, colPath, jobId), {
+      customerSignOff: cleanForFirestore(signOff),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+export async function syncJobWorkPhotoToFirestore(jobId: string, photoUrl: string, caption?: string) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('jobs');
+  const docPath = `${colPath}/${jobId}`;
+  try {
+    const jobRef = doc(db, colPath, jobId);
+    const snap = await getDocFromServer(jobRef).catch(() => null);
+    const existing = snap && snap.exists() ? (snap.data() as JobRecord) : null;
+    const workPhotos = existing?.workPhotos || [];
+    const messages = existing?.messages || [];
+
+    const newPhotos = [...workPhotos, photoUrl];
+    const newMessages = caption ? [
+      ...messages,
+      {
+        id: `msg-photo-${Date.now()}`,
+        sender: 'ajw' as const,
+        senderName: 'Solent Field Tech (AJWMES)',
+        text: caption,
+        timestamp: 'Just now',
+        attachments: [photoUrl]
+      }
+    ] : messages;
+
+    await setDoc(jobRef, {
+      workPhotos: newPhotos,
+      messages: cleanForFirestore(newMessages),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+export async function syncJobSheetToFirestore(jobId: string, hours: number, materials?: MaterialLineItem[]) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('jobs');
+  const docPath = `${colPath}/${jobId}`;
+  try {
+    const jobRef = doc(db, colPath, jobId);
+    const patch: any = {
+      diagnosticHours: hours,
+      updatedAt: new Date().toISOString()
+    };
+    if (materials && materials.length > 0) {
+      patch.materialsUsed = cleanForFirestore(materials);
+    }
+    await setDoc(jobRef, patch, { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+
 export function subscribeCatalog(onUpdate: (catalog: CatalogItem[]) => void) {
   if (!firebaseConfig.apiKey) {
     return () => {};

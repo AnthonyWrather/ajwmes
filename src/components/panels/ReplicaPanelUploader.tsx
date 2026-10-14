@@ -89,7 +89,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
     try {
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
-        setUploadStatus(`Uploading ${file.name} to Firebase Storage (${i + 1}/${fileList.length})...`);
+        setUploadStatus(`Processing ${file.name} (${i + 1}/${fileList.length})...`);
 
         const uploaded: UploadedPanelImage = await uploadSwitchPanelImage(file, {
           jobReference: `REP-${sanitizeForJob(boatMake)}-${sanitizeForJob(boatModel)}`,
@@ -107,18 +107,18 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
           name: uploaded.originalName,
           formattedSize: uploaded.formattedSize,
           storagePath: uploaded.storagePath,
-          isCloud: true
+          isCloud: !uploaded.storagePath.startsWith('local_')
         };
 
         setPhotos(prev => [...prev, newEntry]);
       }
 
-      setUploadStatus('Upload complete! Saved to Firebase Cloud Storage.');
+      setUploadStatus('Upload complete! Saved and ready for quote submission.');
       setUploadProgress(100);
       setTimeout(() => {
         setIsUploading(false);
         setUploadStatus('');
-      }, 1500);
+      }, 1200);
     } catch (err) {
       console.error('Firebase Storage upload error:', err);
       const message = err instanceof Error ? err.message : 'Upload failed. Please check network connectivity.';

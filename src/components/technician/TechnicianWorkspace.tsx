@@ -121,7 +121,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
           setLocalSignOffs(prev => ({ ...prev, [jobId]: signOff }));
           if (onCustomerSignOff) onCustomerSignOff(jobId, signOff);
         }
-        if (hours > 0 && materials) {
+        if (hours > 0 && materials && materials.length > 0) {
           onSaveJobSheet(jobId, hours, materials);
         }
       },
@@ -168,12 +168,16 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
       setQueuedPhotos(prev => [queuedMedia, ...prev]);
 
       if (isOnline) {
-        showToast(`Photo compressed. Syncing to Google Cloud Storage...`, 'info');
+        showToast(`Photo compressed. Syncing to Cloud & Firestore...`, 'info');
         triggerSyncNow().then(res => {
           if (res.success) {
-            showToast(`Work photo successfully uploaded to Cloud Storage!`, 'success');
+            showToast(`Work photo successfully uploaded and synchronized with Firestore!`, 'success');
             getPendingPhotos().then(setQueuedPhotos);
+          } else {
+            showToast(`Photo cached locally in IndexedDB queue.`, 'info');
           }
+        }).catch(() => {
+          showToast(`Photo stored in local pontoon cache.`, 'info');
         });
       } else {
         showToast(
