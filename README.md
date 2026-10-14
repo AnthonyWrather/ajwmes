@@ -9,23 +9,45 @@ Welcome to the **AJW Marine Electrical Services** codebase. This application is 
 ---
 
 ## Table of Contents
-1. [Quick Start (3-Minute Setup)](#quick-start-3-minute-setup)
-2. [Master Configuration Reference](#master-configuration-reference)
-3. [How to Locate All Configuration Keys & Data](#how-to-locate-all-configuration-keys--data)
-   - [Google AI Studio (Gemini AI Key)](#1-google-ai-studio-gemini-ai-key)
-   - [Firebase Console (Standard Web App Config)](#2-firebase-console-standard-web-app-config)
-   - [Special Firebase & GCP Keys](#3-special-firebase--google-cloud-keys)
-   - [Hosting & Application URLs](#4-hosting--application-urls)
-   - [CI/CD Deployment Service Account](#5-cicd-deployment-service-account-github-actions)
-4. [Secrets Management Strategy & Best Practices](#secrets-management-strategy--best-practices)
-   - [Public Client Keys vs. Private Secrets](#1-public-client-keys-vs-private-secrets)
-   - [Local Development with `.env` Files](#2-local-development-with-env-files)
-   - [Google AI Studio Secrets](#3-google-ai-studio-secrets)
-   - [GitHub Secrets & CI/CD Pipelines](#4-github-secrets--cicd-pipelines)
-   - [Google Cloud Secret Manager & Production Hardening](#5-google-cloud-secret-manager--production-hardening)
-   - [Emergency Key Rotation & Incident Response](#6-emergency-key-rotation--incident-response)
-5. [In-App Developer Diagnostics & Multi-Environment Isolation](#in-app-developer-diagnostics--multi-environment-isolation)
-6. [Useful npm & Firebase Commands](#useful-npm--firebase-commands)
+- [AJW Marine Electrical Services — App Configuration \& Secrets Management Guide](#ajw-marine-electrical-services--app-configuration--secrets-management-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start (3-Minute Setup)](#quick-start-3-minute-setup)
+    - [1. Clone \& Install Dependencies](#1-clone--install-dependencies)
+    - [2. Configure Environment Variables](#2-configure-environment-variables)
+    - [3. Start the Development Server](#3-start-the-development-server)
+  - [Master Configuration Reference](#master-configuration-reference)
+  - [How to Locate All Configuration Keys \& Data](#how-to-locate-all-configuration-keys--data)
+    - [1. Google AI Studio (Gemini AI Key)](#1-google-ai-studio-gemini-ai-key)
+    - [2. Firebase Console (Standard Web App Config)](#2-firebase-console-standard-web-app-config)
+      - [Mapping to `.env` Keys:](#mapping-to-env-keys)
+    - [3. Special Firebase \& Google Cloud Keys](#3-special-firebase--google-cloud-keys)
+      - [A. Firestore Database ID (`VITE_FIREBASE_FIRESTORE_DATABASE_ID`)](#a-firestore-database-id-vite_firebase_firestore_database_id)
+      - [B. Google OAuth Client ID (`VITE_FIREBASE_OAUTH_CLIENT_ID`)](#b-google-oauth-client-id-vite_firebase_oauth_client_id)
+      - [C. Enable Google Authentication in Firebase](#c-enable-google-authentication-in-firebase)
+    - [4. Hosting \& Application URLs](#4-hosting--application-urls)
+    - [5. CI/CD Deployment Service Account (GitHub Actions)](#5-cicd-deployment-service-account-github-actions)
+      - [Option A: Automatic Setup via Firebase CLI (Recommended)](#option-a-automatic-setup-via-firebase-cli-recommended)
+      - [Option B: Manual Service Account Key Generation](#option-b-manual-service-account-key-generation)
+  - [Secrets Management Strategy \& Best Practices](#secrets-management-strategy--best-practices)
+    - [1. Public Client Keys vs. Private Secrets](#1-public-client-keys-vs-private-secrets)
+    - [2. Local Development with `.env` Files](#2-local-development-with-env-files)
+      - [Git Protection](#git-protection)
+      - [Vite Configuration Precedence in This Project](#vite-configuration-precedence-in-this-project)
+    - [3. Google AI Studio Secrets](#3-google-ai-studio-secrets)
+    - [4. GitHub Secrets \& CI/CD Pipelines](#4-github-secrets--cicd-pipelines)
+      - [Required GitHub Secrets:](#required-github-secrets)
+      - [Using GitHub Environments (Optional for Teams):](#using-github-environments-optional-for-teams)
+    - [5. Google Cloud Secret Manager \& Production Hardening](#5-google-cloud-secret-manager--production-hardening)
+      - [A. Restrict Firebase Web API Key in Google Cloud](#a-restrict-firebase-web-api-key-in-google-cloud)
+      - [B. Pre-commit Secret Scanning](#b-pre-commit-secret-scanning)
+      - [C. Google Cloud Secret Manager (for Backend APIs / Functions)](#c-google-cloud-secret-manager-for-backend-apis--functions)
+    - [6. Emergency Key Rotation \& Incident Response](#6-emergency-key-rotation--incident-response)
+  - [In-App Developer Diagnostics \& Multi-Environment Isolation](#in-app-developer-diagnostics--multi-environment-isolation)
+    - [1. In-App "Fix Firebase API Key" Tool](#1-in-app-fix-firebase-api-key-tool)
+    - [2. 1-Click Developer Sign-In](#2-1-click-developer-sign-in)
+    - [3. Multi-Environment Data Scoping](#3-multi-environment-data-scoping)
+  - [Useful npm \& Firebase Commands](#useful-npm--firebase-commands)
+  - [Support \& Contributing](#support--contributing)
 
 ---
 
@@ -109,7 +131,7 @@ All client-side variables prefixed with `VITE_FIREBASE_*` come directly from you
 
 ```javascript
 const firebaseConfig = {
-  apiKey: "AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg",
+  apiKey: "AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-xxxxxxxx",
   authDomain: "gen-lang-client-0618772940.firebaseapp.com",
   projectId: "gen-lang-client-0618772940",
   storageBucket: "gen-lang-client-0618772940.firebasestorage.app",
@@ -250,8 +272,8 @@ flowchart TD
 It is vital to understand what Vite does with environment variables:
 
 > [!IMPORTANT]
-> Any variable prefixed with `VITE_` (such as `VITE_FIREBASE_API_KEY`) is **embedded directly into the client-side JavaScript code** during `npm run build`. 
-> Anyone visiting your website can inspect your network requests or JavaScript bundles and see this key. 
+> Any variable prefixed with `VITE_` (such as `VITE_FIREBASE_API_KEY`) is **embedded directly into the client-side JavaScript code** during `npm run build`.
+> Anyone visiting your website can inspect your network requests or JavaScript bundles and see this key.
 
 Because `VITE_*` variables are public by design:
 1. **Never put true private secrets in `VITE_*` variables.** (e.g., service account private keys, database root passwords, Stripe secret keys, private admin tokens).
