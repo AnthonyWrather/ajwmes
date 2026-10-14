@@ -184,7 +184,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         </nav>
 
         {/* Zone 3: User Authentication & Role Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Cart Icon & Badge Trigger */}
             <button
               onClick={() => {
@@ -225,7 +225,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 <button
                   data-testid="user-account-button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 pl-1.5 pr-2 sm:pr-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group max-w-[140px] xs:max-w-[170px] sm:max-w-[200px]"
                   title="Account settings & profile menu"
                 >
                   <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-slate-200 font-bold text-xs shrink-0">
@@ -235,15 +235,15 @@ export const Navigation: React.FC<NavigationProps> = ({
                       <User className="w-3.5 h-3.5 text-sky-400" />
                     )}
                   </div>
-                  <div className="hidden sm:flex flex-col text-left leading-none">
-                    <span data-testid="user-profile-name" className="text-[11px] font-bold text-white max-w-[100px] truncate">
+                  <div className="flex flex-col text-left leading-none min-w-0 max-w-[65px] xs:max-w-[90px] sm:max-w-[120px]">
+                    <span data-testid="user-profile-name" className="text-[11px] font-bold text-white truncate block">
                       {currentUserProfile?.name || 'Account'}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-mono capitalize">
+                    <span className="text-[9px] text-slate-400 font-mono capitalize truncate block">
                       {ROLE_CONFIGS[currentUserRole].badge}
                     </span>
                   </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform shrink-0 ${userDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -339,7 +339,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Primary Action Button */}
           <button
             onClick={onOpenBookingModal}
-            className="px-3.5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 active:scale-95 transition-all rounded-xl shadow-md shadow-sky-600/30 whitespace-nowrap cursor-pointer"
+            className="px-2.5 sm:px-3.5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 active:scale-95 transition-all rounded-xl shadow-md shadow-sky-600/30 whitespace-nowrap cursor-pointer shrink-0"
           >
             Book (£25/hr)
           </button>
