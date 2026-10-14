@@ -330,7 +330,7 @@ Our automated deployment workflow (`.github/workflows/firebase-hosting-merge.yml
 Navigate to your GitHub repository &rarr; **Settings &rarr; Secrets and variables &rarr; Actions &rarr; Repository secrets**:
 
 1. **`VITE_FIREBASE_API_KEY`**:
-   - Value: `AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg`
+   - Value: `AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-xxxxxxxx`
    - Passed into `npm run build` during the CI step:
      ```yaml
      - name: Build Production Assets
