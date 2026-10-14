@@ -22,9 +22,11 @@ import {
 import { 
   detectEnvironment, 
   setEnvironmentOverride, 
+  getEnvironmentBadge,
   AppEnvironment, 
   EnvironmentInfo 
 } from '../../lib/environment';
+import { APP_VERSION, RELEASE_CHANNEL, RELEASE_BUILD_DATE } from '../../version';
 import { 
   exportEnvironmentData, 
   importEnvironmentData, 
@@ -156,11 +158,19 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <span>Multi-Environment &amp; Data Storage Manager</span>
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-base font-bold text-white">
+                  Multi-Environment &amp; Release Manager
+                </h2>
+                <span className="px-2 py-0.5 rounded-full bg-sky-950 border border-sky-500/40 text-[10px] font-mono text-sky-300 font-bold">
+                  v{APP_VERSION}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300 capitalize">
+                  {RELEASE_CHANNEL}
+                </span>
+              </div>
               <p className="text-xs text-slate-400">
-                Isolated data partitions for AI Studio, Previews, and GitHub deployments
+                Track releases across AI Studio Dev, Shared Preview, PR Staging, and Production Live (Build: {RELEASE_BUILD_DATE})
               </p>
             </div>
           </div>

@@ -153,3 +153,52 @@ export function setEnvironmentOverride(env: AppEnvironment | 'auto'): void {
     console.warn('Could not set environment override:', e);
   }
 }
+
+export interface EnvironmentBadgeConfig {
+  label: string;
+  shortLabel: string;
+  badgeClass: string;
+  dotColor: string;
+  description: string;
+}
+
+/**
+ * Returns UI badge styling and human-readable label for environment indicators
+ */
+export function getEnvironmentBadge(envCode: AppEnvironment): EnvironmentBadgeConfig {
+  switch (envCode) {
+    case 'aistudio-dev':
+      return {
+        label: 'Dev Sandbox',
+        shortLabel: 'Dev',
+        badgeClass: 'bg-amber-950/80 text-amber-300 border-amber-500/40 hover:bg-amber-900/80 hover:border-amber-400/60',
+        dotColor: 'bg-amber-400',
+        description: 'AI Studio Development Workspace'
+      };
+    case 'aistudio-preview':
+      return {
+        label: 'Shared Preview',
+        shortLabel: 'Preview',
+        badgeClass: 'bg-indigo-950/80 text-indigo-300 border-indigo-500/40 hover:bg-indigo-900/80 hover:border-indigo-400/60',
+        dotColor: 'bg-indigo-400',
+        description: 'AI Studio Shared Demo Preview'
+      };
+    case 'github-preview':
+      return {
+        label: 'PR Staging',
+        shortLabel: 'Staging',
+        badgeClass: 'bg-purple-950/80 text-purple-300 border-purple-500/40 hover:bg-purple-900/80 hover:border-purple-400/60',
+        dotColor: 'bg-purple-400',
+        description: 'GitHub PR Preview Channel'
+      };
+    case 'github-deployed':
+    default:
+      return {
+        label: 'Production Live',
+        shortLabel: 'Live',
+        badgeClass: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/80 hover:border-emerald-400/60',
+        dotColor: 'bg-emerald-400',
+        description: 'Live Production Deployment (ajwmes.co.uk)'
+      };
+  }
+}

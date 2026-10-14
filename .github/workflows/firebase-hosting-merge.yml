@@ -1,14 +1,86 @@
 name: Deploy to Firebase Hosting on merge
+
 on:
   push:
     branches:
       - main
       - master
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build_and_deploy:
+  test:
+    name: Run Automated Test Suite
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci || npm install
+          else
+            npm install
+          fi
+
+      - name: Verify TypeScript & Build Lint
+        run: npm run lint
+
+      - name: Run Unit Tests (Auth, Electrical Calculations, Form Validation, Version)
+        run: npm run test:unit
+        env:
+          CI: true
+
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browser binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Browsers and System Dependencies
+        run: npx playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright System Dependencies Only
+        run: npx playwright install-deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+
+      - name: Run Playwright E2E Tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright Test Report Artifact
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-test-failure-report
+          path: playwright-report/
+          retention-days: 14
+
+  build_and_deploy:
+    name: Build & Deploy to Firebase Hosting
+    needs: test
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -17,7 +89,12 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci || npm install
+          else
+            npm install
+          fi
 
       - name: Build Production Assets
         env:

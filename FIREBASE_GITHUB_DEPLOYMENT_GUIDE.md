@@ -58,7 +58,11 @@ Every time you commit or merge changes into your GitHub repository, GitHub Actio
    - *Set up the workflow to run a build script before every deploy?* -> Press **Yes**, script: `npm install && npm run build`.
    - *Set up automatic deployment to your site's live channel when a PR is merged?* -> Press **Yes**, branch: `main` (or `master`).
 3. Firebase CLI will automatically create the required encrypted secret (`FIREBASE_SERVICE_ACCOUNT_...`) in your GitHub repository settings!
-4. From now on, any `git push` to your GitHub repository will build and deploy your website automatically in under 60 seconds.
+4. **Test-Gated Deployment Pipeline (`needs: test`)**:
+   - The workflow (`.github/workflows/firebase-hosting-merge.yml`) runs the full automated test suite (TypeScript check, unit tests, and Playwright E2E browser tests) in the `test` job.
+   - The `build_and_deploy` job only runs if all tests pass with zero failures.
+   - If any test breaks, deployment is immediately aborted to protect production live.
+   - Track active releases directly via the header release badge (e.g. `v1.2.0 | LIVE` vs `v1.2.0 | DEV`).
 
 ---
 

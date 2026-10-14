@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../lib/auth';
 import { canAccessRoute } from '../lib/rbac';
-import { detectEnvironment } from '../lib/environment';
+import { detectEnvironment, getEnvironmentBadge } from '../lib/environment';
+import { APP_VERSION } from '../version';
 import { Layers } from 'lucide-react';
 
 interface NavigationProps {
@@ -68,6 +69,9 @@ export const Navigation: React.FC<NavigationProps> = ({
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const envInfo = detectEnvironment();
+  const envBadge = getEnvironmentBadge(envInfo.envCode);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -82,13 +86,28 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Zone 1: Brand Wordmark & Anchor-Bolt */}
-        <div 
-          onClick={() => setCurrentTab('home')}
-          className="cursor-pointer shrink-0"
-          title="AJWMES · Home"
-        >
-          <Logo size="md" showSubtitle={false} />
+        {/* Zone 1: Brand Wordmark, Anchor-Bolt & Release Version Label */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div 
+            onClick={() => setCurrentTab('home')}
+            className="cursor-pointer shrink-0"
+            title="AJWMES · Home"
+          >
+            <Logo size="md" showSubtitle={false} />
+          </div>
+
+          {/* Release Version & Environment Tracker Tag */}
+          <button
+            data-testid="header-version-badge"
+            onClick={onOpenEnvironmentSettings}
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-mono font-medium transition-all cursor-pointer shadow-xs active:scale-95 group ${envBadge.badgeClass}`}
+            title={`Release v${APP_VERSION} [${envBadge.label}] · ${envInfo.envName} · Click to manage environments`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${envBadge.dotColor} animate-pulse`} />
+            <span className="font-bold tracking-tight text-white group-hover:underline">v{APP_VERSION}</span>
+            <span className="opacity-30">|</span>
+            <span className="uppercase text-[9px] font-semibold tracking-wider">{envBadge.shortLabel}</span>
+          </button>
         </div>
 
         {/* Zone 2: Clean Text Navigation Links - Role Adaptive (≥ 1280px) */}
@@ -431,6 +450,26 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Mobile Release Version & Target Environment Tracker */}
+          <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${envBadge.dotColor} animate-pulse`} />
+              <div className="flex flex-col">
+                <span className="font-mono text-white font-bold">Release v{APP_VERSION}</span>
+                <span className="text-[10px] text-slate-400 font-mono">{envInfo.envName}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenEnvironmentSettings?.();
+              }}
+              className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer ${envBadge.badgeClass}`}
+            >
+              {envBadge.shortLabel} Settings
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs font-semibold pt-2 border-t border-slate-900">
