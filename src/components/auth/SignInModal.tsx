@@ -3,6 +3,7 @@ import { UserRole, UserProfile } from '../../types';
 import { 
   ROLE_CONFIGS, 
   DEMO_PROFILES, 
+  getActiveDemoProfiles,
   signInWithEmailOrAccount, 
   registerVesselAccount,
   saveAndSyncUserProfile 
@@ -588,11 +589,11 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {activeTab === 'quick_personas' && (
           <div className="p-6 overflow-y-auto space-y-4 flex-1">
             <div className="text-xs text-slate-300 bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800">
-              One-click instant authentication: test all functionality with realistic team personas.
+              One-click instant authentication: test all functionality with operational accounts for the active environment.
             </div>
 
             <div className="space-y-2.5">
-              {DEMO_PROFILES.map((profile) => {
+              {getActiveDemoProfiles().map((profile) => {
                 const config = ROLE_CONFIGS[profile.role];
                 const isCurrent = currentUserRole === profile.role;
 

@@ -12,11 +12,15 @@ import {
   getDocs,
   writeBatch,
   enableNetwork,
-  disableNetwork
+  disableNetwork,
+  query,
+  limit
 } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
 import { detectEnvironment } from './environment';
 import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState } from '../types';
+import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, DEFAULT_TEST_ACCOUNTS } from '../data/seedData';
+import { AI_STUDIO_DEV_USERS, AI_STUDIO_PREVIEW_USERS, GITHUB_LIVE_PROD_USERS } from '../data/environmentTestData';
 
 export enum OperationType {
   CREATE = 'create',
@@ -756,6 +760,75 @@ export async function deleteUserFromFirestore(userId: string): Promise<void> {
     await deleteDoc(doc(db, colPath, userId));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, docPath);
+  }
+}
+
+/**
+ * Checks whether all root/scoped collections are empty.
+ * Verifies users, jobs, catalog, and postal_orders.
+ */
+export async function isDatabaseEmpty(): Promise<boolean> {
+  if (!firebaseConfig.apiKey) return true;
+  try {
+    const collectionsToCheck = ['users', 'jobs', 'catalog', 'postal_orders'];
+    for (const colName of collectionsToCheck) {
+      const colPath = getScopedCollection(colName);
+      const q = query(collection(db, colPath), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        return false;
+      }
+    }
+    return true;
+  } catch (error) {
+    console.warn('Error checking if database is empty:', error);
+    return false;
+  }
+}
+
+/**
+ * Environment-aware seed data runner.
+ * 
+ * - AI Studio Dev, AI Studio Preview, GitHub Preview:
+ *   Applies baseline catalog, categories, and test user accounts.
+ * 
+ * - GitHub Live Production ('github-deployed'):
+ *   Checks if all root collections (users, jobs, catalog, postal_orders) are empty.
+ *   Only seeds if empty. When empty, seeds ONLY the 3 staff accounts
+ *   (admin, technician, postal) under @ajwmes.co.uk with NO dummy customers,
+ *   products, or categories.
+ */
+export async function seedEnvironmentData(): Promise<void> {
+  if (!firebaseConfig.apiKey) return;
+  const env = detectEnvironment();
+
+  if (env.envCode === 'github-deployed') {
+    const empty = await isDatabaseEmpty();
+    if (empty) {
+      console.log('GitHub Live Production: Database is empty. Seeding initial 3 staff accounts under ajwmes.co.uk...');
+      await seedUsersToFirestore(GITHUB_LIVE_PROD_USERS);
+    } else {
+      console.log('GitHub Live Production: Database already contains data. Skipping test data seeding.');
+    }
+    return;
+  }
+
+  // Non-production environments continue existing behavior
+  try {
+    let nonProdUsers: UserProfile[] = DEFAULT_TEST_ACCOUNTS;
+    if (env.envCode === 'aistudio-dev') {
+      nonProdUsers = AI_STUDIO_DEV_USERS;
+    } else if (env.envCode === 'aistudio-preview') {
+      nonProdUsers = AI_STUDIO_PREVIEW_USERS;
+    } else if (env.envCode === 'github-preview') {
+      nonProdUsers = DEFAULT_TEST_ACCOUNTS.map(u => ({ ...u, environment: 'github-preview' }));
+    }
+
+    await seedCatalogToFirestore(DEFAULT_CATALOG);
+    await seedCategoriesToFirestore(DEFAULT_CATEGORIES);
+    await seedUsersToFirestore(nonProdUsers);
+  } catch (error) {
+    console.warn('Non-production test data seeding notice:', error);
   }
 }
 

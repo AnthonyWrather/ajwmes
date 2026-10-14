@@ -130,7 +130,7 @@ export function detectEnvironment(): EnvironmentInfo {
         isGitHubDeployed: true,
         storageNamespace: 'ajwmes_github_live',
         firestoreCollectionPrefix: '', // Uses root production collections: jobs, catalog, postal_orders, users, etc.
-        dataDescription: 'Live production deployment connected to primary Firestore database at ajwmes.co.uk.',
+        dataDescription: 'Live production deployment connected to primary Firestore database at ajwmes.co.uk. Checks if database is empty on rollout; only loads 3 staff accounts (admin, technician, postal) when empty, with zero test catalog or demo customers.',
         hasApiKey,
         hostname,
         isSimulatedOverride

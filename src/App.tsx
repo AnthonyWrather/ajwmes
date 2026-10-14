@@ -28,6 +28,7 @@ import {
   enrichUserProfile,
   subscribeAuthState,
   DEMO_PROFILES, 
+  getActiveDemoProfiles,
   ROLE_CONFIGS 
 } from './lib/auth';
 import { SupplierReorderModal } from './components/admin/SupplierReorderModal';
@@ -72,7 +73,9 @@ import {
   subscribeConnectionState,
   retryFirestoreConnection,
   toggleSimulatedOffline,
-  getConnectionState
+  getConnectionState,
+  seedEnvironmentData,
+  isDatabaseEmpty
 } from './lib/firebase';
 import { trackPageView, trackAddToCart, trackPurchase, trackQuoteRequest } from './lib/analytics';
 import { 
@@ -184,7 +187,8 @@ export default function App() {
   const handleRoleChange = (newRole: UserRole) => {
     setCurrentUserRole(newRole);
     saveCurrentRole(newRole);
-    const demoProfile = DEMO_PROFILES.find(p => p.role === newRole);
+    const activeProfiles = getActiveDemoProfiles();
+    const demoProfile = activeProfiles.find(p => p.role === newRole) || DEMO_PROFILES.find(p => p.role === newRole);
     let resolvedProfile: UserProfile;
     if (demoProfile) {
       const enriched = enrichUserProfile(demoProfile);
@@ -304,10 +308,8 @@ export default function App() {
 
   // Firestore Real-time Synchronization
   useEffect(() => {
-    // Seed default baseline catalog & initial user accounts if remote collections are empty
-    seedCatalogToFirestore(DEFAULT_CATALOG).catch(err => console.warn('Catalog seeding skipped or cached:', err));
-    seedCategoriesToFirestore(DEFAULT_CATEGORIES).catch(err => console.warn('Categories seeding skipped or cached:', err));
-    seedUsersToFirestore(envSeed.users).catch(err => console.warn('Users seeding skipped or cached:', err));
+    // Environment-aware seeding: checks if database is empty in GitHub Live production before seeding 3 staff accounts
+    seedEnvironmentData().catch(err => console.warn('Database seeding skipped or notice:', err));
 
     const unsubJobs = subscribeJobs((remoteJobs) => {
       if (remoteJobs && remoteJobs.length > 0) {

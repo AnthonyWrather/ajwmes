@@ -154,8 +154,21 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
 };
 
 import { DEFAULT_TEST_ACCOUNTS } from '../data/seedData';
+import { GITHUB_LIVE_PROD_USERS } from '../data/environmentTestData';
 
 export const DEMO_PROFILES: UserProfile[] = DEFAULT_TEST_ACCOUNTS;
+
+/**
+ * Returns active seed profiles for the current environment.
+ * For github-deployed (production), returns strictly the 3 staff accounts under ajwmes.co.uk.
+ */
+export function getActiveDemoProfiles(): UserProfile[] {
+  const env = detectEnvironment();
+  if (env.envCode === 'github-deployed') {
+    return GITHUB_LIVE_PROD_USERS;
+  }
+  return DEMO_PROFILES;
+}
 
 export function getSavedRole(): UserRole {
   try {
@@ -179,12 +192,13 @@ export function saveCurrentRole(role: UserRole) {
 
 export function getSavedUserProfile(): UserProfile {
   const defaultRole = getSavedRole();
-  const demoMatch = DEMO_PROFILES.find(p => p.role === defaultRole) || DEMO_PROFILES[4];
+  const activeProfiles = getActiveDemoProfiles();
+  const demoMatch = activeProfiles.find(p => p.role === defaultRole) || activeProfiles[0] || DEMO_PROFILES[4];
   try {
     const saved = getEnvStorageItem<UserProfile | null>('current_user_profile', null);
     if (saved) {
-      const demoFallback = DEMO_PROFILES.find(p => p.email.toLowerCase() === saved.email?.toLowerCase());
-      const isAnthony = saved.email?.toLowerCase() === 'anthonywrather@gmail.com';
+      const demoFallback = activeProfiles.find(p => p.email.toLowerCase() === saved.email?.toLowerCase()) || DEMO_PROFILES.find(p => p.email.toLowerCase() === saved.email?.toLowerCase());
+      const isAnthony = saved.email?.toLowerCase() === 'anthonywrather@gmail.com' || saved.email?.toLowerCase() === 'admin@ajwmes.co.uk';
       return {
         ...saved,
         id: saved.id || demoFallback?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? `usr-${crypto.randomUUID()}` : `usr-${Date.now()}`),
@@ -205,8 +219,9 @@ export function getSavedUserProfile(): UserProfile {
 }
 
 export function enrichUserProfile(profile: UserProfile): UserProfile {
-  const demoFallback = DEMO_PROFILES.find(p => p.email.toLowerCase() === profile.email?.toLowerCase());
-  const isAnthony = profile.email?.toLowerCase() === 'anthonywrather@gmail.com';
+  const activeProfiles = getActiveDemoProfiles();
+  const demoFallback = activeProfiles.find(p => p.email.toLowerCase() === profile.email?.toLowerCase()) || DEMO_PROFILES.find(p => p.email.toLowerCase() === profile.email?.toLowerCase());
+  const isAnthony = profile.email?.toLowerCase() === 'anthonywrather@gmail.com' || profile.email?.toLowerCase() === 'admin@ajwmes.co.uk';
   return {
     ...profile,
     id: profile.id || demoFallback?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? `usr-${crypto.randomUUID()}` : `usr-${Date.now()}`),
@@ -336,7 +351,8 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
     return { success: false, error: 'Please enter a valid email address.' };
   }
   const providedHash = password ? encodePassword(password) : '';
-  const demoMatch = DEMO_PROFILES.find(p => p.email.toLowerCase() === cleanEmail);
+  const activeProfiles = getActiveDemoProfiles();
+  const demoMatch = activeProfiles.find(p => p.email.toLowerCase() === cleanEmail) || (detectEnvironment().envCode !== 'github-deployed' ? DEMO_PROFILES.find(p => p.email.toLowerCase() === cleanEmail) : undefined);
 
   // 1. Look up existing user in Firestore 'users' collection first if API key is present
   if (firebaseConfig.apiKey) {

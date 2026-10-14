@@ -17,7 +17,8 @@ import {
   AI_STUDIO_PREVIEW_JOBS,
   AI_STUDIO_PREVIEW_POSTAL_ORDERS,
   AI_STUDIO_PREVIEW_VESSEL_SPEC,
-  AI_STUDIO_PREVIEW_USERS
+  AI_STUDIO_PREVIEW_USERS,
+  GITHUB_LIVE_PROD_USERS
 } from '../data/environmentTestData';
 import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, CartItem, UserProfile } from '../types';
 
@@ -138,8 +139,6 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
       };
 
     case 'github-preview':
-    case 'github-deployed':
-    default:
       return {
         jobs: INITIAL_JOBS,
         postalOrders: INITIAL_POSTAL_ORDERS,
@@ -147,7 +146,25 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
-        users: DEMO_PROFILES.map(u => ({ ...u, environment: 'github-deployed' }))
+        users: DEMO_PROFILES.map(u => ({ ...u, environment: 'github-preview' }))
+      };
+
+    case 'github-deployed':
+    default:
+      return {
+        jobs: [],
+        postalOrders: [],
+        vesselSpec: {
+          ...INITIAL_VESSEL_SPEC,
+          id: 'vessel-prod-solent',
+          userId: 'usr-admin-prod-001',
+          vesselName: 'AJW Solent Response',
+          historyLog: []
+        },
+        vessels: [],
+        catalog: [],
+        categories: [],
+        users: GITHUB_LIVE_PROD_USERS
       };
   }
 }
