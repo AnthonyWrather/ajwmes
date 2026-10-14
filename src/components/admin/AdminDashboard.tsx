@@ -182,7 +182,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="w-full space-y-6 text-slate-100">
+    <div data-testid="admin-dashboard" className="w-full space-y-6 text-slate-100">
       <ImageLightboxModal
         isOpen={!!lightboxUrl}
         imageUrl={lightboxUrl}
@@ -202,7 +202,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <span>Firebase Storage Active</span>
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">
+          <h2 data-testid="admin-dashboard-title" className="text-xl sm:text-2xl font-bold text-white">
             Anthony's Operations Dashboard
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">

@@ -186,7 +186,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div data-testid="auth-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
         <div className="p-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-4">
@@ -219,6 +219,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {/* Tab Switcher */}
         <div className="px-6 py-2 bg-slate-950/70 border-b border-slate-800 flex items-center gap-1.5 text-xs font-semibold">
           <button
+            data-testid="tab-signin"
             onClick={() => { setActiveTab('signin'); setErrorMessage(null); }}
             className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'signin'
@@ -264,7 +265,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {/* Feedback Alerts */}
         <div className="px-6 pt-4 empty:hidden">
           {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-rose-950/90 border border-rose-500/50 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
+            <div data-testid="auth-error-message" className="p-3.5 rounded-2xl bg-rose-950/90 border border-rose-500/50 text-xs text-rose-200 flex items-start gap-2.5 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <div className="flex-1">
                 <span className="font-bold text-white block">Authentication Notice</span>
@@ -280,7 +281,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           )}
 
           {successMessage && (
-            <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs text-emerald-200 flex items-center gap-2.5 animate-in fade-in">
+            <div data-testid="auth-success-message" className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-xs text-emerald-200 flex items-center gap-2.5 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{successMessage}</span>
             </div>
@@ -331,6 +332,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    data-testid="auth-email-input"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -354,6 +356,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    data-testid="auth-password-input"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -402,6 +405,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               </div>
 
               <button
+                data-testid="auth-submit-button"
                 type="submit"
                 disabled={isLoading}
                 className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50"

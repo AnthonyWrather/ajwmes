@@ -109,6 +109,9 @@ export interface JobRecord {
   depositAmount: number;
   createdAt: string;
   messages: MessageItem[];
+  customerSignOff?: CustomerSignOffRecord;
+  workPhotos?: string[];
+  pendingOfflineSync?: boolean;
 }
 
 export interface CategoryItem {
@@ -324,3 +327,55 @@ export interface FirestoreConnectionState {
   environmentName?: string;
   hasApiKey?: boolean;
 }
+
+export interface CustomerSignOffRecord {
+  jobId: string;
+  jobReference: string;
+  clientName: string;
+  signerRole: 'vessel_owner' | 'skipper' | 'marina_agent';
+  signatureDataUrl: string; // Base64 data URL from signature pad
+  signedAtOffline: string;  // ISO timestamp when captured on pontoon
+  signedAtSynced?: string;  // ISO timestamp when synchronized to cloud
+  agreedDiagnosticHours: number;
+  agreedTotalEstimate: number;
+  customerFeedback?: string;
+  synced: boolean;
+}
+
+export interface OfflineQueuedMedia {
+  id: string;
+  jobId: string;
+  jobReference: string;
+  vesselName: string;
+  category: 'work_fitment' | 'diagnostic_meter' | 'multimeter_test' | 'damage_report';
+  blob: Blob;
+  previewUrl: string;
+  fileName: string;
+  fileSizeBytes: number;
+  capturedAt: string;
+  status: 'queued' | 'uploading' | 'synced' | 'failed';
+  remoteUrl?: string;
+  errorMessage?: string;
+}
+
+export interface OfflineJobSheetUpdate {
+  jobId: string;
+  hours: number;
+  materials: MaterialLineItem[];
+  status?: JobRecord['status'];
+  notes?: string;
+  queuedAt: string;
+  synced: boolean;
+}
+
+export interface OfflineSyncQueueStatus {
+  totalPending: number;
+  pendingJobs: number;
+  pendingPhotos: number;
+  pendingSignatures: number;
+  isSyncing: boolean;
+  syncProgressPercent: number;
+  lastSyncedAt: string | null;
+  lastError?: string;
+}
+

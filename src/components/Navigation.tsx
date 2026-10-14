@@ -210,6 +210,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             {currentUserRole === 'guest' ? (
               <div className="flex items-center gap-1.5">
                 <button
+                  data-testid="nav-signin-button"
                   onClick={onOpenSignInModal}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-950/80 hover:bg-sky-900 text-sky-300 hover:text-white border border-sky-500/40 text-xs font-bold transition-all shadow-sm shadow-sky-950 cursor-pointer active:scale-95"
                   title="Sign in or register your vessel account"
@@ -220,8 +221,9 @@ export const Navigation: React.FC<NavigationProps> = ({
               </div>
             ) : (
               /* Signed-in Account Pill with Dropdown */
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative" ref={dropdownRef} data-testid="user-account-badge">
                 <button
+                  data-testid="user-account-button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group"
                   title="Account settings & profile menu"
@@ -234,7 +236,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     )}
                   </div>
                   <div className="hidden sm:flex flex-col text-left leading-none">
-                    <span className="text-[11px] font-bold text-white max-w-[100px] truncate">
+                    <span data-testid="user-profile-name" className="text-[11px] font-bold text-white max-w-[100px] truncate">
                       {currentUserProfile?.name || 'Account'}
                     </span>
                     <span className="text-[9px] text-slate-400 font-mono capitalize">

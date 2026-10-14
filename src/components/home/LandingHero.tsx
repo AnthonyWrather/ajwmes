@@ -28,7 +28,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span>Gosport Based · From 16ft Day Boats &amp; Anglers to Offshore Cruisers · Solent Wide</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+          <h1 data-testid="landing-hero-heading" className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
             Reliable Marine Electrics For <br className="hidden sm:block" />
             <span className="text-sky-400">Every Boat &amp; Budget.</span>
           </h1>

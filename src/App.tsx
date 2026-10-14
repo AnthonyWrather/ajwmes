@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState } from './types';
+import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState, CustomerSignOffRecord } from './types';
 import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS, DEFAULT_VESSELS } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
@@ -853,6 +853,21 @@ export default function App() {
     );
   };
 
+  // Handler: Customer Pontoon Sign-Off
+  const handleCustomerSignOff = (jobId: string, signOff: CustomerSignOffRecord) => {
+    setJobs(prev =>
+      prev.map(j => {
+        if (j.id !== jobId) return j;
+        const updated: JobRecord = {
+          ...j,
+          customerSignOff: signOff
+        };
+        syncJobToFirestore(updated);
+        return updated;
+      })
+    );
+  };
+
   // Handler: Submit Booking / Quote Request
   const handleSubmitBooking = (newJobData: Partial<JobRecord>) => {
     const fullJob: JobRecord = {
@@ -1417,6 +1432,7 @@ export default function App() {
               onSendMessage={handleSendMessage}
               onSaveJobSheet={handleSaveJobSheet}
               onUpdateJobStatus={handleUpdateJobStatus}
+              onCustomerSignOff={handleCustomerSignOff}
             />
           )}
 
@@ -1689,7 +1705,7 @@ export default function App() {
 
       {/* Authentication / Sign Off Status Toast */}
       {authToast && (
-        <div className="fixed bottom-6 left-6 z-50 max-w-sm w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div data-testid="auth-toast" className="fixed bottom-6 left-6 z-50 max-w-sm w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className={`p-2.5 rounded-xl border shrink-0 ${
               authToast.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-400' : 'bg-sky-950/90 border-sky-500/40 text-sky-400'
@@ -1698,10 +1714,10 @@ export default function App() {
             </div>
 
             <div className="flex-1 space-y-1">
-              <h4 className="text-xs font-bold text-white">
+              <h4 data-testid="auth-toast-title" className="text-xs font-bold text-white">
                 {authToast.title}
               </h4>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
+              <p data-testid="auth-toast-message" className="text-[11px] text-slate-300 leading-relaxed">
                 {authToast.message}
               </p>
             </div>
