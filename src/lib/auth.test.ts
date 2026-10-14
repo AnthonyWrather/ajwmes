@@ -81,6 +81,29 @@ describe('enrichUserProfile', () => {
     assert.equal(enriched.avatarUrl, 'https://lh3.googleusercontent.com/a/photo.png');
   });
 
+  it('preserves system supplied preset avatar relative paths', () => {
+    const profileWithPreset: Partial<UserProfile> = {
+      email: 'sailor.preset@solent.co.uk',
+      role: 'client',
+      avatarUrl: '/assets/images/marine_helm_navigation_1791400844235.jpg'
+    };
+
+    const enriched = enrichUserProfile(profileWithPreset);
+    assert.equal(enriched.avatarUrl, '/assets/images/marine_helm_navigation_1791400844235.jpg');
+  });
+
+  it('preserves user uploaded base64 photo data URLs', () => {
+    const mockDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP...';
+    const profileWithCustomPhoto: Partial<UserProfile> = {
+      email: 'boatowner@solent.co.uk',
+      role: 'client',
+      avatarUrl: mockDataUrl
+    };
+
+    const enriched = enrichUserProfile(profileWithCustomPhoto);
+    assert.equal(enriched.avatarUrl, mockDataUrl);
+  });
+
   it('resolves demo fallback data for known team seed profiles', () => {
     const techUser: Partial<UserProfile> = {
       email: 'jack.tech@ajwmes.co.uk',

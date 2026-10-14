@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, UserRole, JobRecord, PostalOrder } from '../../types';
 import { 
   ROLE_CONFIGS, 
@@ -29,8 +29,14 @@ import {
   Zap, 
   Compass,
   Sparkles,
-  Sliders
+  Sliders,
+  Camera,
+  Upload,
+  Trash2,
+  Image as ImageIcon,
+  AlertCircle
 } from 'lucide-react';
+import { resizeImageToDataUrl } from '../../utils/imageResize';
 
 interface AccountManagementModalProps {
   isOpen: boolean;
@@ -47,12 +53,14 @@ interface AccountManagementModalProps {
   postalOrders?: PostalOrder[];
 }
 
-// Preset marine avatar options
-const PRESET_AVATARS = [
+// Preset marine avatar options with clean relative paths and labels
+export const PRESET_AVATARS = [
   { label: 'Marine Engineer (Sarah)', url: '/assets/images/avatar_designer_sarah_1791400201276.jpg' },
   { label: 'Helm Navigator', url: '/assets/images/marine_helm_navigation_1791400844235.jpg' },
   { label: 'Switchboard Specialist', url: '/assets/images/marine_switch_panel_laser_1791400808406.jpg' },
   { label: 'Cruiser Captain', url: '/assets/images/budget_small_cruiser_boat_1791420135992.jpg' },
+  { label: 'LiFePO4 Battery Bank', url: '/assets/images/marine_lithium_battery_bank_1791400821608.jpg' },
+  { label: 'Solent Solar Array', url: '/assets/images/marine_solar_array_yacht_1791400831647.jpg' },
 ];
 
 export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
@@ -80,12 +88,19 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   const [vesselType, setVesselType] = useState(currentUserProfile.vesselType || 'Sailing Yacht');
   const [marinaBerth, setMarinaBerth] = useState(currentUserProfile.marinaBerth || '');
 
+  // Photo upload and dragging states
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
+  const [photoMeta, setPhotoMeta] = useState<string | null>(null);
+
   // Preferences
   const [notifyJobUpdates, setNotifyJobUpdates] = useState(currentUserProfile.notifyJobUpdates ?? true);
   const [notifyDispatchSms, setNotifyDispatchSms] = useState(currentUserProfile.notifyDispatchSms ?? true);
   const [systemVoltagePref, setSystemVoltagePref] = useState<'12V' | '24V'>(currentUserProfile.systemVoltage || '12V');
 
-  // Synchronize form values whenever modal opens or currentUserProfile updates
+  // Synchronize form values whenever modal opens or active user ID changes
   useEffect(() => {
     if (isOpen) {
       const demoFallback = DEMO_PROFILES.find(p => p.email.toLowerCase() === currentUserProfile.email?.toLowerCase());
@@ -100,13 +115,55 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
       setNotifyJobUpdates(currentUserProfile.notifyJobUpdates ?? demoFallback?.notifyJobUpdates ?? true);
       setNotifyDispatchSms(currentUserProfile.notifyDispatchSms ?? demoFallback?.notifyDispatchSms ?? true);
       setSystemVoltagePref(currentUserProfile.systemVoltage || demoFallback?.systemVoltage || '12V');
+      setPhotoError(null);
+      setPhotoMeta(null);
     }
-  }, [isOpen, currentUserProfile]);
+  }, [isOpen, currentUserProfile.id]);
 
   // Feedback states
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
+
+  // Handle client-side photo processing for avatar
+  const handlePhotoSelect = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Please select a valid image file (JPG, PNG, WebP).');
+      return;
+    }
+    setPhotoError(null);
+    setIsProcessingPhoto(true);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, 400, 0.88);
+      setAvatarUrl(dataUrl);
+      setPhotoMeta(`${file.name} (${Math.round(file.size / 1024)} KB)`);
+    } catch (err) {
+      console.error('Failed to process photo:', err);
+      setPhotoError('Unable to process photo file. Please try another image.');
+    } finally {
+      setIsProcessingPhoto(false);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handlePhotoSelect(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleSelectPreset = (url: string) => {
+    setAvatarUrl(url);
+    setPhotoMeta(null);
+    setPhotoError(null);
+  };
+
+  const handleClearAvatar = () => {
+    setAvatarUrl('');
+    setPhotoMeta(null);
+    setPhotoError(null);
+  };
 
   if (!isOpen) return null;
 
@@ -162,13 +219,13 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div data-testid="account-management-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header with profile banner */}
         <div className="p-6 bg-slate-950 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-slate-700 overflow-hidden flex items-center justify-center text-slate-300 font-bold text-xl shadow-inner">
+              <div data-testid="modal-avatar-preview" className="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-slate-700 overflow-hidden flex items-center justify-center text-slate-300 font-bold text-xl shadow-inner">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
                 ) : (
@@ -292,83 +349,266 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
 
         {/* Tab 1: Profile & Contact */}
         {activeTab === 'profile' && (
-          <form onSubmit={handleSaveChanges} className="p-6 overflow-y-auto space-y-5 flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Full Name</label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <form onSubmit={handleSaveChanges} className="p-6 overflow-y-auto space-y-6 flex-1">
+            {/* Section A: Profile Photo & Avatar Studio */}
+            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-sky-400" />
+                    <span>Profile Photo &amp; Avatar</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Upload a custom photo from your device, paste an image URL, or choose a system marine avatar.
+                  </p>
+                </div>
+
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleClearAvatar}
+                    className="px-2.5 py-1 text-[11px] text-rose-400 hover:text-rose-300 bg-rose-950/30 hover:bg-rose-950/60 border border-rose-500/30 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Remove custom avatar and reset to default"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Reset to Default</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Interactive Photo Dropzone & Preview Row */}
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                {/* Avatar Preview Box */}
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="group relative w-20 h-20 rounded-2xl bg-slate-900 border-2 border-slate-700 hover:border-sky-500 overflow-hidden shrink-0 flex items-center justify-center cursor-pointer transition-all shadow-inner"
+                  title="Click to choose a photo from your device"
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={name || 'Profile'} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-9 h-9 text-slate-500 group-hover:text-sky-400 transition-colors" />
+                  )}
+
+                  <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white font-semibold transition-opacity">
+                    <Camera className="w-4 h-4 text-sky-400 mb-0.5" />
+                    <span>Change</span>
+                  </div>
+                </div>
+
+                {/* Upload & Drag Zone */}
+                <div 
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDraggingPhoto(true);
+                  }}
+                  onDragLeave={() => setIsDraggingPhoto(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingPhoto(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handlePhotoSelect(file);
+                  }}
+                  className={`flex-1 w-full p-3.5 rounded-xl border border-dashed transition-all flex flex-col sm:flex-row items-center justify-between gap-3 ${
+                    isDraggingPhoto 
+                      ? 'border-sky-400 bg-sky-950/40 text-sky-200' 
+                      : 'border-slate-800 bg-slate-900/50 hover:border-slate-700 text-slate-300'
+                  }`}
+                >
                   <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                    data-testid="profile-photo-file-input"
+                  />
+
+                  <div className="text-center sm:text-left">
+                    <div className="text-xs font-semibold text-white flex items-center justify-center sm:justify-start gap-1.5">
+                      <Upload className="w-3.5 h-3.5 text-sky-400" />
+                      <span>{photoMeta ? 'Photo Attached' : 'Pick a Photo from Device'}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      {photoMeta ? (
+                        <span className="text-emerald-400 font-mono flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 shrink-0" />
+                          <span>{photoMeta}</span>
+                        </span>
+                      ) : (
+                        <span>Supports JPG, PNG, WebP (auto-optimized for fast Solent field sync)</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      data-testid="upload-profile-photo-button"
+                      disabled={isProcessingPhoto}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm shadow-sky-600/30 disabled:opacity-50"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{isProcessingPhoto ? 'Optimizing...' : 'Pick Photo'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {photoError && (
+                <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{photoError}</span>
+                </div>
+              )}
+
+              {/* Custom Avatar URL or Path field */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-850">
+                <div className="flex items-center justify-between text-xs">
+                  <label htmlFor="profile-avatar-url-input" className="font-semibold text-slate-300 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Avatar URL or Local Data Path</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {avatarUrl.startsWith('data:') 
+                      ? 'Custom Uploaded Photo' 
+                      : avatarUrl.startsWith('/assets/') 
+                        ? 'System Supplied Avatar' 
+                        : avatarUrl.startsWith('http') 
+                          ? 'External Web Image' 
+                          : 'Default SVG Avatar'}
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <input
+                    id="profile-avatar-url-input"
+                    data-testid="profile-avatar-url-input"
                     type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
+                    value={avatarUrl}
+                    onChange={(e) => {
+                      setAvatarUrl(e.target.value);
+                      setPhotoMeta(null);
+                      setPhotoError(null);
+                    }}
+                    placeholder="/assets/images/... or https://example.com/avatar.jpg"
+                    className="w-full pl-3 pr-8 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30"
                   />
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleClearAvatar}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-0.5"
+                      title="Clear URL"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Email Address</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                  />
+              {/* System Supplied Profile Avatar Presets */}
+              <div className="space-y-2 pt-2 border-t border-slate-850">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Choose System Marine Avatar
+                  </label>
+                  <span className="text-[10px] text-sky-400 font-mono">
+                    Click to fill URL &amp; update profile
+                  </span>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Mobile / VHF Phone</label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="07700 900551"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                  />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {PRESET_AVATARS.map((preset, index) => {
+                    const isSelected = avatarUrl === preset.url;
+                    return (
+                      <button
+                        key={preset.url}
+                        type="button"
+                        data-testid={`preset-avatar-${index}`}
+                        onClick={() => handleSelectPreset(preset.url)}
+                        className={`p-2.5 rounded-xl border flex items-center gap-2.5 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-sky-950/80 border-sky-400 ring-2 ring-sky-500/50 text-white shadow-sm shadow-sky-950'
+                            : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-850 text-slate-300'
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <img 
+                            src={preset.url} 
+                            alt={preset.label} 
+                            className="w-10 h-10 rounded-lg object-cover border border-slate-700" 
+                          />
+                          {isSelected && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center shadow-xs">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[11px] font-semibold text-slate-200 block truncate">
+                            {preset.label}
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-mono block truncate">
+                            {isSelected ? '✓ Selected' : 'System Marine'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Custom Avatar URL</label>
-                <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://example.com/photo.jpg"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                />
               </div>
             </div>
 
-            {/* Avatar Selector Presets */}
-            <div className="space-y-2 pt-2 border-t border-slate-800">
-              <label className="text-xs font-semibold text-slate-300 block">Choose Solent Profile Avatar</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {PRESET_AVATARS.map((preset) => {
-                  const isSelected = avatarUrl === preset.url;
-                  return (
-                    <div
-                      key={preset.url}
-                      onClick={() => setAvatarUrl(preset.url)}
-                      className={`p-2 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'bg-sky-950/70 border-sky-500 ring-1 ring-sky-500/40'
-                          : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                      }`}
-                    >
-                      <img src={preset.url} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
-                      <span className="text-[10px] text-slate-300 truncate">{preset.label}</span>
-                    </div>
-                  );
-                })}
+            {/* Section B: Contact & Personal Details */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-slate-400">
+                Contact &amp; Account Identity
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300">Full Name</label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs font-semibold text-slate-300">Mobile / VHF Phone</label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="07700 900551"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -376,6 +616,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
               <span className="text-xs text-slate-400">Updates save to local memory &amp; live Firestore.</span>
               <button
                 type="submit"
+                data-testid="save-profile-button"
                 disabled={isSaving}
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-sky-600/30 transition-all cursor-pointer disabled:opacity-50"
               >

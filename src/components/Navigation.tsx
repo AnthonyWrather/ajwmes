@@ -285,6 +285,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
 
                     <button
+                      data-testid="nav-manage-account-button"
                       onClick={() => {
                         setUserDropdownOpen(false);
                         onOpenAccountModal?.();

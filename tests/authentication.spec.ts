@@ -82,4 +82,82 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(userProfileName).toBeVisible();
     await expect(userProfileName).toContainText('Anthony Wrather');
   });
+
+  test('should allow user to pick system preset avatar and custom photo in Profile & Details', async ({ page }) => {
+    await page.route('**/api/auth/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          token: 'mock-jwt-token-solent-2026',
+          user: {
+            id: 'usr-admin-01',
+            email: 'anthonywrather@gmail.com',
+            name: 'Anthony Wrather',
+            role: 'admin'
+          }
+        })
+      });
+    });
+
+    await page.goto('/');
+
+    // 1. Sign in as admin
+    await page.getByTestId('nav-signin-button').click();
+    await page.getByTestId('auth-email-input').fill('anthonywrather@gmail.com');
+    await page.getByTestId('auth-password-input').fill('ajwmes2026');
+    await page.getByTestId('auth-submit-button').click();
+    await expect(page.getByTestId('admin-dashboard')).toBeVisible({ timeout: 10000 });
+
+    // 2. Open User Account Dropdown and click Manage Account & Specs
+    await page.getByTestId('user-account-button').click();
+    await page.getByTestId('nav-manage-account-button').click();
+
+    // 3. Verify Account modal is open
+    const accountModal = page.getByTestId('account-management-modal');
+    await expect(accountModal).toBeVisible();
+
+    // 4. Verify avatar URL input is present
+    const avatarUrlInput = page.getByTestId('profile-avatar-url-input');
+    await expect(avatarUrlInput).toBeVisible();
+
+    // 5. Click on system supplied preset avatar (index 1: Helm Navigator)
+    const presetBtn1 = page.getByTestId('preset-avatar-1');
+    await expect(presetBtn1).toBeVisible();
+    await presetBtn1.scrollIntoViewIfNeeded();
+    await presetBtn1.click({ force: true });
+
+    // 6. Verify URL is filled in successfully
+    await expect(avatarUrlInput).toHaveValue('/assets/images/marine_helm_navigation_1791400844235.jpg');
+
+    // 7. Click another preset (index 3: Cruiser Captain)
+    const presetBtn3 = page.getByTestId('preset-avatar-3');
+    await presetBtn3.scrollIntoViewIfNeeded();
+    await presetBtn3.click({ force: true });
+    await expect(avatarUrlInput).toHaveValue('/assets/images/budget_small_cruiser_boat_1791420135992.jpg');
+
+    // 8. Test picking a photo file via the file input
+    const fileInput = page.getByTestId('profile-photo-file-input');
+    const testImageBuffer = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    await fileInput.setInputFiles({
+      name: 'boat_avatar.png',
+      mimeType: 'image/png',
+      buffer: testImageBuffer
+    });
+
+    // Verify avatar URL is populated with data URL
+    await expect(avatarUrlInput).toHaveValue(/^data:image\/png;base64,/);
+
+    // 9. Save profile changes
+    const saveButton = page.getByTestId('save-profile-button');
+    await saveButton.scrollIntoViewIfNeeded();
+    await saveButton.click({ force: true });
+
+    // Verify success feedback
+    await expect(accountModal).toContainText('Account profile updated');
+  });
 });
