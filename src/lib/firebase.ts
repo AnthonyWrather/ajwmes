@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
 import { detectEnvironment } from './environment';
-import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState } from '../types';
+import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState, CustomerSignOffRecord, MaterialLineItem } from '../types';
 import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, DEFAULT_TEST_ACCOUNTS } from '../data/seedData';
 import { AI_STUDIO_DEV_USERS, AI_STUDIO_PREVIEW_USERS, GITHUB_LIVE_PROD_USERS } from '../data/environmentTestData';
 
@@ -318,7 +318,20 @@ export function subscribeJobs(onUpdate: (jobs: JobRecord[]) => void) {
     collection(db, colPath),
     (snapshot) => {
       if (!snapshot.empty) {
-        const remoteJobs = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as JobRecord));
+        const remoteJobs = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            hourlyRate: 25,
+            diagnosticHours: 0,
+            totalLabor: 0,
+            totalMaterials: 0,
+            totalEstimated: 0,
+            ...data,
+            messages: Array.isArray(data.messages) ? data.messages : [],
+            materialsUsed: Array.isArray(data.materialsUsed) ? data.materialsUsed : []
+          } as JobRecord;
+        });
         onUpdate(remoteJobs);
       }
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });

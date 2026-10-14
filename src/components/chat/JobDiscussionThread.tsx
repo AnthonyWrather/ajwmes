@@ -126,6 +126,10 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
     }
   };
 
+  const messages = Array.isArray(job.messages) ? job.messages : [];
+  const materialsUsed = Array.isArray(job.materialsUsed) ? job.materialsUsed : [];
+  const replicaImages = Array.isArray(job.replicaImages) ? job.replicaImages : [];
+
   return (
     <div className="w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[650px] shadow-xl">
       {/* Lightbox Modal */}
@@ -153,10 +157,10 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg bg-sky-950/80 border border-sky-500/30 text-sky-300 capitalize">
-            {job.status.replace('_', ' ')}
+            {(job.status || 'quote_requested').replace('_', ' ')}
           </span>
           <span className="text-xs text-slate-400 hidden sm:inline">
-            Flat Rate: £{job.hourlyRate}/hr
+            Flat Rate: £{job.hourlyRate ?? 25}/hr
           </span>
         </div>
       </div>
@@ -174,12 +178,12 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
               <p className="text-slate-300 leading-relaxed">{job.notes}</p>
 
               {/* Uploaded Switch Panel Photos Section */}
-              {job.replicaImages && job.replicaImages.length > 0 && (
+              {replicaImages.length > 0 && (
                 <div className="pt-2 border-t border-slate-800/60 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-semibold text-sky-400 flex items-center gap-1.5">
                       <ImageIcon className="w-3.5 h-3.5" />
-                      <span>Switch Panel Reference Photos ({job.replicaImages.length})</span>
+                      <span>Switch Panel Reference Photos ({replicaImages.length})</span>
                     </span>
                     <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
                       <Cloud className="w-3 h-3" />
@@ -188,7 +192,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {job.replicaImages.map((img: string, i: number) => (
+                    {replicaImages.map((img: string, i: number) => (
                       <div
                         key={i}
                         onClick={() => {
@@ -216,7 +220,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
             </div>
 
             {/* Conversation Messages */}
-            {job.messages.map((msg: MessageItem) => {
+            {messages.map((msg: MessageItem) => {
               const isDispatchNotification = 
                 msg.senderName.includes('Postal Dispatch') || 
                 msg.text.includes('Postal Order') || 
@@ -380,21 +384,21 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Labor Subtotal</span>
-                <span className="font-mono text-white tabular-nums">£{job.totalLabor.toFixed(2)}</span>
+                <span className="font-mono text-white tabular-nums">£{(job.totalLabor ?? 0).toFixed(2)}</span>
               </div>
             </div>
 
             {/* Materials Breakdown */}
             <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
               <span className="text-[11px] font-semibold text-slate-300 block">Materials Used:</span>
-              {job.materialsUsed.length === 0 ? (
+              {materialsUsed.length === 0 ? (
                 <span className="text-[10px] text-slate-500 italic">No materials billed yet</span>
               ) : (
-                job.materialsUsed.map((m: any) => (
+                materialsUsed.map((m: any) => (
                   <div key={m.id} className="text-[11px] flex justify-between text-slate-400">
                     <span className="truncate max-w-[140px]">{m.quantity}x {m.name}</span>
                     <span className="font-mono text-slate-200 tabular-nums">
-                      £{(m.quantity * m.unitPrice).toFixed(2)}
+                      £{((m.quantity || 0) * (m.unitPrice || 0)).toFixed(2)}
                     </span>
                   </div>
                 ))

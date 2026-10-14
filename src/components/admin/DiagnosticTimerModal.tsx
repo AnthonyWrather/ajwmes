@@ -17,8 +17,8 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
   onClose
 }) => {
   const [isRunning, setIsRunning] = useState(false);
-  const [seconds, setSeconds] = useState(Math.round(job.diagnosticHours * 3600));
-  const [materials, setMaterials] = useState<MaterialLineItem[]>(job.materialsUsed);
+  const [seconds, setSeconds] = useState(Math.round((job.diagnosticHours || 0) * 3600));
+  const [materials, setMaterials] = useState<MaterialLineItem[]>(job.materialsUsed || []);
   const [selectedCatalogId, setSelectedCatalogId] = useState(catalog[0]?.id || '');
   const [addQty, setAddQty] = useState(1);
 
