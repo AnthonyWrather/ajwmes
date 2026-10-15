@@ -89,6 +89,13 @@ import {
 } from './lib/envStorage';
 import { detectEnvironment } from './lib/environment';
 import { EnvironmentSettingsModal } from './components/modals/EnvironmentSettingsModal';
+import { 
+  sendOrderConfirmationEmail, 
+  sendOrderDispatchEmail, 
+  sendDiagnosticQuoteEmail, 
+  sendPontoonSignOffEmail, 
+  sendZeroStockEmail 
+} from './lib/emailService';
 
 
 export default function App() {
@@ -579,6 +586,11 @@ export default function App() {
 
     setStockAlerts(prev => [newAlert, ...prev]);
     setActiveStockAlertToast(newAlert);
+
+    // Dispatch zero stock alert email via Resend
+    sendZeroStockEmail(newAlert).catch(err => {
+      console.warn('Zero stock email dispatch notice:', err);
+    });
   };
 
   // Restock item callback from SupplierReorderModal (Admin only)
@@ -890,6 +902,10 @@ export default function App() {
           customerSignOff: signOff
         };
         syncJobToFirestore(updated);
+        // Dispatch pontoon sign-off confirmation receipt to boat owner via Resend
+        sendPontoonSignOffEmail(updated, signOff).catch(err => {
+          console.warn('Customer sign-off email dispatch notice:', err);
+        });
         return updated;
       })
     );
@@ -954,6 +970,10 @@ export default function App() {
 
     setJobs([fullJob, ...jobs]);
     syncJobToFirestore(fullJob);
+    // Dispatch diagnostic quote request confirmation to boat owner via Resend
+    sendDiagnosticQuoteEmail(fullJob).catch(err => {
+      console.warn('Diagnostic quote email dispatch notice:', err);
+    });
     trackQuoteRequest({
       serviceCategory: fullJob.serviceCategory,
       vesselName: fullJob.vesselName,
@@ -1097,6 +1117,10 @@ export default function App() {
     setPostalOrders(prev => [userLinkedOrder, ...prev]);
     syncPostalOrderToFirestore(userLinkedOrder);
     trackPurchase(userLinkedOrder);
+    // Dispatch order confirmation email via Resend
+    sendOrderConfirmationEmail(userLinkedOrder).catch(err => {
+      console.warn('Order confirmation email dispatch notice:', err);
+    });
     // Decrement stock from catalog and trigger alert if hits 0
     setCatalog(prev =>
       prev.map(catItem => {
@@ -1148,6 +1172,11 @@ export default function App() {
               deliveredAt: status === 'delivered' ? (o.deliveredAt || new Date().toISOString().slice(0, 16).replace('T', ' ')) : o.deliveredAt
             };
             syncPostalOrderToFirestore(updatedOrder);
+            if (status === 'dispatched') {
+              sendOrderDispatchEmail(updatedOrder).catch(err => {
+                console.warn('Order dispatch email notice:', err);
+              });
+            }
             return updatedOrder;
           })
         );

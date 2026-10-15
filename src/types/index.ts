@@ -402,9 +402,80 @@ export interface OfflineSyncQueueStatus {
   pendingJobs: number;
   pendingPhotos: number;
   pendingSignatures: number;
+  pendingEmails?: number;
   isSyncing: boolean;
   syncProgressPercent: number;
   lastSyncedAt: string | null;
   lastError?: string;
 }
+
+export type EmailTemplateType =
+  | 'welcome'
+  | 'order_confirmation'
+  | 'order_dispatch'
+  | 'diagnostic_quote'
+  | 'pontoon_signoff'
+  | 'zero_stock_alert'
+  | 'custom';
+
+export interface EmailAttachment {
+  filename: string;
+  content: string; // Base64 string
+  contentType?: string;
+}
+
+export interface EmailPayload {
+  to: string | string[];
+  subject: string;
+  html?: string;
+  text?: string;
+  from?: string;
+  replyTo?: string;
+  templateType?: EmailTemplateType;
+  tags?: { name: string; value: string }[];
+  attachments?: EmailAttachment[];
+  jobReference?: string;
+  orderId?: string;
+}
+
+export interface EmailDispatchResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+  queuedOffline?: boolean;
+  isSimulated?: boolean;
+}
+
+export interface QueuedEmailRecord {
+  id: string;
+  payload: EmailPayload;
+  queuedAt: string;
+  retryCount: number;
+  lastError?: string;
+  status: 'queued' | 'sending' | 'sent' | 'failed';
+}
+
+export interface ResendAppConfig {
+  apiKey: string;
+  fromEmail: string;
+  fromName: string;
+  replyTo: string;
+  isConfigured: boolean;
+  isSimulatedMode: boolean;
+}
+
+export interface IncomingEmailMessage {
+  id: string;
+  from: string;
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  receivedAt: string;
+  jobReference?: string;
+  matchedUserId?: string;
+  attachments?: { filename: string; url?: string; sizeBytes?: number }[];
+  status: 'unread' | 'read' | 'processed';
+}
+
 

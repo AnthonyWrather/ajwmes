@@ -298,15 +298,18 @@ async function testConnection(retryCount = 0) {
         errorMessage: 'Firebase client is offline' 
       });
     }
-    // Retry up to 3 times with exponential backoff on initial load
-    if (retryCount < 3) {
+    // Retry up to 3 times with exponential backoff on initial load in browser
+    if (typeof window !== 'undefined' && retryCount < 3) {
       setTimeout(() => {
         testConnection(retryCount + 1);
       }, (retryCount + 1) * 2000);
     }
   }
 }
-testConnection();
+
+if (typeof window !== 'undefined') {
+  testConnection();
+}
 
 // Realtime listeners & persistence helpers
 export function subscribeJobs(onUpdate: (jobs: JobRecord[]) => void) {

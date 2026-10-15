@@ -3,7 +3,9 @@ import {
   OfflineQueuedMedia, 
   OfflineJobSheetUpdate, 
   OfflineSyncQueueStatus, 
-  JobRecord 
+  JobRecord,
+  EmailPayload,
+  QueuedEmailRecord
 } from '../types';
 import { uploadSwitchPanelImage } from './storage';
 import { 
@@ -15,11 +17,12 @@ import {
 export type { OfflineSyncQueueStatus };
 
 const DB_NAME = 'ajw_marine_field_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORE_MEDIA = 'media_queue';
 const STORE_SIGNATURES = 'signatures_queue';
 const STORE_JOBS = 'jobs_queue';
+const STORE_EMAILS = 'emails_queue';
 
 /**
  * Open or upgrade the IndexedDB instance
@@ -44,6 +47,9 @@ function openOfflineDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_JOBS)) {
         db.createObjectStore(STORE_JOBS, { keyPath: 'jobId' });
+      }
+      if (!db.objectStoreNames.contains(STORE_EMAILS)) {
+        db.createObjectStore(STORE_EMAILS, { keyPath: 'id' });
       }
     };
 
@@ -235,6 +241,34 @@ export async function getPendingJobUpdates(): Promise<OfflineJobSheetUpdate[]> {
   }
 }
 
+export async function enqueueOfflineEmail(payload: EmailPayload): Promise<QueuedEmailRecord> {
+  const queuedRecord: QueuedEmailRecord = {
+    id: `queued-email-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    payload,
+    queuedAt: new Date().toISOString(),
+    retryCount: 0,
+    status: 'queued'
+  };
+  await performTx(STORE_EMAILS, 'readwrite', (store) => store.put(queuedRecord));
+  notifyQueueChanged();
+  return queuedRecord;
+}
+
+export async function getPendingEmails(): Promise<QueuedEmailRecord[]> {
+  try {
+    const db = await openOfflineDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_EMAILS, 'readonly');
+      const store = tx.objectStore(STORE_EMAILS);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function deleteQueuedItem(storeName: string, key: string): Promise<void> {
   await performTx(storeName, 'readwrite', (store) => store.delete(key));
   notifyQueueChanged();
@@ -252,6 +286,7 @@ let currentStatus: OfflineSyncQueueStatus = {
   pendingJobs: 0,
   pendingPhotos: 0,
   pendingSignatures: 0,
+  pendingEmails: 0,
   isSyncing: false,
   syncProgressPercent: 0,
   lastSyncedAt: null
@@ -267,10 +302,11 @@ export function subscribeToQueueStatus(listener: QueueListener): () => void {
 }
 
 export async function refreshQueueStatus(): Promise<OfflineSyncQueueStatus> {
-  const [photos, sigs, jobs] = await Promise.all([
+  const [photos, sigs, jobs, emails] = await Promise.all([
     getPendingPhotos(),
     getPendingSignatures(),
-    getPendingJobUpdates()
+    getPendingJobUpdates(),
+    getPendingEmails()
   ]);
 
   currentStatus = {
@@ -278,7 +314,8 @@ export async function refreshQueueStatus(): Promise<OfflineSyncQueueStatus> {
     pendingPhotos: photos.length,
     pendingSignatures: sigs.length,
     pendingJobs: jobs.length,
-    totalPending: photos.length + sigs.length + jobs.length
+    pendingEmails: emails.length,
+    totalPending: photos.length + sigs.length + jobs.length + emails.length
   };
 
   listeners.forEach((l) => l(currentStatus));
@@ -296,6 +333,7 @@ function notifyQueueChanged() {
 export interface SyncCallbacks {
   onJobUpdated?: (jobId: string, hours: number, materials: any[], signOff?: CustomerSignOffRecord, photoUrls?: string[]) => void;
   onPostMessage?: (jobId: string, text: string, attachments?: string[]) => void;
+  onDispatchQueuedEmail?: (record: QueuedEmailRecord) => Promise<boolean | void>;
 }
 
 let activeCallbacks: SyncCallbacks = {};
@@ -332,7 +370,8 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
     const photos = await getPendingPhotos();
     const signatures = await getPendingSignatures();
     const jobUpdates = await getPendingJobUpdates();
-    const totalItems = photos.length + signatures.length + jobUpdates.length;
+    const emails = await getPendingEmails();
+    const totalItems = photos.length + signatures.length + jobUpdates.length + emails.length;
 
     if (totalItems === 0) {
       currentStatus = {
@@ -437,6 +476,21 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
       } catch (err: any) {
         console.warn(`Failed to sync job sheet ${jobUp.jobId}:`, err);
         errors.push(`Job update for ${jobUp.jobId}: ${err.message}`);
+      }
+      processedItems++;
+    }
+
+    // 4. Process Queued Offline Emails
+    for (const emailRecord of emails) {
+      try {
+        if (activeCallbacks.onDispatchQueuedEmail) {
+          await activeCallbacks.onDispatchQueuedEmail(emailRecord);
+        }
+        await deleteQueuedItem(STORE_EMAILS, emailRecord.id);
+        syncedCount++;
+      } catch (err: any) {
+        console.warn(`Failed to sync email ${emailRecord.id}:`, err);
+        errors.push(`Email ${emailRecord.payload.subject}: ${err.message || 'Send error'}`);
       }
       processedItems++;
     }

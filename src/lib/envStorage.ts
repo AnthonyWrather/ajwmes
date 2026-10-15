@@ -55,27 +55,51 @@ export function getEnvKey(baseKey: string, envCode?: AppEnvironment): string {
   return `ajwmes_${safeEnv}_${baseKey}`;
 }
 
+// In-memory storage fallback for Node.js test runners, headless CI, and SSR
+const memoryStorage = new Map<string, string>();
+
+interface StorageBackend {
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+}
+
+function getStorageBackend(): StorageBackend {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  return {
+    getItem: (key: string) => memoryStorage.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      memoryStorage.set(key, value);
+    },
+    removeItem: (key: string) => {
+      memoryStorage.delete(key);
+    }
+  };
+}
+
 /**
  * Safely retrieves an item from environment-scoped localStorage with automatic fallback
  * and migration from legacy un-namespaced keys.
  */
 export function getEnvStorageItem<T>(baseKey: string, fallbackDefault: T, envCode?: AppEnvironment): T {
-  if (typeof window === 'undefined') return fallbackDefault;
+  const backend = getStorageBackend();
   const namespacedKey = getEnvKey(baseKey, envCode);
 
   try {
-    const namespacedVal = localStorage.getItem(namespacedKey);
+    const namespacedVal = backend.getItem(namespacedKey);
     if (namespacedVal !== null) {
       return JSON.parse(namespacedVal);
     }
 
     // Check if legacy un-namespaced key exists (migration path)
     const legacyKey = `ajwmes_${baseKey}`;
-    const legacyVal = localStorage.getItem(legacyKey);
+    const legacyVal = backend.getItem(legacyKey);
     if (legacyVal !== null) {
       const parsed = JSON.parse(legacyVal);
       // Copy over to new namespaced key for this environment
-      localStorage.setItem(namespacedKey, JSON.stringify(parsed));
+      backend.setItem(namespacedKey, JSON.stringify(parsed));
       return parsed;
     }
   } catch (e) {
@@ -89,10 +113,10 @@ export function getEnvStorageItem<T>(baseKey: string, fallbackDefault: T, envCod
  * Saves an item into environment-scoped localStorage
  */
 export function setEnvStorageItem<T>(baseKey: string, value: T, envCode?: AppEnvironment): void {
-  if (typeof window === 'undefined') return;
+  const backend = getStorageBackend();
   const namespacedKey = getEnvKey(baseKey, envCode);
   try {
-    localStorage.setItem(namespacedKey, JSON.stringify(value));
+    backend.setItem(namespacedKey, JSON.stringify(value));
   } catch (e) {
     console.warn(`Could not save storage item for ${namespacedKey}:`, e);
   }
@@ -102,10 +126,10 @@ export function setEnvStorageItem<T>(baseKey: string, value: T, envCode?: AppEnv
  * Removes an item from environment-scoped localStorage
  */
 export function removeEnvStorageItem(baseKey: string, envCode?: AppEnvironment): void {
-  if (typeof window === 'undefined') return;
+  const backend = getStorageBackend();
   const namespacedKey = getEnvKey(baseKey, envCode);
   try {
-    localStorage.removeItem(namespacedKey);
+    backend.removeItem(namespacedKey);
   } catch (e) {
     console.warn(`Could not remove storage item for ${namespacedKey}:`, e);
   }

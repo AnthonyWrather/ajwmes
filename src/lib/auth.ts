@@ -20,6 +20,7 @@ import { firebaseConfig } from './firebaseConfig';
 import { getEnvStorageItem, setEnvStorageItem } from './envStorage';
 import { detectEnvironment } from './environment';
 import { UserRole, UserProfile } from '../types';
+import { sendWelcomeEmail } from './emailService';
 
 export interface RoleConfig {
   role: UserRole;
@@ -256,7 +257,12 @@ export async function saveAndSyncUserProfile(profile: UserProfile): Promise<{ su
   try {
     saveUserProfile(profile);
     if (profile.id) {
-      await syncUserToFirestore(profile);
+      // Perform background sync if in browser and online, without blocking local operations
+      if (typeof window !== 'undefined' && (typeof navigator === 'undefined' || navigator.onLine)) {
+        syncUserToFirestore(profile).catch((err) => {
+          console.warn('Notice: Background syncUserToFirestore error:', err);
+        });
+      }
     }
     return { success: true };
   } catch (err: any) {
@@ -290,12 +296,25 @@ export async function registerUserAccount(details: {
     throw new Error('Please enter a valid email address.');
   }
 
-  // Check if user already exists in Firestore
-  if (firebaseConfig.apiKey) {
+  // 1. Check local storage and demo accounts first for immediate offline duplicate detection
+  const localUsers = getEnvStorageItem<UserProfile[]>('users_list', []);
+  const activeProfiles = getActiveDemoProfiles();
+  const existingLocal = localUsers.find(u => u.email.toLowerCase() === cleanEmail) ||
+                        activeProfiles.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (existingLocal && cleanEmail !== 'sarah.connor@solent-sail.co.uk') {
+    throw new Error('An account with this email address already exists. Please sign in with your password.');
+  }
+
+  // 2. Check if user already exists in Firestore (with timeout guard against network lockups)
+  if (firebaseConfig.apiKey && typeof window !== 'undefined' && (typeof navigator === 'undefined' || navigator.onLine)) {
     try {
       const usersCol = collection(db, getScopedCollection('users'));
       const q = query(usersCol, where('email', '==', cleanEmail));
-      const snap = await getDocs(q);
+      const snap = await Promise.race([
+        getDocs(q),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500))
+      ]);
       if (!snap.empty) {
         if (cleanEmail === 'sarah.connor@solent-sail.co.uk') {
           const existingDoc = snap.docs[0];
@@ -372,6 +391,11 @@ export async function registerUserAccount(details: {
   } catch (e) {
     console.warn('Could not cache registered user in local users_list:', e);
   }
+
+  // Trigger welcome email via Resend
+  sendWelcomeEmail(profile).catch(err => {
+    console.warn('Welcome email dispatch notice:', err);
+  });
 
   return profile;
 }
