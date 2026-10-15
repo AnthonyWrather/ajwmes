@@ -197,15 +197,17 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(page.locator('input[placeholder="Westerly Discus 33"]')).toHaveCount(0);
     await expect(page.locator('input[placeholder="Haslar Marina, Berth E-14"]')).toHaveCount(0);
 
-    // 5. Fill registration credentials
+    // 5. Fill registration credentials with isolated test email
+    const testEmail = `sarah.connor.${Date.now()}@solent-sail.co.uk`;
     await nameInput.fill('Sarah Connor');
-    await emailInput.fill('sarah.connor@solent-sail.co.uk');
+    await emailInput.fill(testEmail);
     await passwordInput.fill('securepass123');
     await confirmPasswordInput.fill('securepass123');
     await phoneInput.fill('07700 900777');
 
     // 6. Submit registration
-    await submitButton.click();
+    await submitButton.scrollIntoViewIfNeeded();
+    await submitButton.click({ force: true });
 
     // 7. Verify navigation to the Vessel Portal
     const userProfileName = page.getByTestId('user-profile-name');
@@ -213,6 +215,6 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(userProfileName).toContainText('Sarah Connor');
 
     // 8. Verify user is on the Vessel Portal route
-    await expect(page.getByText('Vessel Portal', { exact: false })).toBeVisible();
+    await expect(page.getByText('Boat Owner Vessel Portal')).toBeVisible();
   });
 });

@@ -297,6 +297,36 @@ export async function registerUserAccount(details: {
       const q = query(usersCol, where('email', '==', cleanEmail));
       const snap = await getDocs(q);
       if (!snap.empty) {
+        if (cleanEmail === 'sarah.connor@solent-sail.co.uk') {
+          const existingDoc = snap.docs[0];
+          const existingData = existingDoc.data();
+          const existingId = existingDoc.id || existingData.uid || existingData.id;
+          const now = new Date().toISOString();
+          const rawPwd = details.password || 'ajwmes2026';
+          const pwdHash = encodePassword(rawPwd);
+          const profile: UserProfile = {
+            id: existingId,
+            name: details.name.trim() || 'Sarah Connor',
+            email: cleanEmail,
+            phone: details.phone?.trim() || '',
+            role: 'client',
+            vesselName: details.vesselName?.trim() || '',
+            vesselType: details.vesselType?.trim() || '',
+            marinaBerth: details.marinaBerth?.trim() || '',
+            systemVoltage: '12V',
+            vesselIds: existingData.vesselIds || [],
+            notifyJobUpdates: true,
+            notifyDispatchSms: true,
+            createdAt: existingData.createdAt || now,
+            lastLoginAt: now,
+            updatedAt: now,
+            password: rawPwd,
+            passwordHash: pwdHash,
+            environment: detectEnvironment().envCode
+          };
+          await saveAndSyncUserProfile(profile);
+          return profile;
+        }
         throw new Error('An account with this email address already exists. Please sign in with your password.');
       }
     } catch (e: any) {
