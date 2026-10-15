@@ -111,5 +111,17 @@ service cloud.firestore {
       allow list: if colPrefix_panels.matches('^(ais_dev_|ais_pre_|gh_pre_)panel_configs$');
       allow create, update, delete: if colPrefix_panels.matches('^(ais_dev_|ais_pre_|gh_pre_)panel_configs$') && isValidId(configId);
     }
+
+    // Marine workshop and technician job expenses
+    match /expenses/{expenseId} {
+      allow get: if isValidId(expenseId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(expenseId);
+    }
+    match /{colPrefix_expenses}/{expenseId} {
+      allow get: if colPrefix_expenses.matches('^(ais_dev_|ais_pre_|gh_pre_)expenses$') && isValidId(expenseId);
+      allow list: if colPrefix_expenses.matches('^(ais_dev_|ais_pre_|gh_pre_)expenses$');
+      allow create, update, delete: if colPrefix_expenses.matches('^(ais_dev_|ais_pre_|gh_pre_)expenses$') && isValidId(expenseId);
+    }
   }
 }

@@ -181,6 +181,32 @@
         "environment": { "type": "string", "maxLength": 64 }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Marine workshop technician and job-related expense record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "jobId": { "type": "string", "maxLength": 128 },
+        "jobReference": { "type": "string", "maxLength": 64 },
+        "vesselName": { "type": "string", "maxLength": 128 },
+        "clientName": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 64 },
+        "description": { "type": "string", "maxLength": 512 },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "maxLength": 64 },
+        "vendor": { "type": "string", "maxLength": 128 },
+        "receiptReference": { "type": "string", "maxLength": 64 },
+        "receiptUrl": { "type": "string", "maxLength": 512 },
+        "isBillableToClient": { "type": "boolean" },
+        "paymentMethod": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "maxLength": 64 },
+        "notes": { "type": "string", "maxLength": 2048 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "jobId", "description", "amount", "date", "status"]
     }
   },
   "firestore": {
@@ -215,6 +241,10 @@
     "/panel_configs/{configId}": {
       "schema": "PanelConfig",
       "description": "Laser-cut custom panel designs"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Workshop technician and job-related expenses"
     },
     "/test/{docId}": {
       "schema": "TestConnection",
