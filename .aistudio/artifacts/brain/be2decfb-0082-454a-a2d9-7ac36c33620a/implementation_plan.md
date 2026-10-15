@@ -1,30 +1,31 @@
-# Streamlined Account Creation & Vessel Portal Onboarding
+# GitHub Commit-Linked Versioning & Release Manager Integration
 
-Restructure the Sign In modal by converting the "Register Vessel" tab into a streamlined "Create Account" screen (focused on user credentials and optional contact info), decoupling vessel registration to the dedicated Vessel Portal, and automatically routing newly registered users to add their vessel specifications.
+Automate application versioning by injecting Git commit metadata at build time, displaying SemVer tags with short commit hashes (e.g. `v1.2.0-8ba2ee3`) in the header, and establishing direct GitHub commit links and metadata inside the Multi-Environment & Release Manager.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following design decisions were confirmed via Phase 1 clarification:
-> - **Post-Registration Destination**: After creating an account, users are automatically authenticated and directed straight to the **Vessel Portal** so they can register their vessel details and manage electrical specs in their dedicated workspace.
-> - **Streamlined Account Creation Fields**: The new Create Account form strictly includes **Full Name**, **Email Address**, **Password**, **Confirm Password**, and an optional **Mobile / VHF Contact** number (for SMS booking and dispatch notifications). All vessel-specific inputs (**Vessel Name**, **Vessel Type / Make**, and **Home Marina / Mooring**) are removed from the authentication modal.
-> - **Seamless Sign In to Create Account Flow**: When a user attempts to sign in with an unregistered email, the modal smoothly switches to the "Create Account" tab with their email prefilled, password preserved (if valid), and an informative banner guiding them to complete their quick account registration.
+> The following decisions were confirmed via Phase 1 clarification:
+> - **Version Format**: Semantic versioning combined with the Git short commit hash (e.g., `v1.2.0-8ba2ee3`).
+> - **GitHub Repository**: `anthonywrather/ajwmes` used as the canonical target for commit URLs (`https://github.com/anthonywrather/ajwmes/commit/<sha>`).
+> - **Multi-Environment & Release Manager Details**: Prominently features the short commit SHA badge with 1-click copy, commit message display, and direct GitHub links to inspect the commit and diff.
 
-- **Confirmed Decision 1**: Rename "Register Vessel" tab and button to "Create Account" across the navigation, authentication modal, and links.
-- **Confirmed Decision 2**: Remove all vessel input fields (`regVesselName`, `regVesselType`, `regMarina`) from `SignInModal.tsx`.
-- **Confirmed Decision 3**: Refactor `src/lib/auth.ts` registration helper to `registerUserAccount` (aliasing `registerVesselAccount` for backward compatibility) and initialize default profile fields cleanly.
-- **Confirmed Decision 4**: In `App.tsx` and `SignInModal.tsx`, on successful account creation, set the active tab to `'portal'` and trigger the "Add Vessel" workflow if no boat exists yet.
+- **Confirmed Decision 1**: Update `src/version.ts` and `vite.config.ts` to dynamically resolve commit SHA, commit message, branch name, and repository URL from CI environment variables (`GITHUB_SHA`, `VITE_GIT_COMMIT_SHA`) with seamless local Git CLI / container fallbacks.
+- **Confirmed Decision 2**: Display the combined version badge `v1.2.0-8ba2ee3` in the navigation header with interactive feedback and a direct tooltip linking to the environment manager.
+- **Confirmed Decision 3**: Upgrade `src/components/modals/EnvironmentSettingsModal.tsx` with a dedicated **Git Release & Commit Verification Card** displaying the active commit SHA, commit subject, branch, and external link buttons to GitHub.
+- **Confirmed Decision 4**: Update GitHub Actions workflow (`.github/workflows/firebase-hosting-merge.yml`) to inject `GITHUB_SHA`, `GITHUB_REF_NAME`, and commit messages into the Vite production build.
 
 ---
 
 ## 1. Overview & Core Concept
 
 - **What It Does**:
-  - Decouples user account creation from boat registration.
-  - Simplifies the authentication modal so visitors can quickly create an account with just their name, email, password, and mobile number.
-  - Directs newly registered users directly to the dedicated **Vessel Portal** (`ClientVesselPortal.tsx`) where they can register one or multiple vessels, record battery bank and voltage specs, track diagnostic jobs, and view PDF certificates.
-- **Target Audience / Persona**: Boat owners, marine contractors, and Solent sailors signing in or registering with AJW Marine Electrical Services.
-- **Key Value**: Drastically reduces registration friction, eliminates redundant duplicate boat registration forms, and establishes a single source of truth for vessel data management in the Vessel Portal.
+  - Eliminates stale, hardcoded version strings that fall out of sync with GitHub commits.
+  - Automatically captures the latest Git commit hash (`git rev-parse --short HEAD` or CI environment variables) and commit title during build time.
+  - Formats version output as `v<SemVer>-<ShortSHA>` (e.g. `v1.2.0-8ba2ee3`).
+  - Provides a 1-click pathway from the application header directly to the specific commit and diff in GitHub via the Multi-Environment & Release Manager.
+- **Target Audience / Persona**: Lead engineer, QA automation testers, and stakeholders reviewing deployments across AI Studio Dev, Preview, and Firebase Production.
+- **Key Value**: Guarantees traceability between any deployed app instance and the exact Git commit that produced it, preventing uncertainty about whether a patch or fix has been deployed.
 
 ---
 
@@ -32,39 +33,43 @@ Restructure the Sign In modal by converting the "Register Vessel" tab into a str
 
 ### Key User Flows
 
-1. **Direct Account Creation**:
-   - User clicks **Sign In** in the top navigation bar.
-   - User switches to the **Create Account** tab (or clicks "Create new account →" from the Sign In tab).
-   - Form presents 4 clean sections: Full Name, Email Address, Password (with toggleable visibility and strength requirement), and optional Mobile/VHF Contact.
-   - User submits form $\rightarrow$ instant feedback message ("Account created for [Name]! Opening Vessel Portal...") $\rightarrow$ automatic sign-in $\rightarrow$ navigation switches to Vessel Portal with an onboarding prompt to register their vessel.
+1. **Header Version Visibility**:
+   - The user looks at the top-left navigation header next to the AJWMES logo.
+   - The version tag displays `v1.2.0-8ba2ee3 | DEV` (or `PREVIEW`, `LIVE` based on environment).
+   - Hovering displays a tooltip: *"Release v1.2.0-8ba2ee3 · Commit: 8ba2ee3 · Click to inspect environment & GitHub commit"*.
+   - Clicking the badge opens the Multi-Environment & Release Manager modal.
 
-2. **Unregistered Email Redirection Flow**:
-   - User enters `newcaptain@solent.co.uk` on the Sign In tab and clicks Sign In.
-   - System identifies unregistered email $\rightarrow$ switches active tab to **Create Account** with email transferred into the email field and an informative notification: *"No account found for 'newcaptain@solent.co.uk'. Fill in your name and password below to create your account in 30 seconds."*
+2. **Multi-Environment & Release Manager Verification**:
+   - The modal header clearly presents `v1.2.0-8ba2ee3` alongside the channel badge.
+   - Inside the **Active Environment & Storage** tab, a dedicated **GitHub Release & Commit Verification** card provides:
+     - **Commit SHA**: Monospace badge `8ba2ee3` with a 1-click **Copy SHA** button (with clipboard check feedback).
+     - **Commit Summary**: The Git commit subject/message associated with this build.
+     - **Branch & Target**: Target branch (e.g., `main`) and target repository (`anthonywrather/ajwmes`).
+     - **Direct Action Button**: `View on GitHub ↗` linking to `https://github.com/anthonywrather/ajwmes/commit/<sha>`.
+     - **Compare & Releases Links**: Quick links to view recent releases or compare commits on GitHub.
 
-3. **Vessel Portal First-Time Experience**:
-   - The user arrives in the Vessel Portal as an authenticated client.
-   - Because they have no registered vessel yet, the Vessel Portal displays an empty state hero: *"Welcome to your Vessel Portal, [Name]. Register your boat to record 12V/24V electrical specs, request diagnostic bookings, and track jobs."* with a prominent **+ Register Your Vessel** action button that opens the boat registration modal.
+3. **Fallback & Graceful Degradation**:
+   - If running in an environment without Git or CI variables (e.g. initial scratch container), the app falls back to the package version with a descriptive `-dev` or clean fallback hash, ensuring zero build breaks or console errors.
 
 ### Visual Identity & Theme
-- Marine dark slate background (`bg-slate-900`, `border-slate-800`), sky blue accents (`text-sky-400`, `bg-sky-600`), and warm amber highlights for role badges.
-- Tab switcher uses standard clean segmented buttons: `[ Key Sign In ]` and `[ UserPlus Create Account ]` along with `[ Zap 1-Click Team Roles ]`.
-- Anti-slop compliance: Unboxed metadata, zero decorative pulsing dots on static text, no pill-badge sandwiches, clear input focus rings (`focus:border-sky-500`).
+- Dark marine slate theme (`#0A192F`, `#0F172A`) with sky blue interactive accents (`#38BDF8`) and amber highlights.
+- Zero-pill compliance: Clean monospace typography with tabular figures (`font-mono tabular-nums text-sky-300`).
+- Micro-interactions: Instant copy-to-clipboard state change (Checkmark icon $\le 200\text{ms}$), smooth tooltip reveals.
 
 ---
 
 ## 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Removal of Vessel Fields from Sign On Modal**:
-  - *Chosen Approach*: Strip out `regVesselName`, `regVesselType`, and `regMarina` from `SignInModal.tsx`.
-  - *Why*: The dedicated `ClientVesselPortal` already has a complete, multi-boat manager (`VesselSpecManager.tsx` and `AddBoatModal`) supporting multiple vessels, detailed battery types (LiFePO4, AGM, Gel), and system voltages (12V/24V). Having boat inputs in the signup modal was redundant and created confusion about where vessels are managed.
-  - *Alternatives Considered*: Keeping vessel name optional in sign-in. Rejected because it blurs the boundary between user identity and vessel assets.
-- **Decision 2: Backward Compatibility in `auth.ts`**:
-  - *Chosen Approach*: Introduce `registerUserAccount(details)` while preserving `registerVesselAccount(details)` as an exported alias.
-  - *Why*: Ensures existing unit tests, Playwright specs, or legacy imports remain 100% operational without breaking changes.
-- **Decision 3: Post-Registration Navigation to Vessel Portal**:
-  - *Chosen Approach*: On registration success, callback invokes `onSuccessSignIn(profile, { isNewAccount: true })` and `App.tsx` navigates to `setCurrentTab('portal')`.
-  - *Why*: Directly satisfies the user's requirement: the user is immediately in the right place to add their vessel.
+- **Decision 1: Vite Compile-Time `define` Injection vs Runtime Git Query**:
+  - *Chosen Approach*: Inject Git metadata via `define` in `vite.config.ts` combining CI environment variables (`GITHUB_SHA`, `GITHUB_REF_NAME`) with local `child_process.execSync` fallbacks.
+  - *Why*: Browsers running client-side React cannot execute Git commands. Embedding metadata at build time ensures instantaneous zero-latency client availability and complete offline compatibility.
+  - *Alternatives Considered*: Fetching GitHub API at runtime. Rejected because it requires internet connectivity, consumes API rate limits, fails in offline pontoon environments, and introduces network latency.
+- **Decision 2: SemVer + Short SHA Tag Format (`v1.2.0-8ba2ee3`)**:
+  - *Chosen Approach*: Standard `v<package.json version>-<7-char SHA>`.
+  - *Why*: Directly fulfills user preference, conforms to SemVer prerelease/build metadata standards, and is immediately recognizable.
+- **Decision 3: Direct Linkage to `anthonywrather/ajwmes`**:
+  - *Chosen Approach*: Configure `anthonywrather/ajwmes` as the primary repository constant with an override via `VITE_GITHUB_REPO`.
+  - *Why*: Ensures out-of-the-box working GitHub links while remaining flexible if repository naming changes.
 
 ---
 
@@ -72,78 +77,83 @@ Restructure the Sign In modal by converting the "Register Vessel" tab into a str
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        Sign In & Account Modal                         │
-│                     (src/components/auth/SignInModal.tsx)              │
+│                        Build Time (Vite / CI)                          │
 │                                                                        │
-│   ┌─────────────────────┐   ┌──────────────────────┐   ┌────────────┐  │
-│   │   Tab 1: Sign In    │   │Tab 2: Create Account │   │1-Click Role│  │
-│   │ • Email & Password  │   │ • Full Name          │   │Quick Switch│  │
-│   │ • Unregistered auto-│   │ • Email Address      │   └────────────┘  │
-│   │   transfer to Tab 2 │   │ • Password & Confirm │                   │
-│   └──────────┬──────────┘   │ • Mobile/VHF (opt)   │                   │
-│              │              └──────────┬───────────┘                   │
-└──────────────┼─────────────────────────┼───────────────────────────────┘
-               │ (Authenticated)         │ (registerUserAccount)
-               ▼                         ▼
+│   GitHub Actions (CI)           Local / Container (Dev)                │
+│   • GITHUB_SHA                  • child_process: git rev-parse --short │
+│   • GITHUB_REF_NAME             • child_process: git log -1            │
+│   • head_commit.message         • package.json: version "1.2.0"        │
+└─────────────────────────────────┬──────────────────────────────────────┘
+                                  │
+                                  ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                     Auth Service (src/lib/auth.ts)                     │
-│  • Registers user profile in Firestore (users/{uid}) & local storage   │
-│  • Sets role to 'client' (or 'admin' for Anthony Wrather)              │
-│  • Returns UserProfile                                                 │
-└────────────────────────────────────────┬───────────────────────────────┘
-                                         │
-                                         ▼
+│                     vite.config.ts (Build Injection)                   │
+│  • Defines import.meta.env.VITE_GIT_COMMIT_SHA                         │
+│  • Defines import.meta.env.VITE_GIT_COMMIT_MESSAGE                     │
+│  • Defines import.meta.env.VITE_GIT_BRANCH                             │
+│  • Defines import.meta.env.VITE_GITHUB_REPO                            │
+│  • Defines import.meta.env.VITE_BUILD_TIME                             │
+└─────────────────────────────────┬──────────────────────────────────────┘
+                                  │
+                                  ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│             App Orchestrator (src/App.tsx) Navigation Router           │
-│  • Sets currentUserProfile & currentUserRole                           │
-│  • Switches active tab: setCurrentTab('portal')                        │
-└────────────────────────────────────────┬───────────────────────────────┘
-                                         │
-                                         ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│              Dedicated Vessel Portal (ClientVesselPortal.tsx)          │
-│  • If no vessels exist: Prompt user to "+ Register First Vessel"       │
-│  • Handles full vessel specs (12V/24V, Lithium/AGM, Marina berth, etc) │
-│  • Multi-vessel support and PDF technical export                       │
-└────────────────────────────────────────────────────────────────────────┘
+│                        src/version.ts (Metadata)                       │
+│  • APP_VERSION = '1.2.0' (from package.json)                           │
+│  • GIT_COMMIT_SHA = '8ba2ee3'                                          │
+│  • FULL_VERSION_TAG = 'v1.2.0-8ba2ee3'                                 │
+│  • getGitHubCommitUrl() -> https://github.com/anthonywrather/...       │
+│  • getVersionInfo() -> structured metadata                             │
+└─────────────────┬──────────────────────────────────────┬───────────────┘
+                  │                                      │
+                  ▼                                      ▼
+┌───────────────────────────────────┐  ┌─────────────────────────────────┐
+│       src/components/Navigation   │  │   src/components/modals/        │
+│             (Header)              │  │      EnvironmentSettingsModal   │
+│                                   │  │                                 │
+│  • Renders v1.2.0-8ba2ee3         │  │  • Release Manager Header       │
+│  • Environment indicator          │  │  • Git Commit SHA & 1-click copy│
+│  • Click opens Release Manager    │  │  • Commit Message & Branch Tag  │
+│                                   │  │  • Direct "View on GitHub ↗"   │
+└───────────────────────────────────┘  └─────────────────────────────────┘
 ```
 
-### Component & File Modifications
+### Component & File Changes
 
-1. **`src/components/auth/SignInModal.tsx`**:
-   - Change Tab 2 label and icon from `Register Vessel` (`Ship`) to `Create Account` (`UserPlus`).
-   - Remove inputs for `regVesselName`, `regVesselType`, and `regMarina`.
-   - Update submission handler to call `registerUserAccount` with `{ name, email, password, phone }`.
-   - Update footer text / link on Tab 1 from `"Create boat account →"` to `"Create account →"`.
-   - Update test-id attributes (`data-testid="tab-register"` / `data-testid="tab-create-account"` and input test IDs).
-   - Pass an onboarding flag or trigger navigation to the Vessel Portal upon registration completion.
-
-2. **`src/lib/auth.ts`**:
-   - Add `registerUserAccount(details: { name: string; email: string; password?: string; phone?: string; })`.
-   - Ensure clean default initialization of vessel fields (e.g. `vesselName: ''`, `vesselType: ''`, `marinaBerth: ''`, `vesselIds: []`).
-   - Retain `registerVesselAccount` as an alias for complete backward compatibility.
-
-3. **`src/App.tsx`**:
-   - Update `handleSuccessSignIn` to accept optional `{ isNewRegistration?: boolean }` parameter.
-   - When `isNewRegistration` is true, automatically navigate to `setCurrentTab('portal')`.
-
-4. **`src/components/client/ClientVesselPortal.tsx`**:
-   - Ensure empty-state banner when a newly registered user has no vessels yet is inviting, prominent, and has a direct 1-click button to open the Add Vessel modal.
-
-5. **`tests/authentication.spec.ts` & `src/lib/auth.test.ts`**:
-   - Add unit tests verifying `registerUserAccount` creates a valid client profile without requiring vessel details.
-   - Update any E2E tests checking the register tab to verify the new "Create Account" tab and smooth registration-to-portal flow.
+1. **`vite.config.ts`**:
+   - Extract Git metadata using `child_process.execSync` safely wrapped in `try/catch`.
+   - Read CI variables (`GITHUB_SHA`, `GITHUB_REF_NAME`, `VITE_GIT_COMMIT_SHA`, `VITE_GIT_COMMIT_MESSAGE`).
+   - Define variables via Vite's `define` config.
+2. **`src/version.ts`**:
+   - Export `APP_VERSION`, `GIT_COMMIT_SHA`, `GIT_COMMIT_MESSAGE`, `GIT_BRANCH`, `GITHUB_REPO`, `FULL_VERSION_TAG`.
+   - Export helper functions: `getVersionInfo()`, `getGitHubCommitUrl()`, `getGitHubRepoUrl()`.
+3. **`src/components/Navigation.tsx`**:
+   - Update header version badge to display `FULL_VERSION_TAG` (`v1.2.0-8ba2ee3`).
+   - Update tooltip and accessibility label.
+4. **`src/components/modals/EnvironmentSettingsModal.tsx`**:
+   - Display `FULL_VERSION_TAG` in modal header.
+   - Add new **GitHub Release & Commit Verification Card** in the Overview tab:
+     - Short SHA badge with Copy button.
+     - Commit message.
+     - Branch name and repository tag.
+     - Direct button to GitHub commit (`https://github.com/anthonywrather/ajwmes/commit/<sha>`).
+5. **`.github/workflows/firebase-hosting-merge.yml`**:
+   - Pass `VITE_GIT_COMMIT_SHA: ${{ github.sha }}`, `VITE_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}`, `VITE_GIT_BRANCH: ${{ github.ref_name }}`, and `VITE_GITHUB_REPO: 'anthonywrather/ajwmes'` into the build step.
+6. **`src/utils/version.test.ts`**:
+   - Update tests to validate semantic version formatting, short SHA handling, and GitHub URL generation.
 
 ---
 
 ## Verification Plan
 
 ### Automated Test Suite
-- Run `npm run lint` (`tsc --noEmit`) to verify 0 type errors.
-- Run `npm run test:unit` (`tsx --test "src/**/*.test.ts"`) to verify all unit tests pass.
-- Run `npm run build` to verify production Vite compilation and PWA service worker bundling.
+- Run `npm run lint` (`tsc --noEmit`) to ensure 0 type errors.
+- Run `npm run test:unit` (`tsx --test "src/**/*.test.ts"`) to verify all unit tests pass including updated `src/utils/version.test.ts`.
+- Run `npm run build` to verify Vite bundle compilation and PWA service worker generation.
 
-### Manual & E2E Verification
-- Open Sign In modal $\rightarrow$ click "Create Account" tab $\rightarrow$ verify only Name, Email, Password, Confirm Password, and Mobile number appear.
-- Fill in new user details $\rightarrow$ click "Create Account & Open Vessel Portal" $\rightarrow$ verify account is created and user lands on the Vessel Portal with vessel registration prompt.
-- Enter unregistered email on Sign In tab $\rightarrow$ submit $\rightarrow$ verify smooth transition to Create Account tab with email prefilled.
+### Manual & UI Verification
+- Verify header version badge displays `v1.2.0-<sha>` with environment indicator.
+- Click header badge to open Multi-Environment & Release Manager.
+- Inspect the new GitHub Release & Commit Verification card:
+  - Verify commit SHA and commit message are displayed.
+  - Click "Copy SHA" and verify clipboard confirmation.
+  - Verify "View on GitHub ↗" link targets `https://github.com/anthonywrather/ajwmes/commit/<sha>`.

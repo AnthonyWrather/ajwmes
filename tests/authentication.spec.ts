@@ -66,7 +66,8 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await passwordInput.fill('ajwmes2026');
 
     // 5. Submit credentials
-    await submitButton.click();
+    await submitButton.scrollIntoViewIfNeeded();
+    await submitButton.click({ force: true });
 
     // 6. Assert successful redirect to workspace / dashboard and verify account state
     // Admin role automatically routes to the Admin Operations Dashboard
@@ -107,12 +108,19 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await page.getByTestId('nav-signin-button').click();
     await page.getByTestId('auth-email-input').fill('anthonywrather@gmail.com');
     await page.getByTestId('auth-password-input').fill('ajwmes2026');
-    await page.getByTestId('auth-submit-button').click();
+    const adminSubmitButton = page.getByTestId('auth-submit-button');
+    await adminSubmitButton.scrollIntoViewIfNeeded();
+    await adminSubmitButton.click({ force: true });
     await expect(page.getByTestId('admin-dashboard')).toBeVisible({ timeout: 10000 });
 
     // 2. Open User Account Dropdown and click Manage Account & Specs
-    await page.getByTestId('user-account-button').click();
-    await page.getByTestId('nav-manage-account-button').click();
+    const userAccountBtn = page.getByTestId('user-account-button');
+    await userAccountBtn.scrollIntoViewIfNeeded();
+    await userAccountBtn.click({ force: true });
+
+    const manageAccountBtn = page.getByTestId('nav-manage-account-button');
+    await manageAccountBtn.scrollIntoViewIfNeeded();
+    await manageAccountBtn.click({ force: true });
 
     // 3. Verify Account modal is open
     const accountModal = page.getByTestId('account-management-modal');
@@ -217,4 +225,34 @@ test.describe('Landing & Authentication E2E Flows', () => {
     // 8. Verify user is on the Vessel Portal route
     await expect(page.getByText('Boat Owner Vessel Portal')).toBeVisible();
   });
+
+  test('should display GitHub commit-linked version in header and open Multi-Environment Manager', async ({ page }) => {
+    await page.goto('/');
+
+    // 1. Verify header version badge displays SemVer with commit SHA
+    const headerBadge = page.getByTestId('header-version-badge');
+    await expect(headerBadge).toBeVisible();
+    await expect(headerBadge).toHaveText(/v\d+\.\d+\.\d+-[a-f0-9]+/i);
+
+    // 2. Click version badge to open Environment Settings Modal
+    await headerBadge.click();
+
+    // 3. Verify modal version tag matches
+    const modalVersionTag = page.getByTestId('modal-version-tag');
+    await expect(modalVersionTag).toBeVisible();
+    await expect(modalVersionTag).toHaveText(/v\d+\.\d+\.\d+-[a-f0-9]+/i);
+
+    // 4. Verify GitHub commit verification card is present with SHA and links
+    const commitCard = page.getByTestId('github-commit-card');
+    await expect(commitCard).toBeVisible();
+
+    const commitSha = page.getByTestId('github-commit-sha');
+    await expect(commitSha).toBeVisible();
+    await expect(commitSha).toHaveText(/^[a-f0-9]{7}$/i);
+
+    const githubLink = page.getByTestId('view-github-commit-link');
+    await expect(githubLink).toBeVisible();
+    await expect(githubLink).toHaveAttribute('href', /https:\/\/github\.com\/anthonywrather\/ajwmes\/commit\/[a-f0-9]+/i);
+  });
 });
+

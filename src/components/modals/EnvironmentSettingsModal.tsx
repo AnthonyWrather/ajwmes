@@ -17,7 +17,8 @@ import {
   Copy,
   Check,
   Key,
-  ExternalLink
+  ExternalLink,
+  GitCommit
 } from 'lucide-react';
 import { 
   detectEnvironment, 
@@ -26,7 +27,20 @@ import {
   AppEnvironment, 
   EnvironmentInfo 
 } from '../../lib/environment';
-import { APP_VERSION, RELEASE_CHANNEL, RELEASE_BUILD_DATE } from '../../version';
+import { 
+  APP_VERSION, 
+  RELEASE_CHANNEL, 
+  RELEASE_BUILD_DATE,
+  FULL_VERSION_TAG,
+  GIT_COMMIT_SHA,
+  GIT_COMMIT_FULL_SHA,
+  GIT_COMMIT_MESSAGE,
+  GIT_BRANCH,
+  GITHUB_REPO,
+  getGitHubCommitUrl,
+  getGitHubRepoUrl,
+  getGitHubReleasesUrl
+} from '../../version';
 import { 
   exportEnvironmentData, 
   importEnvironmentData, 
@@ -62,6 +76,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   const [envInfo, setEnvInfo] = useState<EnvironmentInfo>(() => detectEnvironment());
   const [activeTab, setActiveTab] = useState<'overview' | 'testdata' | 'guide'>('overview');
   const [copiedJson, setCopiedJson] = useState(false);
+  const [copiedSha, setCopiedSha] = useState(false);
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [actionSuccessNotice, setActionSuccessNotice] = useState<string | null>(null);
@@ -130,6 +145,12 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
     setTimeout(() => setCopiedJson(false), 3000);
   };
 
+  const handleCopySha = () => {
+    navigator.clipboard.writeText(GIT_COMMIT_FULL_SHA);
+    setCopiedSha(true);
+    setTimeout(() => setCopiedSha(false), 2500);
+  };
+
   const handleImportJson = () => {
     try {
       const parsed = JSON.parse(importText) as ExportedEnvironmentData;
@@ -162,15 +183,18 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                 <h2 className="text-base font-bold text-white">
                   Multi-Environment &amp; Release Manager
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-sky-950 border border-sky-500/40 text-[10px] font-mono text-sky-300 font-bold">
-                  v{APP_VERSION}
+                <span 
+                  data-testid="modal-version-tag"
+                  className="px-2 py-0.5 rounded-full bg-sky-950 border border-sky-500/40 text-[10px] font-mono text-sky-300 font-bold"
+                >
+                  {FULL_VERSION_TAG}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300 capitalize">
                   {RELEASE_CHANNEL}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Track releases across AI Studio Dev, Shared Preview, PR Staging, and Production Live (Build: {RELEASE_BUILD_DATE})
+                Track releases across AI Studio Dev, Shared Preview, PR Staging, and Production Live (Commit: <span className="font-mono text-sky-300 font-semibold">{GIT_COMMIT_SHA}</span> · Build: {RELEASE_BUILD_DATE})
               </p>
             </div>
           </div>
@@ -292,6 +316,105 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                         Retry Connect
                       </button>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* GitHub Release & Commit Linkage Card */}
+              <div 
+                data-testid="github-commit-card"
+                className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GitCommit className="w-4 h-4 text-sky-400" />
+                    <span className="font-bold text-white">GitHub Release &amp; Commit Verification</span>
+                  </div>
+                  <a
+                    href={getGitHubRepoUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-sky-400 hover:text-sky-300 transition-colors"
+                    title={`View ${GITHUB_REPO} on GitHub`}
+                  >
+                    <span>{GITHUB_REPO}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  {/* Commit SHA & Copy */}
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 block">Commit Hash</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span 
+                        data-testid="github-commit-sha"
+                        className="font-mono text-xs font-bold text-sky-300 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-500/30"
+                      >
+                        {GIT_COMMIT_SHA}
+                      </span>
+                      <button
+                        data-testid="copy-commit-sha-button"
+                        onClick={handleCopySha}
+                        className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                        title="Copy full commit SHA to clipboard"
+                      >
+                        {copiedSha ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Git Branch */}
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 block">Active Branch</span>
+                    <div className="flex items-center gap-1.5 text-xs font-mono font-semibold text-slate-200">
+                      <GitBranch className="w-3.5 h-3.5 text-purple-400" />
+                      <span>{GIT_BRANCH}</span>
+                    </div>
+                  </div>
+
+                  {/* App Full Tag */}
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 block">Release Tag</span>
+                    <span className="text-xs font-mono font-bold text-amber-300 block truncate">
+                      {FULL_VERSION_TAG}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Commit Message */}
+                <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block mb-1">Commit Message</span>
+                  <p className="text-xs text-slate-300 font-sans italic truncate" title={GIT_COMMIT_MESSAGE}>
+                    "{GIT_COMMIT_MESSAGE}"
+                  </p>
+                </div>
+
+                {/* Action Links */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/60">
+                  <span className="text-[11px] text-slate-400">
+                    Live target commit for <span className="font-semibold text-slate-200">{envInfo.envName}</span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <a
+                      data-testid="view-github-commit-link"
+                      href={getGitHubCommitUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-colors cursor-pointer"
+                    >
+                      <span>View Commit on GitHub</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <a
+                      href={getGitHubReleasesUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-xs border border-slate-700 transition-colors cursor-pointer"
+                    >
+                      <span>Releases</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 </div>
               </div>

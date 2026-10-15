@@ -21,7 +21,7 @@ import {
 import { ROLE_CONFIGS } from '../lib/auth';
 import { canAccessRoute } from '../lib/rbac';
 import { detectEnvironment, getEnvironmentBadge } from '../lib/environment';
-import { APP_VERSION } from '../version';
+import { APP_VERSION, FULL_VERSION_TAG, GIT_COMMIT_SHA } from '../version';
 import { Layers } from 'lucide-react';
 
 interface NavigationProps {
@@ -100,11 +100,11 @@ export const Navigation: React.FC<NavigationProps> = ({
           <button
             data-testid="header-version-badge"
             onClick={onOpenEnvironmentSettings}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-mono font-medium transition-all cursor-pointer shadow-xs active:scale-95 group ${envBadge.badgeClass}`}
-            title={`Release v${APP_VERSION} [${envBadge.label}] · ${envInfo.envName} · Click to manage environments`}
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-mono font-medium transition-all cursor-pointer shadow-xs active:scale-95 group ${envBadge.badgeClass}`}
+            title={`Release ${FULL_VERSION_TAG} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Click to open Multi-Environment & Release Manager`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${envBadge.dotColor} animate-pulse`} />
-            <span className="font-bold tracking-tight text-white group-hover:underline">v{APP_VERSION}</span>
+            <span className="font-bold tracking-tight text-white group-hover:underline">{FULL_VERSION_TAG}</span>
             <span className="opacity-30">|</span>
             <span className="uppercase text-[9px] font-semibold tracking-wider">{envBadge.shortLabel}</span>
           </button>

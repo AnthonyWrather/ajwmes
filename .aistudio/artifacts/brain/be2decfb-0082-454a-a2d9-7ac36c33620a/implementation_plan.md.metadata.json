@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan for restructuring the Sign On portal by renaming the Register Vessel tab to Create Account, removing vessel-specific fields, streamlining account creation, and routing newly registered users directly to the dedicated Vessel Portal.",
-  "updatedAt": "2026-10-15T16:05:22.860293702Z",
+  "summary": "Comprehensive architecture and implementation plan to synchronize application versioning with GitHub commits, injecting short commit hashes into SemVer tags (e.g. v1.2.0-8ba2ee3), and establishing direct GitHub commit links, commit message displays, and SHA copy utilities in the header and Multi-Environment & Release Manager.",
+  "updatedAt": "2026-10-15T17:03:40.715300164Z",
   "requestFeedback": true,
   "userFacing": true
 }

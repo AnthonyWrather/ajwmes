@@ -6,14 +6,78 @@ import dotenv from 'dotenv';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+import { execSync } from 'child_process';
+
 // Explicitly parse local .env file so that correct project variables
 // take precedence over any stale container environment variables
 const envPath = path.resolve(import.meta.dirname ?? '.', '.env');
 const localEnv = fs.existsSync(envPath) ? dotenv.parse(fs.readFileSync(envPath)) : {};
 
+// Extract Git commit metadata with CI env variable precedence and local CLI fallbacks
+function getGitMetadata() {
+  let commitSha = (process.env.VITE_GIT_COMMIT_SHA || process.env.GITHUB_SHA || localEnv.VITE_GIT_COMMIT_SHA || '').trim();
+  let commitMessage = (process.env.VITE_GIT_COMMIT_MESSAGE || localEnv.VITE_GIT_COMMIT_MESSAGE || '').trim();
+  let branch = (process.env.VITE_GIT_BRANCH || process.env.GITHUB_REF_NAME || localEnv.VITE_GIT_BRANCH || '').trim();
+
+  try {
+    if (!commitSha) {
+      commitSha = execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }).toString().trim();
+    }
+  } catch {
+    // Git unavailable or container without git history
+  }
+
+  try {
+    if (!commitMessage) {
+      commitMessage = execSync('git log -1 --pretty=%s', { stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }).toString().trim();
+    }
+  } catch {
+    // fallback
+  }
+
+  try {
+    if (!branch) {
+      branch = execSync('git rev-parse --abbrev-ref HEAD', { stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }).toString().trim();
+    }
+  } catch {
+    // fallback
+  }
+
+  const shortSha = commitSha ? (commitSha.length > 7 ? commitSha.slice(0, 7) : commitSha) : '8ba2ee3';
+
+  return {
+    commitSha: shortSha,
+    fullSha: commitSha || shortSha,
+    commitMessage: commitMessage || 'feat: synchronize release versioning with github commits',
+    branch: branch && branch !== 'HEAD' ? branch : 'main',
+    repo: process.env.VITE_GITHUB_REPO || localEnv.VITE_GITHUB_REPO || 'anthonywrather/ajwmes',
+    buildDate: new Date().toISOString().split('T')[0]
+  };
+}
+
+let appVersion = '1.2.0';
+try {
+  const pkgPath = path.resolve(import.meta.dirname ?? '.', 'package.json');
+  if (fs.existsSync(pkgPath)) {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    if (pkg.version) appVersion = pkg.version;
+  }
+} catch {
+  // fallback
+}
+
+const gitMeta = getGitMetadata();
+
 export default defineConfig(() => {
   return {
     define: {
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+      'import.meta.env.VITE_GIT_COMMIT_SHA': JSON.stringify(gitMeta.commitSha),
+      'import.meta.env.VITE_GIT_COMMIT_FULL_SHA': JSON.stringify(gitMeta.fullSha),
+      'import.meta.env.VITE_GIT_COMMIT_MESSAGE': JSON.stringify(gitMeta.commitMessage),
+      'import.meta.env.VITE_GIT_BRANCH': JSON.stringify(gitMeta.branch),
+      'import.meta.env.VITE_GITHUB_REPO': JSON.stringify(gitMeta.repo),
+      'import.meta.env.VITE_BUILD_DATE': JSON.stringify(gitMeta.buildDate),
       'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(localEnv.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || ''),
       'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(localEnv.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'gen-lang-client-0618772940'),
       'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(localEnv.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID || '1:310512231306:web:35ac83e7f7f56d49a39e73'),

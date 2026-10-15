@@ -99,6 +99,10 @@ jobs:
       - name: Build Production Assets
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_GIT_COMMIT_SHA: ${{ github.sha }}
+          VITE_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          VITE_GIT_BRANCH: ${{ github.ref_name }}
+          VITE_GITHUB_REPO: 'anthonywrather/ajwmes'
         run: npm run build
 
       - name: Deploy to Firebase Hosting
