@@ -1,4 +1,4 @@
-import { CatalogItem, CategoryItem, JobRecord, SwitchPanelConfig, VesselSpec, PostalOrder, UserProfile } from '../types';
+import { CatalogItem, CategoryItem, JobRecord, SwitchPanelConfig, VesselSpec, PostalOrder, UserProfile, JobExpense } from '../types';
 
 export const DEFAULT_CATEGORIES: CategoryItem[] = [
   {
@@ -1004,4 +1004,98 @@ export const DEFAULT_TEST_ACCOUNTS: UserProfile[] = [
 ];
 
 export const INITIAL_TEST_ACCOUNTS = DEFAULT_TEST_ACCOUNTS;
+
+export const INITIAL_EXPENSES: JobExpense[] = [
+  {
+    id: 'exp-101',
+    jobId: 'job-101',
+    jobReference: 'AJW-2026-088',
+    vesselName: 'Windbird III',
+    clientName: 'David Mercer',
+    category: 'fuel',
+    description: 'Workshop mobile van diesel: Gosport workshop to Haslar Marina return trips (42 miles)',
+    amount: 28.50,
+    date: '2026-10-06',
+    vendor: 'Shell Gosport Road',
+    receiptReference: 'REC-SHL-8491',
+    isBillableToClient: false,
+    paymentMethod: 'fuel_card',
+    status: 'recorded',
+    notes: 'Standard operational van mileage overhead.',
+    createdAt: '2026-10-06 14:30'
+  },
+  {
+    id: 'exp-102',
+    jobId: 'job-101',
+    jobReference: 'AJW-2026-088',
+    vesselName: 'Windbird III',
+    clientName: 'David Mercer',
+    category: 'subcontractor',
+    description: 'Specialist marine rigger - masthead wind transducer cable pull assist through conduit',
+    amount: 160.00,
+    date: '2026-10-07',
+    vendor: 'Solent Rigging & Marine Services Ltd',
+    receiptReference: 'INV-SRM-2026-44',
+    isBillableToClient: true,
+    paymentMethod: 'bacs_transfer',
+    status: 'billed',
+    notes: 'Required two-man hoist for safe mast ascent and conduit feeder line retrieval.',
+    createdAt: '2026-10-07 16:15'
+  },
+  {
+    id: 'exp-103',
+    jobId: 'job-102',
+    jobReference: 'AJW-2026-089',
+    vesselName: 'Sea Sprite',
+    clientName: 'Mark Henderson',
+    category: 'travel',
+    description: 'Red Funnel vehicle ferry crossing (Southampton to East Cowes) for pontoon switchboard template validation',
+    amount: 64.00,
+    date: '2026-10-07',
+    vendor: 'Red Funnel Ferries',
+    receiptReference: 'RF-TKT-99218',
+    isBillableToClient: true,
+    paymentMethod: 'company_card',
+    status: 'recorded',
+    notes: 'Pre-approved travel expense for on-site CAD verification.',
+    createdAt: '2026-10-07 10:45'
+  },
+  {
+    id: 'exp-104',
+    jobId: 'job-103',
+    jobReference: 'AJW-2026-090',
+    vesselName: 'Kestrel of Hamble',
+    clientName: 'Sarah Jenkins',
+    category: 'equipment_hire',
+    description: 'FLIR thermal imaging camera & calibration kit rental for high-amperage parasitic drain analysis',
+    amount: 45.00,
+    date: '2026-10-07',
+    vendor: 'Solent Test Equipment Hire',
+    receiptReference: 'STE-HIR-1092',
+    isBillableToClient: false,
+    paymentMethod: 'company_card',
+    status: 'recorded',
+    notes: 'Traced parasitic drain to corroded bilge pump float switch circuit.',
+    createdAt: '2026-10-07 13:00'
+  },
+  {
+    id: 'exp-105',
+    jobId: 'job-101',
+    jobReference: 'AJW-2026-088',
+    vesselName: 'Windbird III',
+    clientName: 'David Mercer',
+    category: 'berthing_harbor',
+    description: 'Contractor day-berth and tender pontoon access fee at Haslar Marina',
+    amount: 18.00,
+    date: '2026-10-06',
+    vendor: 'Boatfolk Haslar Marina',
+    receiptReference: 'HAS-BF-3329',
+    isBillableToClient: true,
+    paymentMethod: 'company_card',
+    status: 'billed',
+    notes: 'Commercial pontoon day pass for workshop support tender.',
+    createdAt: '2026-10-06 09:30'
+  }
+];
+
 

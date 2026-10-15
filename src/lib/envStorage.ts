@@ -6,7 +6,8 @@ import {
   INITIAL_POSTAL_ORDERS, 
   INITIAL_VESSEL_SPEC, 
   INITIAL_SAMPLE_PANEL,
-  DEFAULT_VESSELS
+  DEFAULT_VESSELS,
+  INITIAL_EXPENSES
 } from '../data/seedData';
 import { DEMO_PROFILES } from './auth';
 import { 
@@ -20,7 +21,7 @@ import {
   AI_STUDIO_PREVIEW_USERS,
   GITHUB_LIVE_PROD_USERS
 } from '../data/environmentTestData';
-import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, CartItem, UserProfile } from '../types';
+import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, CartItem, UserProfile, JobExpense } from '../types';
 
 /**
  * Scoped Local Storage Manager with Environment Partitioning
@@ -41,6 +42,7 @@ export interface ExportedEnvironmentData {
   vesselSpec: VesselSpec;
   cart?: CartItem[];
   usersList?: UserProfile[];
+  expenses?: JobExpense[];
 }
 
 /**
@@ -124,7 +126,8 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
-        users: AI_STUDIO_DEV_USERS
+        users: AI_STUDIO_DEV_USERS,
+        expenses: INITIAL_EXPENSES
       };
 
     case 'aistudio-preview':
@@ -135,7 +138,8 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
-        users: AI_STUDIO_PREVIEW_USERS
+        users: AI_STUDIO_PREVIEW_USERS,
+        expenses: INITIAL_EXPENSES
       };
 
     case 'github-preview':
@@ -146,7 +150,8 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: DEFAULT_VESSELS,
         catalog: DEFAULT_CATALOG,
         categories: DEFAULT_CATEGORIES,
-        users: DEMO_PROFILES.map(u => ({ ...u, environment: 'github-preview' }))
+        users: DEMO_PROFILES.map(u => ({ ...u, environment: 'github-preview' })),
+        expenses: INITIAL_EXPENSES
       };
 
     case 'github-deployed':
@@ -164,7 +169,8 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
         vessels: [],
         catalog: [],
         categories: [],
-        users: GITHUB_LIVE_PROD_USERS
+        users: GITHUB_LIVE_PROD_USERS,
+        expenses: []
       };
   }
 }
@@ -180,6 +186,7 @@ export function resetEnvironmentToTestData(envCode?: AppEnvironment): {
   vesselSpec: VesselSpec;
   vessels: VesselSpec[];
   users: UserProfile[];
+  expenses: JobExpense[];
 } {
   const seed = getEnvironmentSeedData(envCode);
   setEnvStorageItem('jobs', seed.jobs, envCode);
@@ -189,6 +196,7 @@ export function resetEnvironmentToTestData(envCode?: AppEnvironment): {
   setEnvStorageItem('vessel_spec', seed.vesselSpec, envCode);
   setEnvStorageItem('vessels', seed.vessels, envCode);
   setEnvStorageItem('users_list', seed.users, envCode);
+  setEnvStorageItem('expenses', seed.expenses, envCode);
   setEnvStorageItem('cart', [], envCode);
   return seed;
 }
@@ -210,6 +218,7 @@ export function exportEnvironmentData(envCode?: AppEnvironment): ExportedEnviron
     vesselSpec: getEnvStorageItem('vessel_spec', seed.vesselSpec, currentEnv),
     cart: getEnvStorageItem('cart', [], currentEnv),
     usersList: getEnvStorageItem('users_list', seed.users, currentEnv),
+    expenses: getEnvStorageItem('expenses', seed.expenses, currentEnv),
   };
 }
 
@@ -233,6 +242,9 @@ export function importEnvironmentData(data: Partial<ExportedEnvironmentData>, en
     }
     if (data.usersList && Array.isArray(data.usersList)) {
       setEnvStorageItem('users_list', data.usersList, currentEnv);
+    }
+    if (data.expenses && Array.isArray(data.expenses)) {
+      setEnvStorageItem('expenses', data.expenses, currentEnv);
     }
     if (data.cart && Array.isArray(data.cart)) {
       setEnvStorageItem('cart', data.cart, currentEnv);

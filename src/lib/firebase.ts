@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
 import { detectEnvironment } from './environment';
-import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState, CustomerSignOffRecord, MaterialLineItem } from '../types';
+import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, UserProfile, FirestoreConnectionState, CustomerSignOffRecord, MaterialLineItem, JobExpense } from '../types';
 import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, DEFAULT_TEST_ACCOUNTS } from '../data/seedData';
 import { AI_STUDIO_DEV_USERS, AI_STUDIO_PREVIEW_USERS, GITHUB_LIVE_PROD_USERS } from '../data/environmentTestData';
 
@@ -611,6 +611,83 @@ export async function syncPostalOrderToFirestore(order: PostalOrder) {
     updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+export function subscribeExpenses(onUpdate: (expenses: JobExpense[]) => void) {
+  if (!firebaseConfig.apiKey) {
+    return () => {};
+  }
+  const colPath = getScopedCollection('expenses');
+  return onSnapshot(
+    collection(db, colPath),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const expenses = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            ...data,
+            id: docSnap.id,
+            amount: typeof data.amount === 'number' ? data.amount : 0,
+            isBillableToClient: Boolean(data.isBillableToClient)
+          } as JobExpense;
+        });
+        onUpdate(expenses);
+      }
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+    },
+    (error) => {
+      if (error instanceof Error && (error.message.includes('offline') || error.message.includes('unavailable'))) {
+        updateConnectionState({ isConnected: false, errorMessage: error.message });
+      }
+      handleFirestoreError(error, OperationType.GET, colPath);
+    }
+  );
+}
+
+export async function syncExpenseToFirestore(expense: JobExpense) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('expenses');
+  const docPath = `${colPath}/${expense.id}`;
+  try {
+    await setDoc(doc(db, colPath, expense.id), cleanForFirestore(expense), { merge: true });
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+export async function deleteExpenseFromFirestore(expenseId: string) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('expenses');
+  const docPath = `${colPath}/${expenseId}`;
+  try {
+    await deleteDoc(doc(db, colPath, expenseId));
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, docPath);
+  }
+}
+
+export async function seedExpensesToFirestore(expenses: JobExpense[]) {
+  if (!firebaseConfig.apiKey) return;
+  const colPath = getScopedCollection('expenses');
+  try {
+    const existing = await getDocs(collection(db, colPath));
+    if (existing.empty) {
+      const batch = writeBatch(db);
+      for (const exp of expenses) {
+        batch.set(doc(db, colPath, exp.id), cleanForFirestore(exp));
+      }
+      await batch.commit();
+    }
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, colPath);
   }
 }
 

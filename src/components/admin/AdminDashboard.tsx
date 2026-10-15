@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, CategoryItem, PostalOrder, StockAlert, UserProfile, UserRole } from '../../types';
+import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, CategoryItem, PostalOrder, StockAlert, UserProfile, UserRole, JobExpense } from '../../types';
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { DiagnosticTimerModal } from './DiagnosticTimerModal';
 import { InventoryManager } from './InventoryManager';
 import { PrintLaserAssetStudio } from './PrintLaserAssetStudio';
 import { PostalOrdersManager } from './PostalOrdersManager';
 import { UserAccountsManager } from './UserAccountsManager';
+import { ExpensesManager } from './ExpensesManager';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
 import { 
   Wrench, 
@@ -28,7 +29,8 @@ import {
   Download, 
   ExternalLink, 
   Loader2,
-  Users
+  Users,
+  Receipt
 } from 'lucide-react';
 import { uploadSwitchPanelImage, isFirebaseStorageUrl, formatFileSize } from '../../lib/storage';
 import { detectEnvironment } from '../../lib/environment';
@@ -59,6 +61,10 @@ interface AdminDashboardProps {
   onAddCategory?: (category: CategoryItem) => void;
   onEditCategory?: (oldId: string, updatedCategory: CategoryItem) => void;
   onDeleteCategory?: (categoryId: string, reassignToCategoryId?: string) => void;
+  expenses?: JobExpense[];
+  onCreateExpense?: (expense: Omit<JobExpense, 'id' | 'createdAt'>) => void;
+  onUpdateExpense?: (expense: JobExpense) => void;
+  onDeleteExpense?: (expenseId: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -69,6 +75,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   postalOrders,
   stockAlerts = [],
   users = [],
+  expenses = [],
   onSendMessage,
   onSaveJobSheet,
   onUpdateCatalog,
@@ -86,10 +93,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDeleteCatalogItem,
   onAddCategory,
   onEditCategory,
-  onDeleteCategory
+  onDeleteCategory,
+  onCreateExpense,
+  onUpdateExpense,
+  onDeleteExpense
 }) => {
-  const [activeAdminTab, setActiveAdminTab] = useState<'jobs' | 'catalog' | 'orders' | 'accounts' | 'print' | 'panels'>('jobs');
+  const [activeAdminTab, setActiveAdminTab] = useState<'jobs' | 'catalog' | 'orders' | 'expenses' | 'accounts' | 'print' | 'panels'>('jobs');
   const [selectedJobId, setSelectedJobId] = useState<string>(jobs[0]?.id || '');
+  const [focusedExpenseJobId, setFocusedExpenseJobId] = useState<string>('');
   const [activeTimerJob, setActiveTimerJob] = useState<JobRecord | null>(null);
 
   // Lightbox Modal State
@@ -248,6 +259,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
 
           <button
+            onClick={() => {
+              setFocusedExpenseJobId('');
+              setActiveAdminTab('expenses');
+            }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeAdminTab === 'expenses' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            <span>Expenses ({expenses.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveAdminTab('panels')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAdminTab === 'panels' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
@@ -343,7 +367,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Total Workload</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-white mt-1 block">
@@ -364,6 +388,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             £{totalBilled.toFixed(2)}
           </span>
           <span className="text-[10px] text-slate-500 mt-0.5 block">Labor &amp; hardware parts</span>
+        </div>
+        <div 
+          onClick={() => {
+            setFocusedExpenseJobId('');
+            setActiveAdminTab('expenses');
+          }}
+          className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl cursor-pointer hover:border-amber-500/50 transition-colors"
+          title="View all non-catalog job expenses"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 block">Non-Catalog Exp</span>
+            <Receipt className="w-3 h-3 text-amber-400" />
+          </div>
+          <span className="text-xl sm:text-2xl font-bold font-mono text-amber-400 mt-1 block">
+            £{expenses.reduce((sum, e) => sum + (e.amount || 0), 0).toFixed(2)}
+          </span>
+          <span className="text-[10px] text-slate-500 mt-0.5 block">{expenses.length} out-of-pocket costs</span>
         </div>
         <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Pending Quotes</span>
@@ -427,6 +468,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   )}
 
+                  {(() => {
+                    const jobExpItems = expenses.filter(e => e.jobId === job.id);
+                    const jobExpSum = jobExpItems.reduce((sum, e) => sum + (e.amount || 0), 0);
+                    if (jobExpItems.length === 0) return null;
+                    return (
+                      <div className="flex items-center gap-1.5 text-[11px] text-amber-400 font-mono">
+                        <Receipt className="w-3.5 h-3.5" />
+                        <span>£{jobExpSum.toFixed(2)} non-catalog exp ({jobExpItems.length} items)</span>
+                      </div>
+                    );
+                  })()}
+
                   <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-slate-400">{job.diagnosticHours ?? 0}h Logged</span>
@@ -436,16 +489,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </span>
                     </div>
 
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setActiveTimerJob(job);
-                      }}
-                      className="px-2.5 py-1 bg-sky-600/20 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/30 rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1"
-                    >
-                      <Clock className="w-3 h-3" />
-                      <span>Log Labor/Parts</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setFocusedExpenseJobId(job.id);
+                          setActiveAdminTab('expenses');
+                        }}
+                        className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Manage expenses for this job"
+                      >
+                        <Receipt className="w-3 h-3 text-amber-400" />
+                        <span>Exp</span>
+                      </button>
+
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setActiveTimerJob(job);
+                        }}
+                        className="px-2.5 py-1 bg-sky-600/20 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/30 rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Clock className="w-3 h-3" />
+                        <span>Log Labor/Parts</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -461,6 +529,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   currentUserRole="admin"
                   onSendMessage={onSendMessage}
                 />
+
+                {/* Non-Catalog Job Expenses Summary Box for Selected Job */}
+                {(() => {
+                  const jobExpenses = expenses.filter(e => e.jobId === selectedJob.id);
+                  const jobExpensesTotal = jobExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+                  const billableTotal = jobExpenses.filter(e => e.isBillableToClient).reduce((sum, e) => sum + (e.amount || 0), 0);
+
+                  return (
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Receipt className="w-4 h-4 text-amber-400" />
+                          <span className="font-bold text-white">Non-Catalog Job Expenses</span>
+                          <span className="font-mono text-amber-400 font-bold">
+                            £{jobExpensesTotal.toFixed(2)}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            ({jobExpenses.length} items · £{billableTotal.toFixed(2)} billable)
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                          Fuel, travel, and external sub-contractors linked to {selectedJob.vesselName}.
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setFocusedExpenseJobId(selectedJob.id);
+                          setActiveAdminTab('expenses');
+                        }}
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                      >
+                        <Receipt className="w-3.5 h-3.5" />
+                        <span>Manage Job Expenses</span>
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {/* Anthony's Workshop Proof Upload Box */}
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
@@ -594,6 +700,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Tab: Non-Catalog Job Expenses */}
+      {activeAdminTab === 'expenses' && (
+        <ExpensesManager
+          expenses={expenses}
+          jobs={jobs}
+          onCreateExpense={onCreateExpense || (() => {})}
+          onUpdateExpense={onUpdateExpense || (() => {})}
+          onDeleteExpense={onDeleteExpense || (() => {})}
+          initialJobIdFilter={focusedExpenseJobId}
+        />
       )}
 
       {/* Tab: Online Postal Orders */}

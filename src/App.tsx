@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState, CustomerSignOffRecord } from './types';
-import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS, DEFAULT_VESSELS } from './data/seedData';
+import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState, CustomerSignOffRecord, JobExpense } from './types';
+import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS, DEFAULT_VESSELS, INITIAL_EXPENSES } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
 import { FirestoreSyncBanner } from './components/common/FirestoreSyncBanner';
@@ -70,6 +70,9 @@ import {
   syncUserToFirestore,
   seedUsersToFirestore,
   deleteUserFromFirestore,
+  subscribeExpenses,
+  syncExpenseToFirestore,
+  deleteExpenseFromFirestore,
   subscribeConnectionState,
   retryFirestoreConnection,
   toggleSimulatedOffline,
@@ -110,6 +113,10 @@ export default function App() {
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     return getEnvStorageItem('cart', []);
+  });
+
+  const [expenses, setExpenses] = useState<JobExpense[]>(() => {
+    return getEnvStorageItem('expenses', envSeed.expenses || INITIAL_EXPENSES);
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -365,6 +372,13 @@ export default function App() {
       setIsFirebaseConnected(true);
     });
 
+    const unsubExpenses = subscribeExpenses((remoteExpenses) => {
+      if (remoteExpenses && remoteExpenses.length > 0) {
+        setExpenses(remoteExpenses);
+      }
+      setIsFirebaseConnected(true);
+    });
+
     return () => {
       unsubJobs();
       unsubCatalog();
@@ -372,6 +386,7 @@ export default function App() {
       unsubOrders();
       unsubSpec();
       unsubUsers();
+      unsubExpenses();
     };
   }, []);
 
@@ -490,6 +505,10 @@ export default function App() {
   useEffect(() => {
     setEnvStorageItem('snapshots', snapshots);
   }, [snapshots]);
+
+  useEffect(() => {
+    setEnvStorageItem('expenses', expenses);
+  }, [expenses]);
 
   // Auto-dismiss toast after 7 seconds
   useEffect(() => {
@@ -868,6 +887,33 @@ export default function App() {
         return updated;
       })
     );
+  };
+
+  // Handlers: Manage Non-Catalog Job Expenses (Admin)
+  const handleCreateExpense = (newExpenseData: Omit<JobExpense, 'id' | 'createdAt'>) => {
+    const newExpense: JobExpense = {
+      ...newExpenseData,
+      id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      createdAt: new Date().toISOString()
+    };
+    setExpenses(prev => [newExpense, ...prev]);
+    syncExpenseToFirestore(newExpense).catch(err => {
+      console.warn('Expense offline sync queued:', err);
+    });
+  };
+
+  const handleUpdateExpense = (updatedExpense: JobExpense) => {
+    setExpenses(prev => prev.map(e => e.id === updatedExpense.id ? updatedExpense : e));
+    syncExpenseToFirestore(updatedExpense).catch(err => {
+      console.warn('Expense update offline sync queued:', err);
+    });
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    setExpenses(prev => prev.filter(e => e.id !== expenseId));
+    deleteExpenseFromFirestore(expenseId).catch(err => {
+      console.warn('Expense delete offline sync queued:', err);
+    });
   };
 
   // Handler: Submit Booking / Quote Request
@@ -1423,6 +1469,10 @@ export default function App() {
               onAddCategory={handleAddCategory}
               onEditCategory={handleEditCategory}
               onDeleteCategory={handleDeleteCategory}
+              expenses={expenses}
+              onCreateExpense={handleCreateExpense}
+              onUpdateExpense={handleUpdateExpense}
+              onDeleteExpense={handleDeleteExpense}
             />
           )}
 

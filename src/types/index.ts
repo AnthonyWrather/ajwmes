@@ -179,6 +179,35 @@ export interface SupplierPurchaseOrder {
   createdAt: string;
 }
 
+export type ExpenseCategory = 
+  | 'fuel'
+  | 'travel'
+  | 'subcontractor'
+  | 'berthing_harbor'
+  | 'equipment_hire'
+  | 'consumables'
+  | 'other';
+
+export interface JobExpense {
+  id: string;
+  jobId: string;
+  jobReference: string;
+  vesselName: string;
+  clientName?: string;
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  vendor?: string;
+  receiptReference?: string;
+  receiptUrl?: string;
+  isBillableToClient: boolean;
+  paymentMethod?: 'company_card' | 'cash' | 'bacs_transfer' | 'fuel_card' | 'personal_reimbursement';
+  status: 'recorded' | 'billed' | 'reimbursed';
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
 
 export interface CartItem {
   item: CatalogItem;
