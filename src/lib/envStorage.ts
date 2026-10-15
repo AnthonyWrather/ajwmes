@@ -21,7 +21,8 @@ import {
   AI_STUDIO_PREVIEW_USERS,
   GITHUB_LIVE_PROD_USERS
 } from '../data/environmentTestData';
-import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, CartItem, UserProfile, JobExpense } from '../types';
+import { JobRecord, CatalogItem, CategoryItem, PostalOrder, VesselSpec, CartItem, UserProfile, JobExpense, ImportMergeMode } from '../types';
+import { mergeCatalogItems, mergeCategories } from '../utils/inventorySync';
 
 /**
  * Scoped Local Storage Manager with Environment Partitioning
@@ -238,6 +239,7 @@ export function exportEnvironmentData(envCode?: AppEnvironment): ExportedEnviron
     environment: currentEnv,
     jobs: getEnvStorageItem('jobs', seed.jobs, currentEnv),
     catalog: getEnvStorageItem('catalog', seed.catalog, currentEnv),
+    categories: getEnvStorageItem('categories', seed.categories, currentEnv),
     postalOrders: getEnvStorageItem('postal_orders', seed.postalOrders, currentEnv),
     vesselSpec: getEnvStorageItem('vessel_spec', seed.vesselSpec, currentEnv),
     cart: getEnvStorageItem('cart', [], currentEnv),
@@ -258,6 +260,9 @@ export function importEnvironmentData(data: Partial<ExportedEnvironmentData>, en
     if (data.catalog && Array.isArray(data.catalog)) {
       setEnvStorageItem('catalog', data.catalog, currentEnv);
     }
+    if (data.categories && Array.isArray(data.categories)) {
+      setEnvStorageItem('categories', data.categories, currentEnv);
+    }
     if (data.postalOrders && Array.isArray(data.postalOrders)) {
       setEnvStorageItem('postal_orders', data.postalOrders, currentEnv);
     }
@@ -276,6 +281,64 @@ export function importEnvironmentData(data: Partial<ExportedEnvironmentData>, en
     return true;
   } catch (e) {
     console.error('Failed to import environment data:', e);
+    return false;
+  }
+}
+
+/**
+ * Exports only catalog items for current or specified environment
+ */
+export function exportCatalogItems(envCode?: AppEnvironment): CatalogItem[] {
+  const currentEnv = envCode || detectEnvironment().envCode;
+  const seed = getEnvironmentSeedData(currentEnv);
+  return getEnvStorageItem('catalog', seed.catalog, currentEnv);
+}
+
+/**
+ * Imports catalog items with either replace or merge strategy
+ */
+export function importCatalogItems(
+  items: CatalogItem[],
+  mode: ImportMergeMode = 'replace',
+  envCode?: AppEnvironment
+): boolean {
+  try {
+    const currentEnv = envCode || detectEnvironment().envCode;
+    const existing = exportCatalogItems(currentEnv);
+    const updated = mergeCatalogItems(existing, items, mode);
+    setEnvStorageItem('catalog', updated, currentEnv);
+    return true;
+  } catch (e) {
+    console.error('Failed to import catalog items:', e);
+    return false;
+  }
+}
+
+/**
+ * Exports only product categories for current or specified environment
+ */
+export function exportCategories(envCode?: AppEnvironment): CategoryItem[] {
+  const currentEnv = envCode || detectEnvironment().envCode;
+  const seed = getEnvironmentSeedData(currentEnv);
+  return getEnvStorageItem('categories', seed.categories, currentEnv);
+}
+
+/**
+ * Imports product categories with either replace or merge strategy
+ */
+export function importCategories(
+  categories: CategoryItem[],
+  mode: ImportMergeMode = 'replace',
+  envCode?: AppEnvironment
+): boolean {
+  try {
+    const currentEnv = envCode || detectEnvironment().envCode;
+    const existing = exportCategories(currentEnv);
+    const updated = mergeCategories(existing, categories, mode);
+    setEnvStorageItem('categories', updated, currentEnv);
+    return true;
+  } catch (e) {
+    console.error('Failed to import categories:', e);
     return false;
   }
 }

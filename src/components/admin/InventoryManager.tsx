@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { CatalogItem, CatalogSnapshot, CategoryItem } from '../../types';
+import { CatalogItem, CatalogSnapshot, CategoryItem, ImportMergeMode, ImportValidationResult } from '../../types';
 import { 
   Plus, 
   Download, 
@@ -26,7 +26,12 @@ import {
   Loader2,
   Cloud,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  FileSpreadsheet,
+  ChevronDown,
+  FileDown,
+  FileUp,
+  FileText
 } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../../data/seedData';
 import { 
@@ -35,6 +40,17 @@ import {
   isFirebaseStorageUrl, 
   formatFileSize 
 } from '../../lib/storage';
+import {
+  exportItemsToJson,
+  exportCategoriesToJson,
+  exportFullCatalogToJson,
+  parseAndValidateItemsJson,
+  parseAndValidateCategoriesJson,
+  mergeCatalogItems,
+  mergeCategories,
+  downloadJsonFile,
+  readJsonFile
+} from '../../utils/inventorySync';
 
 interface InventoryManagerProps {
   catalog: CatalogItem[];
@@ -51,6 +67,7 @@ interface InventoryManagerProps {
   onAddCategory?: (category: CategoryItem) => void;
   onEditCategory?: (oldId: string, updatedCategory: CategoryItem) => void;
   onDeleteCategory?: (categoryId: string, reassignToCategoryId?: string) => void;
+  onUpdateCategories?: (categories: CategoryItem[]) => void;
 }
 
 const PRESET_IMAGE_OPTIONS = [
@@ -79,13 +96,27 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   onDeleteCatalogItem,
   onAddCategory,
   onEditCategory,
-  onDeleteCategory
+  onDeleteCategory,
+  onUpdateCategories
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [snapshotLabel, setSnapshotLabel] = useState('');
   const [showSnapshotDrawer, setShowSnapshotDrawer] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [showSyncMenu, setShowSyncMenu] = useState(false);
+
+  // Standalone Items Import Modal State
+  const [isImportItemsModalOpen, setIsImportItemsModalOpen] = useState(false);
+  const [importItemsText, setImportItemsText] = useState('');
+  const [importItemsMode, setImportItemsMode] = useState<ImportMergeMode>('merge');
+  const [importItemsValidation, setImportItemsValidation] = useState<ImportValidationResult<CatalogItem[]> | null>(null);
+
+  // Standalone Categories Import Modal State
+  const [isImportCategoriesModalOpen, setIsImportCategoriesModalOpen] = useState(false);
+  const [importCategoriesText, setImportCategoriesText] = useState('');
+  const [importCategoriesMode, setImportCategoriesMode] = useState<ImportMergeMode>('merge');
+  const [importCategoriesValidation, setImportCategoriesValidation] = useState<ImportValidationResult<CategoryItem[]> | null>(null);
 
   // Item Modal State (Add or Edit)
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -215,42 +246,147 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     showNotification('New catalog snapshot save point created!');
   };
 
-  const handleDownloadBackupJSON = () => {
-    const backupData = {
-      exportedAt: new Date().toISOString(),
-      company: 'AJW Marine Electrical Services',
-      categories,
-      catalog,
-      snapshots
-    };
-
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ajwmes-catalog-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  // -------------------------------------------------------------
+  // Granular Stock & JSON Sync Handlers (Items, Categories, Full)
+  // -------------------------------------------------------------
+  const handleExportItemsJSON = () => {
+    const json = exportItemsToJson(catalog);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadJsonFile(`ajwmes-inventory-items-${dateStr}.json`, json);
+    showNotification(`Exported ${catalog.length} items to JSON for stock control.`);
   };
 
-  const handleUploadBackupJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExportCategoriesJSON = () => {
+    const json = exportCategoriesToJson(categories);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadJsonFile(`ajwmes-categories-${dateStr}.json`, json);
+    showNotification(`Exported ${categories.length} categories to JSON.`);
+  };
+
+  const handleExportFullBackupJSON = () => {
+    const json = exportFullCatalogToJson(catalog, categories, snapshots);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadJsonFile(`ajwmes-catalog-full-backup-${dateStr}.json`, json);
+    showNotification(`Exported full catalog backup (${catalog.length} items, ${categories.length} categories).`);
+  };
+
+  // Items Import State Handlers
+  const handleItemsTextChange = (text: string) => {
+    setImportItemsText(text);
+    if (!text.trim()) {
+      setImportItemsValidation(null);
+      return;
+    }
+    const result = parseAndValidateItemsJson(text);
+    setImportItemsValidation(result);
+  };
+
+  const handleItemsFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = event => {
-        try {
-          const parsed = JSON.parse(event.target?.result as string);
-          if (Array.isArray(parsed.catalog)) {
-            onUpdateCatalog(parsed.catalog);
-            showNotification(`Restored ${parsed.catalog.length} items from ${file.name}`);
-          }
-        } catch (err) {
-          alert('Invalid backup file. Please select a valid AJWMES catalog JSON.');
+      try {
+        const content = await readJsonFile(file);
+        setImportItemsText(content);
+        const result = parseAndValidateItemsJson(content);
+        setImportItemsValidation(result);
+      } catch (err: any) {
+        setImportItemsValidation({
+          success: false,
+          count: 0,
+          detectedType: 'unknown',
+          error: `File read error: ${err.message || 'Could not read file.'}`
+        });
+      }
+    }
+  };
+
+  const handleApplyImportItems = () => {
+    if (!importItemsValidation?.data) return;
+    const merged = mergeCatalogItems(catalog, importItemsValidation.data, importItemsMode);
+    onUpdateCatalog(merged);
+    showNotification(
+      `Successfully imported ${importItemsValidation.data.length} items (${importItemsMode === 'merge' ? 'Stock updated & merged' : 'Catalog replaced'}).`
+    );
+    setIsImportItemsModalOpen(false);
+    setImportItemsText('');
+    setImportItemsValidation(null);
+  };
+
+  // Categories Import State Handlers
+  const handleCategoriesTextChange = (text: string) => {
+    setImportCategoriesText(text);
+    if (!text.trim()) {
+      setImportCategoriesValidation(null);
+      return;
+    }
+    const result = parseAndValidateCategoriesJson(text);
+    setImportCategoriesValidation(result);
+  };
+
+  const handleCategoriesFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      try {
+        const content = await readJsonFile(file);
+        setImportCategoriesText(content);
+        const result = parseAndValidateCategoriesJson(content);
+        setImportCategoriesValidation(result);
+      } catch (err: any) {
+        setImportCategoriesValidation({
+          success: false,
+          count: 0,
+          detectedType: 'unknown',
+          error: `File read error: ${err.message || 'Could not read file.'}`
+        });
+      }
+    }
+  };
+
+  const handleApplyImportCategories = () => {
+    if (!importCategoriesValidation?.data) return;
+    const merged = mergeCategories(categories, importCategoriesValidation.data, importCategoriesMode);
+    if (onUpdateCategories) {
+      onUpdateCategories(merged);
+    }
+    showNotification(
+      `Successfully imported ${importCategoriesValidation.data.length} categories (${importCategoriesMode === 'merge' ? 'Merged & appended' : 'Replaced all'}).`
+    );
+    setIsImportCategoriesModalOpen(false);
+    setImportCategoriesText('');
+    setImportCategoriesValidation(null);
+  };
+
+  const handleUploadFullBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      try {
+        const content = await readJsonFile(file);
+        const itemsResult = parseAndValidateItemsJson(content);
+        const catsResult = parseAndValidateCategoriesJson(content);
+
+        let importedItemsCount = 0;
+        let importedCatsCount = 0;
+
+        if (itemsResult.success && itemsResult.data) {
+          onUpdateCatalog(itemsResult.data);
+          importedItemsCount = itemsResult.data.length;
         }
-      };
-      reader.readAsText(file);
+
+        if (catsResult.success && catsResult.data && onUpdateCategories) {
+          onUpdateCategories(catsResult.data);
+          importedCatsCount = catsResult.data.length;
+        }
+
+        if (importedItemsCount > 0 || importedCatsCount > 0) {
+          showNotification(
+            `Restored full catalog from ${file.name}: ${importedItemsCount} items and ${importedCatsCount} categories.`
+          );
+        } else {
+          alert('Could not detect valid items or categories in the selected backup file.');
+        }
+      } catch (err: any) {
+        alert(`Failed to parse backup file: ${err.message || 'Invalid JSON format.'}`);
+      }
     }
   };
 
@@ -582,26 +718,141 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             <span>Snapshots ({snapshots.length})</span>
           </button>
 
-          {/* Export / Import JSON */}
+          {/* Export Items Button */}
           <button
-            onClick={handleDownloadBackupJSON}
-            className="flex items-center gap-1 px-2.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 transition-colors"
-            title="Download full catalog backup JSON file"
+            onClick={handleExportItemsJSON}
+            data-testid="export-items-button"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/50 rounded-xl text-xs font-semibold text-slate-200 transition-colors"
+            title="Export catalog items as standalone JSON for stock control & spreadsheets"
           >
-            <Download className="w-3.5 h-3.5 text-slate-400" />
-            <span className="hidden sm:inline">Export</span>
+            <Download className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Export Items</span>
+            <span className="sm:hidden">Items</span>
           </button>
 
-          <label className="flex items-center gap-1 px-2.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 transition-colors cursor-pointer">
-            <Upload className="w-3.5 h-3.5 text-slate-400" />
-            <span className="hidden sm:inline">Import</span>
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleUploadBackupJSON}
-              className="hidden"
-            />
-          </label>
+          {/* Import Items Button */}
+          <button
+            onClick={() => {
+              setImportItemsText('');
+              setImportItemsValidation(null);
+              setIsImportItemsModalOpen(true);
+            }}
+            data-testid="import-items-button"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/50 rounded-xl text-xs font-semibold text-slate-200 transition-colors"
+            title="Import or restore items from JSON with stock merge or replace options"
+          >
+            <Upload className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Import Items</span>
+            <span className="sm:hidden">Import</span>
+          </button>
+
+          {/* More Sync & Backup Dropdown Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSyncMenu(!showSyncMenu)}
+              data-testid="sync-menu-button"
+              className="flex items-center gap-1 px-2.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 transition-colors"
+              title="More sync & backup options (Categories, Full Catalog)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+              <span>Data Sync</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+
+            {showSyncMenu && (
+              <div 
+                className="absolute right-0 mt-1 w-64 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-30 animate-in fade-in zoom-in-95 space-y-1"
+                data-testid="sync-menu-dropdown"
+              >
+                <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                  Item Stock (Google Sheets)
+                </div>
+                <button
+                  onClick={() => {
+                    setShowSyncMenu(false);
+                    handleExportItemsJSON();
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
+                >
+                  <Download className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Export Items JSON</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSyncMenu(false);
+                    setImportItemsText('');
+                    setImportItemsValidation(null);
+                    setIsImportItemsModalOpen(true);
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
+                >
+                  <Upload className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Import / Merge Items</span>
+                </button>
+
+                <div className="border-t border-slate-800 my-1"></div>
+                <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                  Product Categories
+                </div>
+                <button
+                  onClick={() => {
+                    setShowSyncMenu(false);
+                    handleExportCategoriesJSON();
+                  }}
+                  data-testid="dropdown-export-categories"
+                  className="w-full px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
+                >
+                  <Download className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Export Categories JSON</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSyncMenu(false);
+                    setImportCategoriesText('');
+                    setImportCategoriesValidation(null);
+                    setIsImportCategoriesModalOpen(true);
+                  }}
+                  data-testid="dropdown-import-categories"
+                  className="w-full px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
+                >
+                  <Upload className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Import Categories JSON</span>
+                </button>
+
+                <div className="border-t border-slate-800 my-1"></div>
+                <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                  Full Catalog Backup
+                </div>
+                <button
+                  onClick={() => {
+                    setShowSyncMenu(false);
+                    handleExportFullBackupJSON();
+                  }}
+                  data-testid="dropdown-export-full"
+                  className="w-full px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
+                >
+                  <Save className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Export Full Backup</span>
+                </button>
+                <label 
+                  data-testid="dropdown-import-full-label"
+                  className="w-full px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Restore Full Backup File</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={(e) => {
+                      setShowSyncMenu(false);
+                      handleUploadFullBackup(e);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1597,7 +1848,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
                   <Layers className="w-4 h-4" />
@@ -1609,15 +1860,41 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setIsCategoryModalOpen(false);
-                  setEditingCategory(null);
-                }}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportCategoriesJSON}
+                  data-testid="export-categories-button"
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 rounded-lg text-xs font-semibold text-indigo-300 transition-colors"
+                  title="Export categories as JSON"
+                >
+                  <Download className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Export</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportCategoriesText('');
+                    setImportCategoriesValidation(null);
+                    setIsImportCategoriesModalOpen(true);
+                  }}
+                  data-testid="import-categories-button"
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 rounded-lg text-xs font-semibold text-indigo-300 transition-colors"
+                  title="Import categories from JSON"
+                >
+                  <Upload className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Import</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsCategoryModalOpen(false);
+                    setEditingCategory(null);
+                  }}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg ml-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Subform: Add / Edit Category */}
@@ -1820,6 +2097,424 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Confirm Delete Category</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ============================================================= */}
+      {/* MODAL 5: IMPORT ITEMS (STANDALONE STOCK SYNC)                 */}
+      {/* ============================================================= */}
+      {isImportItemsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-sky-500/10 rounded-xl text-sky-400 border border-sky-500/20">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>Import Hardware Items &amp; Stock</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-sky-950 text-sky-300 border border-sky-500/30 font-mono">
+                      Stock Sync
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Sync stock levels from Google Sheets or restore items from an AJWMES JSON export.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsImportItemsModalOpen(false);
+                  setImportItemsText('');
+                  setImportItemsValidation(null);
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* File Upload Zone */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300">
+                Choose JSON File from Computer:
+              </label>
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-sky-500/60 bg-slate-950/50 hover:bg-slate-950 p-4 rounded-xl cursor-pointer transition-colors text-center">
+                <UploadCloud className="w-7 h-7 text-sky-400 mb-1" />
+                <span className="text-xs font-semibold text-slate-200">Click to browse or select .json file</span>
+                <span className="text-[11px] text-slate-500 mt-0.5">Compatible with .json arrays or AJWMES envelopes</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  data-testid="import-items-file-input"
+                  onChange={handleItemsFileSelect}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Paste JSON Textarea */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Or Paste JSON Data Directly:
+                </label>
+                {importItemsText && (
+                  <button
+                    type="button"
+                    onClick={() => handleItemsTextChange('')}
+                    className="text-[11px] text-slate-400 hover:text-white"
+                  >
+                    Clear Text
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={importItemsText}
+                onChange={e => handleItemsTextChange(e.target.value)}
+                data-testid="import-items-textarea"
+                placeholder='[&#10;  {&#10;    "id": "cable-10awg",&#10;    "name": "10 AWG Tinned Marine Cable",&#10;    "category": "cable",&#10;    "stockCount": 120,&#10;    "unitPrice": 4.50&#10;  }&#10;]'
+                rows={5}
+                className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white font-mono focus:outline-none focus:border-sky-500"
+              />
+            </div>
+
+            {/* Validation Feedback */}
+            {importItemsValidation && (
+              <div 
+                data-testid="import-items-validation"
+                className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                  importItemsValidation.success 
+                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' 
+                    : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-bold">
+                  {importItemsValidation.success ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Ready to import {importItemsValidation.count} items ({importItemsValidation.detectedType} detected)</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                      <span>{importItemsValidation.error}</span>
+                    </>
+                  )}
+                </div>
+
+                {importItemsValidation.warnings && importItemsValidation.warnings.length > 0 && (
+                  <div className="text-[11px] text-amber-300/90 pl-6 space-y-0.5 border-t border-slate-800/60 pt-1 mt-1">
+                    {importItemsValidation.warnings.slice(0, 3).map((w, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5">
+                        <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span>{w}</span>
+                      </div>
+                    ))}
+                    {importItemsValidation.warnings.length > 3 && (
+                      <div className="text-slate-400 italic">
+                        + {importItemsValidation.warnings.length - 3} more minor notices
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Import Strategy Selector */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300">
+                Choose Import Strategy:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label 
+                  data-testid="mode-merge"
+                  className={`p-3 rounded-xl border cursor-pointer transition-colors flex flex-col justify-between ${
+                    importItemsMode === 'merge'
+                      ? 'bg-sky-950/40 border-sky-500/60 ring-1 ring-sky-500/40'
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Merge &amp; Update Stock</span>
+                    </div>
+                    <input
+                      type="radio"
+                      name="importItemsMode"
+                      value="merge"
+                      checked={importItemsMode === 'merge'}
+                      onChange={() => setImportItemsMode('merge')}
+                      className="text-sky-500"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Ideal for Google Sheets updates. Updates matching SKUs/IDs, appends new items, and preserves photos.
+                  </p>
+                </label>
+
+                <label 
+                  data-testid="mode-replace"
+                  className={`p-3 rounded-xl border cursor-pointer transition-colors flex flex-col justify-between ${
+                    importItemsMode === 'replace'
+                      ? 'bg-rose-950/40 border-rose-500/60 ring-1 ring-rose-500/40'
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Replace Entire Catalog</span>
+                    </div>
+                    <input
+                      type="radio"
+                      name="importItemsMode"
+                      value="replace"
+                      checked={importItemsMode === 'replace'}
+                      onChange={() => setImportItemsMode('replace')}
+                      className="text-rose-500"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Completely overwrites all current items with the imported dataset.
+                  </p>
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportItemsModalOpen(false);
+                  setImportItemsText('');
+                  setImportItemsValidation(null);
+                }}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyImportItems}
+                disabled={!importItemsValidation?.success || !importItemsValidation?.data?.length}
+                data-testid="apply-import-items-button"
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-sky-950 cursor-pointer disabled:cursor-not-allowed transition-all"
+              >
+                <Check className="w-4 h-4" />
+                <span>Apply Items Import ({importItemsValidation?.count || 0})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* MODAL 6: IMPORT CATEGORIES (STANDALONE SYNC)                   */}
+      {/* ============================================================= */}
+      {isImportCategoriesModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>Import Product Categories</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-mono">
+                      Category Sync
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Import and organize marine hardware classifications independently.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsImportCategoriesModalOpen(false);
+                  setImportCategoriesText('');
+                  setImportCategoriesValidation(null);
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* File Upload Zone */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300">
+                Choose Categories JSON File:
+              </label>
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-indigo-500/60 bg-slate-950/50 hover:bg-slate-950 p-4 rounded-xl cursor-pointer transition-colors text-center">
+                <UploadCloud className="w-7 h-7 text-indigo-400 mb-1" />
+                <span className="text-xs font-semibold text-slate-200">Click to browse or select .json file</span>
+                <span className="text-[11px] text-slate-500 mt-0.5">Compatible with category arrays or AJWMES category exports</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  data-testid="import-categories-file-input"
+                  onChange={handleCategoriesFileSelect}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Paste JSON Textarea */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Or Paste Categories JSON Directly:
+                </label>
+                {importCategoriesText && (
+                  <button
+                    type="button"
+                    onClick={() => handleCategoriesTextChange('')}
+                    className="text-[11px] text-slate-400 hover:text-white"
+                  >
+                    Clear Text
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={importCategoriesText}
+                onChange={e => handleCategoriesTextChange(e.target.value)}
+                data-testid="import-categories-textarea"
+                placeholder='[&#10;  {&#10;    "id": "solar",&#10;    "label": "Solar Panels & Victron MPPT",&#10;    "description": "Rigid solar arrays, controllers & cables"&#10;  }&#10;]'
+                rows={4}
+                className="w-full bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-white font-mono focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            {/* Validation Feedback */}
+            {importCategoriesValidation && (
+              <div 
+                data-testid="import-categories-validation"
+                className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                  importCategoriesValidation.success 
+                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' 
+                    : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-bold">
+                  {importCategoriesValidation.success ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Ready to import {importCategoriesValidation.count} categories</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                      <span>{importCategoriesValidation.error}</span>
+                    </>
+                  )}
+                </div>
+
+                {importCategoriesValidation.warnings && importCategoriesValidation.warnings.length > 0 && (
+                  <div className="text-[11px] text-amber-300/90 pl-6 space-y-0.5 border-t border-slate-800/60 pt-1 mt-1">
+                    {importCategoriesValidation.warnings.slice(0, 3).map((w, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5">
+                        <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span>{w}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Import Strategy Selector */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300">
+                Choose Import Strategy:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label 
+                  data-testid="cat-mode-merge"
+                  className={`p-3 rounded-xl border cursor-pointer transition-colors flex flex-col justify-between ${
+                    importCategoriesMode === 'merge'
+                      ? 'bg-indigo-950/40 border-indigo-500/60 ring-1 ring-indigo-500/40'
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Merge &amp; Append</span>
+                    </div>
+                    <input
+                      type="radio"
+                      name="importCategoriesMode"
+                      value="merge"
+                      checked={importCategoriesMode === 'merge'}
+                      onChange={() => setImportCategoriesMode('merge')}
+                      className="text-indigo-500"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Updates matching category titles/descriptions and appends newly defined categories.
+                  </p>
+                </label>
+
+                <label 
+                  data-testid="cat-mode-replace"
+                  className={`p-3 rounded-xl border cursor-pointer transition-colors flex flex-col justify-between ${
+                    importCategoriesMode === 'replace'
+                      ? 'bg-rose-950/40 border-rose-500/60 ring-1 ring-rose-500/40'
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Replace All Categories</span>
+                    </div>
+                    <input
+                      type="radio"
+                      name="importCategoriesMode"
+                      value="replace"
+                      checked={importCategoriesMode === 'replace'}
+                      onChange={() => setImportCategoriesMode('replace')}
+                      className="text-rose-500"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Completely replaces the existing category list with the imported categories.
+                  </p>
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportCategoriesModalOpen(false);
+                  setImportCategoriesText('');
+                  setImportCategoriesValidation(null);
+                }}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyImportCategories}
+                disabled={!importCategoriesValidation?.success || !importCategoriesValidation?.data?.length}
+                data-testid="apply-import-categories-button"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-950 cursor-pointer disabled:cursor-not-allowed transition-all"
+              >
+                <Check className="w-4 h-4" />
+                <span>Apply Categories Import ({importCategoriesValidation?.count || 0})</span>
               </button>
             </div>
           </div>

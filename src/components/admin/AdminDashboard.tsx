@@ -61,6 +61,7 @@ interface AdminDashboardProps {
   onAddCategory?: (category: CategoryItem) => void;
   onEditCategory?: (oldId: string, updatedCategory: CategoryItem) => void;
   onDeleteCategory?: (categoryId: string, reassignToCategoryId?: string) => void;
+  onUpdateCategories?: (categories: CategoryItem[]) => void;
   expenses?: JobExpense[];
   onCreateExpense?: (expense: Omit<JobExpense, 'id' | 'createdAt'>) => void;
   onUpdateExpense?: (expense: JobExpense) => void;
@@ -94,6 +95,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddCategory,
   onEditCategory,
   onDeleteCategory,
+  onUpdateCategories,
   onCreateExpense,
   onUpdateExpense,
   onDeleteExpense
@@ -296,6 +298,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveAdminTab('catalog')}
+            data-testid="admin-tab-catalog"
             className={`relative flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAdminTab === 'catalog' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -738,6 +741,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onAddCategory={onAddCategory}
           onEditCategory={onEditCategory}
           onDeleteCategory={onDeleteCategory}
+          onUpdateCategories={onUpdateCategories}
         />
       )}
 

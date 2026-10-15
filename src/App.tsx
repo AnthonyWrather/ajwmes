@@ -759,6 +759,21 @@ export default function App() {
     );
   };
 
+  // Update / Restore Categories (Admin only)
+  const handleUpdateCategories = (newCategories: CategoryItem[]) => {
+    enforceAction(
+      currentUserRole,
+      'edit_catalog_pricing',
+      () => {
+        setCategories(newCategories);
+        newCategories.forEach(cat => {
+          syncCategoryToFirestore(cat);
+        });
+      },
+      (denial) => setActionDenial(denial)
+    );
+  };
+
 
   // Handler: Send Message in Discussion Thread
   const handleSendMessage = (jobId: string, message: MessageItem) => {
@@ -1504,6 +1519,7 @@ export default function App() {
               onAddCategory={handleAddCategory}
               onEditCategory={handleEditCategory}
               onDeleteCategory={handleDeleteCategory}
+              onUpdateCategories={handleUpdateCategories}
               expenses={expenses}
               onCreateExpense={handleCreateExpense}
               onUpdateExpense={handleUpdateExpense}

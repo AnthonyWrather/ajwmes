@@ -297,6 +297,47 @@ export interface CatalogSnapshot {
   items: CatalogItem[];
 }
 
+export type ImportMergeMode = 'replace' | 'merge';
+
+export interface InventoryItemsExport {
+  version: string;
+  exportedAt: string;
+  type: 'ajwmes_items';
+  source: string;
+  count: number;
+  items: CatalogItem[];
+}
+
+export interface InventoryCategoriesExport {
+  version: string;
+  exportedAt: string;
+  type: 'ajwmes_categories';
+  source: string;
+  count: number;
+  categories: CategoryItem[];
+}
+
+export interface FullCatalogExport {
+  version: string;
+  exportedAt: string;
+  type: 'ajwmes_full_catalog';
+  company: string;
+  itemsCount: number;
+  categoriesCount: number;
+  catalog: CatalogItem[];
+  categories: CategoryItem[];
+  snapshots?: CatalogSnapshot[];
+}
+
+export interface ImportValidationResult<T> {
+  success: boolean;
+  data?: T;
+  count: number;
+  detectedType: 'items' | 'categories' | 'full_catalog' | 'unknown';
+  error?: string;
+  warnings?: string[];
+}
+
 export interface ElectricalLogEntry {
   id: string;
   date: string;
