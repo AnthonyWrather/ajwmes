@@ -1,0 +1,641 @@
+# AJW Marine Electrical Services — System Architecture & QA Design Specification
+
+> **Document Classification:** Engineering Architecture & Quality Assurance Specification  
+> **Author:** Principal Full Stack Engineer & QA Automation Specialist  
+> **Application Version:** `1.2.0` | **Target Runtime:** Node `>=24.12.0`  
+> **Repository:** `ajwmes/ajwmes` | **Primary Domain:** [ajwmes.co.uk](https://ajwmes.co.uk)  
+> **Last Updated:** October 2026  
+
+---
+
+## Table of Contents
+1. [Executive Summary & Operational Domain](#1-executive-summary--operational-domain)
+2. [High-Level Architecture & System Topology](#2-high-level-architecture--system-topology)
+3. [Core Design Principles & Tenets](#3-core-design-principles--tenets)
+4. [Frontend Architecture & Component Hierarchy](#4-frontend-architecture--component-hierarchy)
+5. [Data Models & Firestore Schema Architecture](#5-data-models--firestore-schema-architecture)
+6. [Offline-First Engine & Field Data Synchronization](#6-offline-first-engine--field-data-synchronization)
+7. [Security Model, Authentication & Dual-Tier RBAC](#7-security-model-authentication--dual-tier-rbac)
+8. [Domain Business Logic & Calculation Engines](#8-domain-business-logic--calculation-engines)
+9. [Progressive Web App (PWA) & Mobile Field Performance](#9-progressive-web-app-pwa--mobile-field-performance)
+10. [Comprehensive QA Automation & Test Strategy](#10-comprehensive-qa-automation--test-strategy)
+11. [CI/CD Pipelines & Operational Deployment](#11-cicd-pipelines--operational-deployment)
+12. [Architecture Decision Records (ADRs)](#12-architecture-decision-records-adrs)
+
+---
+
+## 1. Executive Summary & Operational Domain
+
+**AJW Marine Electrical Services (AJWMES)** is a specialized marine electrical engineering Progressive Web App (PWA) and workshop operations platform headquartered in Gosport, Hampshire, serving the Solent marine basin (Portsmouth, Southampton, Hamble, Cowes, and Chichester).
+
+### 1.1 Operational Pillars
+The platform unifies five core operational capabilities:
+1. **On-Vessel Diagnostic Workstation**: Field technician portal for managing jobs, timing diagnostic labor at a flat £25/hour rate, tracking marine materials used, recording vessel faults, and capturing pontoon customer digital signatures offline.
+2. **Marine Hardware & Postal Fulfillment Station**: Storefront for marine-grade tinned copper conductors, Victron Energy equipment, Blue Sea Systems switchgear, and terminal consumables with an automated workshop packing queue, dispatch management, and Royal Mail / DPD tracking integration.
+3. **Custom Switch Panel CAD Configurator & Replica Quoter**: Interactive design studio for custom acrylic and teak Carling rocker switchboards, cut-out dimensioning, circuit rating assignment, and photographic replica extraction for boat refits.
+4. **Boat Owner Vessel Electrical Portal**: Digital vessel logbook storing 12V/24V electrical specifications, LiFePO4 lithium bank capacities, solar array outputs, wiring schematics, and PDF certificate generation.
+5. **Master Workshop Management**: Administrative back-office for inventory control, automated zero-stock alert emails, supplier purchase order drafting (MakeFast, Solent Marine, Victron UK), expense classification, and laser cut file exports.
+
+---
+
+## 2. High-Level Architecture & System Topology
+
+The system uses an **Offline-First Single-Page Application (SPA) / Progressive Web App (PWA)** architecture built on React 19 and Vite 8, backed by Google Firebase serverless cloud services and Google Gemini Generative AI.
+
+```mermaid
+flowchart TB
+    subgraph ClientLayer["Client Application Layer (PWA)"]
+        direction TB
+        Browser["Modern Browser / PWA Standalone\n(Desktop, iPad, iPhone, Android)"]
+        SW["Service Worker (Workbox)\nStatic Asset Caching & Offline App Shell"]
+        ReactApp["React 19 Core Application\n(SPA Tab Routing & State Controllers)"]
+        
+        subgraph ClientStorage["Client-Side Persistence"]
+            IDB[("IndexedDB (ajw_marine_field_db)\n- media_queue\n- signatures_queue\n- jobs_queue")]
+            LocalStor[("LocalStorage / SessionStorage\n- Scoped Env Partitioning\n- Offline Cache Fallbacks")]
+        end
+    end
+
+    subgraph LogicLayer["Decoupled Business & Pure Logic Layer"]
+        ElecCalc["Electrical & CAD Pricing Engine\n(src/utils/electricalCalculations.ts)"]
+        ExpenseCalc["Job Financial & Expense Rollup\n(src/utils/expenseCalculations.ts)"]
+        FormVal["Marine Schema & Phone Validator\n(src/utils/formValidation.ts)"]
+        PDFGen["Vessel Spec PDF Generator (jsPDF)\n(src/utils/generateVesselPdf.ts)"]
+        SyncEngine["Resilient Sync Controller\n(src/lib/offlineSync.ts)"]
+        RBACEngine["Dual-Tier RBAC Middleware\n(src/lib/rbac.ts)"]
+    end
+
+    subgraph CloudLayer["Google Cloud & Firebase Backend"]
+        FBAuth["Firebase Authentication\n(Google OAuth 2.0 & Email/Password)"]
+        Firestore[("Cloud Firestore\n- Multi-Environment Partitioned\n- Realtime Listeners onSnapshot")]
+        FBStorage[("Cloud Storage for Firebase\n- Panel Designs & Replica Photos\n- Pontoon Work & Fitment Proof")]
+        GeminiAI["Google GenAI SDK (@google/genai)\n- Multimodal Panel Diagnosis\n- Generative Workshop Intelligence"]
+    end
+
+    subgraph ExternalServices["External Ecosystem"]
+        StripeCheckout["Stripe Checkout API\n(Deposit & Invoice Clearing)"]
+        Carriers["Royal Mail & DPD APIs\n(Consignment Tracking)"]
+        Suppliers["Marine Wholesale Supply EDI/Email\n(Victron UK, MakeFast, Solent Marine)"]
+    end
+
+    Browser <--> SW
+    SW <--> ReactApp
+    ReactApp <--> ClientStorage
+    ReactApp <--> LogicLayer
+    LogicLayer <--> SyncEngine
+    SyncEngine <--> Firestore
+    SyncEngine <--> FBStorage
+    ReactApp <--> FBAuth
+    ReactApp <--> GeminiAI
+    ReactApp -.-> StripeCheckout
+    ReactApp -.-> Carriers
+    ReactApp -.-> Suppliers
+```
+
+---
+
+## 3. Core Design Principles & Tenets
+
+### 3.1 Offline-First Resiliency on the Pontoon
+Marine electrical diagnostics routinely occur inside steel hulls, GRP engine bays, or offshore pontoons where cellular signal is nonexistent. 
+- **Tenet**: *No technician action may ever be blocked by a dropped network connection.*
+- Mutations are committed instantaneously to local state and queued in durable IndexedDB stores.
+- Firestore operations are wrapped with graceful fallbacks; code 14 (`UNAVAILABLE`) is handled silently without interrupting technician workflows.
+
+### 3.2 Multi-Environment Data Scoping
+To enable concurrent development, staging previews, and live production within a single Firebase project without cross-contaminating production marine data, all collections are scoped dynamically:
+- **Tenet**: *Collection isolation is guaranteed by deterministic environmental prefixes.*
+- Dev Workspaces: `ais_dev_*`
+- Shared PR Previews: `ais_pre_*`
+- GitHub Staging: `gh_pre_*`
+- Production Live ([ajwmes.co.uk](https://ajwmes.co.uk)): Root collections (`jobs`, `catalog`, `postal_orders`, `users`).
+
+### 3.3 Strict Separation of Pure Logic and UI Components
+All mathematical calculations (Ohm's Law, voltage drops, diagnostic hourly rates, fractional labor, panel layout geometry, material costs) are strictly decoupled from React rendering cycles:
+- **Tenet**: *Calculations are pure, deterministic functions located in [`src/utils/`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/utils) accompanied by unit tests.*
+
+### 3.4 Defense-in-Depth Authorization
+Security is enforced at two distinct boundaries:
+1. Client-Side User Experience: Dynamic route masking and action execution interception via [`src/lib/rbac.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/rbac.ts).
+2. Server-Side Data Integrity: Strict default-deny Firestore Security Rules ([`firestore.rules`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/firestore.rules)) with document ID validation and regex prefix matching.
+
+---
+
+## 4. Frontend Architecture & Component Hierarchy
+
+### 4.1 Technology Stack Rationale
+
+| Layer | Technology | Version | Architectural Justification |
+| :--- | :--- | :--- | :--- |
+| **Framework** | React | `19.3.0` | Concurrent rendering, modern hooks, fine-grained state reactivity without boilerplate overhead. |
+| **Language** | TypeScript | `7.0.2` (Strict) | Compile-time guarantees for electrical safety calculations, schema enforcement, and zero `any` allowance. |
+| **Build Tool** | Vite | `8.3.4` | Sub-second Hot Module Replacement (HMR), optimized Rollup chunking, and instant cold starts. |
+| **Styling** | Tailwind CSS | `4.3.3` | Next-generation engine (`@tailwindcss/vite`), zero legacy config overhead, nautical palette (`#0A192F` marine navy). |
+| **Animations** | Motion | `12.43.0` | Fluid physics-based transitions for modals, switch panel interactions, and progress bars. |
+| **PWA Engine** | `vite-plugin-pwa` | `2.0.0` | Workbox service worker generation, offline asset caching, web manifest management. |
+| **Icons** | Lucide React | `0.546.0` | Lightweight, scalable vector icons consistent across marine instrument visualizers. |
+
+### 4.2 Component Architecture & State Distribution
+
+```mermaid
+graph TD
+    App["App.tsx\nRoot State Coordinator & Route Controller"]
+    
+    Nav["Navigation.tsx\nResponsive Header, Role Switcher, PWA Pill"]
+    SyncBanner["FirestoreSyncBanner.tsx\nOffline / Connection Status Indicator"]
+    
+    subgraph RouteViews["Routed Feature Workspaces"]
+        Home["LandingHero & ServicesSection\nPublic Solent Rate Cards & Bio"]
+        Store["StoreFront.tsx\nCatalog Filter, Cart Drawer, Postal Checkout"]
+        Tracker["PostalOrderTracker.tsx\nLive Royal Mail / Consignment Timeline"]
+        Designer["SwitchPanelDesigner.tsx\nInteractive 2D CAD Panel Configurator"]
+        Replica["ReplicaPanelUploader.tsx\nDamaged Panel OCR & CAD Quoter"]
+        Portal["ClientVesselPortal.tsx\nVessel Specs, History Log, PDF Exporter"]
+        Tech["TechnicianWorkspace.tsx\nLabor Stopwatch, Materials Picker, Signature Pad"]
+        Postal["PostalWorkspace.tsx\nOrder Packing Queue, Tracking Assignment, Slips"]
+        Admin["AdminDashboard.tsx\nPricing Editor, Snapshots, POs, Stock Alerts, Expenses"]
+    end
+
+    subgraph ModalControllers["Modal Controllers & Overlays"]
+        AuthModal["AuthModal & SignInModal\nFirebase Auth & Fast Dev Switcher"]
+        SignOffModal["CustomerSignOffModal\nHTML5 Canvas Digital Signature Pad"]
+        BookingModal["BookingQuoteModal\nField Service Booking Form"]
+        EnvModal["EnvironmentSettingsModal\nMulti-Environment Diagnostics"]
+        SlipModal["PackingSlipModal\nA4 Printable Dispatch Documentation"]
+    end
+
+    App --> Nav
+    App --> SyncBanner
+    App --> RouteViews
+    App --> ModalControllers
+```
+
+### 4.3 Key Component Responsibilities
+
+1. **[`SwitchPanelDesigner.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/panels/SwitchPanelDesigner.tsx)**:
+   - Live interactive 2D preview rendered using SVG/CSS scaling.
+   - Dynamic width recalculation based on gang count and cutout specifications (voltmeter, dual USB sockets, 12V marine accessory sockets).
+   - Real-time CAD laser cutting quotation matching material (matte black acrylic, gloss white acrylic, oiled marine teak, birch).
+2. **[`TechnicianWorkspace.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/technician/TechnicianWorkspace.tsx)**:
+   - Diagnostic Stopwatch with millisecond precision, clamping negative values, and rounding to billable fractional hours.
+   - Rapid hardware selector for tinned conductors, mega/midi fuses, and busbars.
+   - Pontoon sign-off integration triggering [`CustomerSignOffModal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/technician/CustomerSignOffModal.tsx).
+3. **[`PostalWorkspace.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/postal/PostalWorkspace.tsx)**:
+   - Real-time status pipeline transitions: `pending` &rarr; `received` &rarr; `processing` &rarr; `packed` &rarr; `ready_for_pickup` &rarr; `dispatched` &rarr; `delivered`.
+   - Direct packing slip generation rendering printable HTML/CSS A4 slips.
+4. **[`AdminDashboard.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/AdminDashboard.tsx)**:
+   - Catalog management with snapshot creation and instant rollback capabilities.
+   - Automatic zero-stock trigger generating supplier purchase orders.
+   - Operational expense accounting distinguishing billable travel from non-billable overheads.
+
+---
+
+## 5. Data Models & Firestore Schema Architecture
+
+All application entities are centrally defined in [`src/types/index.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/types/index.ts).
+
+### 5.1 Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    UserProfile ||--o{ VesselSpec : owns
+    UserProfile ||--o{ JobRecord : requests
+    UserProfile ||--o{ PostalOrder : places
+    
+    JobRecord ||--|{ MaterialLineItem : consumes
+    JobRecord ||--o| CustomerSignOffRecord : contains
+    JobRecord ||--o{ MessageItem : logs
+    JobRecord ||--o| SwitchPanelConfig : specifies
+    JobRecord ||--o{ JobExpense : incurs
+    
+    PostalOrder ||--|{ PostalOrderItem : includes
+    PostalOrder ||--|{ PostalOrderTimelineEvent : tracks
+    PostalOrder }o--|| PostalOrderShippingAddress : delivers_to
+    
+    CatalogItem ||--o{ StockAlert : triggers
+    CatalogItem ||--o{ SupplierPurchaseOrder : reorders
+    CatalogSnapshot ||--|{ CatalogItem : captures
+```
+
+### 5.2 Core Document Definitions
+
+#### 1. `JobRecord` (`jobs` / `{prefix}jobs`)
+Captures all diagnostic visits, lithium retrofits, and panel fabrication contracts:
+```typescript
+interface JobRecord {
+  id: string;                     // UUID e.g. "job-1791420000000"
+  reference: string;              // Human reference e.g. "AJW-JOB-842"
+  userId?: string;                // Bound boat owner ID
+  vesselName: string;             // Vessel name e.g. "Solent Mistral"
+  vesselType: string;             // Rig/Hull e.g. "Moody 346"
+  berthLocation: string;          // Marina berth e.g. "Haslar Marina, Berth E14"
+  serviceCategory: ServiceType;   // 'diagnostic' | 'lithium' | 'solar' | ...
+  status: 'quote_requested' | 'quote_sent' | 'quote_accepted' | 'scheduled' | 'in_progress' | 'completed';
+  hourlyRate: number;             // Standardized £25.00/hr
+  diagnosticHours: number;        // Logged fractional decimal hours
+  materialsUsed: MaterialLineItem[];
+  totalLabor: number;
+  totalMaterials: number;
+  totalEstimated: number;
+  depositPaid: boolean;
+  depositAmount: number;
+  customerSignOff?: CustomerSignOffRecord;
+  workPhotos?: string[];          // Firebase Storage URLs
+  messages: MessageItem[];
+}
+```
+
+#### 2. `CustomerSignOffRecord` (Sub-entity of `JobRecord`)
+Legal pontoon authorization captured on physical mobile devices:
+```typescript
+interface CustomerSignOffRecord {
+  jobId: string;
+  jobReference: string;
+  clientName: string;
+  signerRole: 'vessel_owner' | 'skipper' | 'marina_agent';
+  signatureDataUrl: string;       // Encoded Base64 PNG signature
+  signedAtOffline: string;        // Pontoon capture timestamp (ISO)
+  signedAtSynced?: string;        // Cloud sync timestamp (ISO)
+  agreedDiagnosticHours: number;
+  agreedTotalEstimate: number;
+  customerFeedback?: string;
+  synced: boolean;
+}
+```
+
+#### 3. `VesselSpec` (`vessel_specs` / `{prefix}vessel_specs`)
+Full engineering blueprint of a client vessel:
+```typescript
+interface VesselSpec {
+  id: string;
+  userId?: string;
+  vesselName: string;
+  makeModel: string;
+  year: number;
+  hinNumber: string;
+  systemVoltage: '12V' | '24V' | '12V/24V Dual';
+  houseBatteryType: 'LiFePO4 Lithium' | 'AGM Deep Cycle' | 'Gel' | 'Flooded Lead-Acid';
+  houseCapacityAh: number;
+  alternatorRating: string;
+  dcDcCharger: string;
+  solarWatts: number;
+  solarController: string;
+  batteryMonitor: string;
+  historyLog: ElectricalLogEntry[];
+}
+```
+
+### 5.3 Firestore Security Rules Architecture
+
+Located in [`firestore.rules`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/firestore.rules), the security configuration adheres to a strict **default-deny** paradigm:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Example: Scoped user profile access
+    match /users/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if true;
+      allow create, update, delete: if isValidId(userId);
+    }
+    match /{colPrefix_users}/{userId} {
+      allow get: if colPrefix_users.matches('^(ais_dev_|ais_pre_|gh_pre_)users$') && isValidId(userId);
+      allow list: if colPrefix_users.matches('^(ais_dev_|ais_pre_|gh_pre_)users$');
+      allow create, update, delete: if colPrefix_users.matches('^(ais_dev_|ais_pre_|gh_pre_)users$') && isValidId(userId);
+    }
+  }
+}
+```
+
+---
+
+## 6. Offline-First Engine & Field Data Synchronization
+
+The synchronization subsystem in [`src/lib/offlineSync.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/offlineSync.ts) bridges volatile pontoon operations with persistent cloud storage.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Tech as Solent Technician
+    participant UI as Technician Workspace
+    participant Comp as Image Compressor (Canvas)
+    participant IDB as IndexedDB (ajw_marine_field_db)
+    participant Sync as Sync Engine (offlineSync.ts)
+    participant Net as Network Monitor (navigator.onLine)
+    participant Cloud as Firebase (Firestore & Storage)
+
+    Tech->>UI: Captures engine alternator fault photo
+    UI->>Comp: compressFieldImage(file)
+    Note over Comp: Scale to max 1400px, JPEG 0.82 quality, <400KB
+    Comp-->>UI: Compressed Blob + Preview DataURL
+    UI->>IDB: enqueueOfflinePhoto(mediaItem)
+    IDB-->>UI: Acknowledged (Queued)
+    UI-->>Tech: Immediate UI update (Pending Sync Badge)
+
+    Tech->>UI: Captures client pontoon signature
+    UI->>IDB: enqueueCustomerSignOff(signatureRecord)
+    IDB-->>UI: Acknowledged (Queued)
+
+    Note over Tech,Net: Technician leaves pontoon, connects to Marina WiFi
+    Net->>Sync: 'online' event triggered
+    Sync->>Sync: triggerSyncNow()
+    
+    critical Photos Sync
+        Sync->>IDB: getPendingPhotos()
+        IDB-->>Sync: Return queued items
+        loop For each photo
+            Sync->>Cloud: uploadSwitchPanelImage(blob) -> Cloud Storage
+            Cloud-->>Sync: Download URL
+            Sync->>Cloud: syncJobWorkPhotoToFirestore(jobId, url)
+            Sync->>IDB: deleteQueuedItem('media_queue', photo.id)
+        end
+    end
+
+    critical Signatures Sync
+        Sync->>IDB: getPendingSignatures()
+        IDB-->>Sync: Return queued signatures
+        loop For each signature
+            Sync->>Cloud: syncJobSignOffToFirestore(jobId, signature)
+            Sync->>IDB: deleteQueuedItem('signatures_queue', sig.jobId)
+        end
+    end
+
+    Sync->>UI: refreshQueueStatus() (totalPending: 0)
+    UI-->>Tech: Visual green indicator "All Data Synchronized"
+```
+
+### 6.1 IndexedDB Schema (`ajw_marine_field_db`)
+- **`media_queue`** (Key: `id`): Stores compressed photo blobs, metadata, timestamp, and target `jobReference`.
+- **`signatures_queue`** (Key: `jobId`): Stores base64 signature vectors, signee name, role, agreed hours, and total quotation.
+- **`jobs_queue`** (Key: `jobId`): Stores diagnostic hours elapsed and itemized material increments.
+
+---
+
+## 7. Security Model, Authentication & Dual-Tier RBAC
+
+### 7.1 Five-Tier User Roles
+Defined in [`src/types/index.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/types/index.ts):
+1. **`guest`**: Public visitor; can browse parts catalog, build live switchboard quotes, and track orders via public order numbers.
+2. **`client`**: Registered vessel owner; access to private vessel electrical layouts, quote acceptance, deposit payments, and engineering messaging.
+3. **`technician`**: Field marine engineer; access to Solent job queue, diagnostic timers (£25/hr), material usage logs, and offline sign-offs.
+4. **`postal`**: Workshop fulfillment operator; access to packing queues, stock cutting, and carrier consignment generation.
+5. **`admin`**: Anthony Wrather (Master Workshop); unrestricted access to parts pricing, stock alerts, supplier purchase orders, and user role management.
+
+### 7.2 Access Control Matrix
+
+```mermaid
+graph LR
+    subgraph Roles["System Roles"]
+        R_Guest["guest"]
+        R_Client["client"]
+        R_Tech["technician"]
+        R_Postal["postal"]
+        R_Admin["admin"]
+    end
+
+    subgraph Routes["Protected Route Domains"]
+        PublicRoutes["Public Store & Tracking\n(/home, /store, /tracker)"]
+        DesignRoutes["CAD & Quoting Tools\n(/designer, /replica)"]
+        ClientRoutes["Vessel Portal\n(/portal)"]
+        TechRoutes["Field Station\n(/technician)"]
+        PostalRoutes["Dispatch Station\n(/postal)"]
+        AdminRoutes["Master Workshop\n(/admin)"]
+    end
+
+    R_Guest --> PublicRoutes
+    R_Guest --> DesignRoutes
+
+    R_Client --> PublicRoutes
+    R_Client --> DesignRoutes
+    R_Client --> ClientRoutes
+
+    R_Tech --> PublicRoutes
+    R_Tech --> TechRoutes
+
+    R_Postal --> PublicRoutes
+    R_Postal --> PostalRoutes
+
+    R_Admin ==> PublicRoutes
+    R_Admin ==> DesignRoutes
+    R_Admin ==> ClientRoutes
+    R_Admin ==> TechRoutes
+    R_Admin ==> PostalRoutes
+    R_Admin ==> AdminRoutes
+```
+
+### 7.3 Programmatic RBAC Enforcement
+
+Enforcement is centralized in [`src/lib/rbac.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/rbac.ts):
+- **Route Guarding**: [`canAccessRoute(role, route)`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/rbac.ts#L403-L407) and [`RBACRouteGuard.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/rbac/RBACRouteGuard.tsx) automatically intercept unauthorized URL transitions and route users to their default safe fallback.
+- **Action Enforcement**: [`enforceAction(role, action, callback, onDenied)`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/rbac.ts#L574-L591) prevents privileged mutations (e.g., catalog price editing, restock acknowledgement) from being invoked by unauthorized clients.
+
+---
+
+## 8. Domain Business Logic & Calculation Engines
+
+### 8.1 Electrical Calculations (`src/utils/electricalCalculations.ts`)
+1. **Diagnostic Labor Calculation**:
+   $$\text{Hours} = \max\left(0, \frac{\text{seconds}}{3600}\right) \quad (\text{rounded to 2 decimals})$$
+   $$\text{Labor Cost} = \text{Hours} \times \text{Hourly Rate} \quad (\text{default } \pounds 25.00/\text{hr})$$
+2. **Materials Summation**:
+   $$\text{Materials Cost} = \sum (\text{Quantity}_i \times \text{UnitPrice}_i)$$
+3. **Switch Panel CAD Pricing Model**:
+   - Base laser cut & setup fee: **£35.00**
+   - Premium Teak Surcharge: **+£25.00** | Birch Surcharge: **+£15.00**
+   - Per-Gang Breaker Surcharge: **+£2.50** per switch
+   - Digital Voltmeter Cutout: **+£8.00**
+   - Dual USB Fast Charger Cutout: **+£10.00**
+   - 12V Heavy-Duty Marine Socket Cutout: **+£8.00**
+   - Packaging Tiers: Assembled & Wired (**+£45.00**), DIY Kit (**+£18.00**), Faceplate Only (**+£0.00**).
+4. **Physical Panel Geometry Validation**:
+   - Baseline minimum faceplate width: **160mm**.
+   - Gang scaling: Add **18mm** per gang over 4 gangs.
+   - Accessory cutouts: Add **35mm** for voltmeter, **30mm** for USB/12V sockets.
+
+### 8.2 Expense Classification & Financial Rollup (`src/utils/expenseCalculations.ts`)
+Expenses are categorized into billable project disbursements vs overhead:
+- Categories: `fuel`, `travel`, `subcontractor`, `berthing_harbor`, `equipment_hire`, `consumables`, `other`.
+- Computes aggregated billable disbursements directly added to final customer invoices vs internal Solent operating overheads.
+
+### 8.3 Form & Marine Standards Validation (`src/utils/formValidation.ts`)
+- UK Mobile and Marine Landline validation (supporting Solent area codes: `023` Portsmouth/Southampton, `01983` Isle of Wight).
+- Marine DC circuit breaker safety rating bounds verification ($5\text{A} \le I_{\text{rating}} \le 60\text{A}$).
+- Marine battery capacity constraints ($10\text{Ah} \le \text{Capacity} \le 5000\text{Ah}$).
+
+---
+
+## 9. Progressive Web App (PWA) & Mobile Field Performance
+
+Configured via [`vite.config.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/vite.config.ts) and [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/):
+
+```typescript
+VitePWA({
+  registerType: 'autoUpdate',
+  includeAssets: ['favicon.ico', 'icon.svg', 'icon-192.png', 'icon-512.png'],
+  manifest: {
+    id: '/',
+    name: 'AJW Marine Electrical Services',
+    short_name: 'AJWMES',
+    description: 'Marine electrical diagnostics, lithium, solar, navigation and custom laser switch panels in Gosport & Solent.',
+    theme_color: '#0A192F',
+    background_color: '#0A192F',
+    display: 'standalone',
+    start_url: '/',
+    scope: '/',
+    icons: [...]
+  },
+  workbox: {
+    maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+    globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2}']
+  }
+})
+```
+
+- **Standalone Mode**: Eliminates browser chrome on iOS/iPadOS and Android when pinned to home screen.
+- **Cache Strategy**: Workbox precaches critical JS/CSS bundles, SVG symbols, and typography assets up to 5MB, allowing complete application boot without network connectivity.
+
+---
+
+## 10. Comprehensive QA Automation & Test Strategy
+
+As Principal QA Automation Specialist, the quality engineering strategy implements a strict multi-tier pyramid ensuring zero defects in mission-critical electrical calculations, authentication, and offline workflows.
+
+```mermaid
+graph BT
+    subgraph TestPyramid["Quality Assurance Test Pyramid"]
+        direction BT
+        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- auth.test.ts\n- version.test.ts\nExecution: < 2 seconds | 75+ Assertions"]
+        
+        Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix Conformance Tests\n- Environment Partition Prefix Routing"]
+        
+        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline"]
+    end
+```
+
+### 10.1 Level 1: Fast Pure Logic Unit Tests (`tsx --test`)
+Executed directly on Node.js using `npm run test:unit`:
+- **Execution Target**: `src/lib/auth.test.ts`, `src/utils/*.test.ts`.
+- **Performance**: Completes in **< 2.0 seconds** with zero external dependencies or browser spins.
+- **Verification Matrix**:
+  - `electricalCalculations.test.ts`: Verifies stopwatch conversions, fractional decimal hours, zero-second edge cases, and panel pricing tiers.
+  - `expenseCalculations.test.ts`: Validates financial rollups, NaN handling, and billable vs overhead categorization.
+  - `formValidation.test.ts`: Tests Solent landlines, UK mobile normalizations, breaker amp limits, and email formats.
+  - `auth.test.ts`: Tests profile enrichment, guest restrictions, technician permissions, and admin elevation.
+  - `version.test.ts`: Verifies SemVer string format and environment release badge tags.
+
+### 10.2 Level 2: End-to-End Test Suite (`@playwright/test`)
+Configured in [`playwright.config.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/playwright.config.ts) and executed via `npm run test:e2e`.
+
+#### Cross-Browser & Viewport Coverage Matrix
+
+| Test Project | Browser Engine | Emulated Device | Viewport Dimensions | Target User Persona |
+| :--- | :--- | :--- | :--- | :--- |
+| **`chromium`** | Chromium | Desktop Chrome | $1280 \times 720$ | Anthony Wrather (Admin / Workshop) |
+| **`firefox`** | Gecko | Desktop Firefox | $1280 \times 720$ | Desktop Client / Parts Purchaser |
+| **`webkit`** | WebKit | Desktop Safari | $1280 \times 720$ | Mac / Marina Office Staff |
+| **`Mobile Chrome`** | Chromium Mobile | Google Pixel 5 | $393 \times 851$ | Marine Technician on Pontoon |
+| **`Mobile Safari`** | WebKit Mobile | Apple iPhone 12 | $390 \times 844$ | Boat Owner at Helm / Companionway |
+
+#### Hermetic E2E Test Principles
+1. **Clean Slate Storage**: Every test suite cleans `localStorage` and `sessionStorage` via `page.addInitScript()` prior to navigation to eliminate state leakage.
+2. **Deterministic Selectors**: All assertions target explicit `data-testid` attributes (e.g. `getByTestId('landing-hero-heading')`, `getByTestId('auth-email-input')`, `getByTestId('preset-avatar-1')`), completely insulating test suites from visual CSS refactoring.
+3. **Automated Dev WebServer**: Playwright boots a local Vite dev instance on port `5173` automatically (`reuseExistingServer: !process.env.CI`).
+
+---
+
+## 11. CI/CD Pipelines & Operational Deployment
+
+Automated pipelines run via GitHub Actions under [`.github/workflows/`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/.github/workflows):
+
+```mermaid
+flowchart TD
+    subgraph Trigger["Git Event Triggers"]
+        PR["Pull Request to main"]
+        PushMain["Push to main / master"]
+    end
+
+    subgraph CI["Continuous Integration (playwright.yml)"]
+        direction TB
+        Lint["npm run lint\n(TypeScript Strict Compilation)"]
+        Unit["npm run test:unit\n(75+ Unit Tests via tsx)"]
+        CachePW["Restore Playwright Browser Cache"]
+        E2E["npm run test:e2e\n(Multi-browser Playwright Suite)"]
+        Artifacts["Upload Test Failure Reports (if failed)"]
+        
+        Lint --> Unit --> CachePW --> E2E
+        E2E -. Failure .-> Artifacts
+    end
+
+    subgraph CD["Continuous Deployment (firebase-hosting-merge.yml)"]
+        direction TB
+        Build["npm run build\n(Vite Production + PWA Generation)"]
+        Deploy["Firebase Extended Action\nDeploy to Firebase Hosting Channel: live"]
+    end
+
+    PR --> CI
+    PushMain --> CI
+    CI -- Success on Main --> CD
+    CD --> LiveProd["Live Production\n(ajwmes.co.uk)"]
+```
+
+### 11.1 Verification Guardrails
+Before code is accepted or deployed:
+1. `npm run lint`: Validates 100% strict TypeScript typing without errors.
+2. `npm run test:unit`: All mathematical and electrical specs must pass.
+3. `npm run test:e2e`: Playwright headless suites across Chromium, Firefox, WebKit, and Mobile must succeed.
+
+---
+
+## 12. Architecture Decision Records (ADRs)
+
+### ADR 001: Selection of React 19 + Vite 8 SPA over Next.js / Server-Side Rendering
+- **Context**: Marine electrical diagnostics require 100% functionality while completely offline on pontoon berths.
+- **Decision**: Adopt a pure client-side SPA with Vite 8 and Workbox service worker caching instead of SSR frameworks (Next.js/Remix).
+- **Consequences**: Zero server dependencies for UI rendering; instantaneous cold starts from local device cache; offline-first compatibility without server round-trips.
+
+### ADR 002: Dual-Layer Client Storage (IndexedDB for Transactions, LocalStorage for Config)
+- **Context**: Digital signatures (base64) and high-resolution work photos quickly exceed the 5MB browser `localStorage` quota.
+- **Decision**: Store structured tabular configuration and environment state in partitioned `localStorage`; store large binary photos, digital signatures, and pending sync mutations in IndexedDB (`ajw_marine_field_db`).
+- **Consequences**: Prevents `QUOTA_EXCEEDED_ERR`; isolates heavy binary data from blocking standard UI configuration reads.
+
+### ADR 003: Multi-Environment Scoping via Firestore Collection Prefixes
+- **Context**: Maintaining 4 distinct cloud Firebase databases for dev, preview, staging, and production incurs management overhead and potential drift.
+- **Decision**: Use a single Firestore database instance partitioned by collection prefixes (`ais_dev_`, `ais_pre_`, `gh_pre_`, and production root).
+- **Consequences**: Instantaneous creation of isolated sandboxes; zero multi-database billing overhead; robust separation enforced via `firestore.rules`.
+
+### ADR 004: Native Node.js Test Runner via `tsx --test`
+- **Context**: Heavy test runners (Jest/Vitest) frequently introduce configuration divergence with ESM/TypeScript modules and slow down CI pipelines.
+- **Decision**: Utilize the built-in Node.js test runner (`node:test`) executed via `tsx --test` for all pure logic and utility tests.
+- **Consequences**: Sub-2-second test execution; zero mock overhead; native ESM compatibility; runs seamlessly on Node 22 and 24.
+
+### ADR 005: Playwright with Native Mobile Device Emulation
+- **Context**: Technicians capture job data on mobile phones and iPads in wet, glare-heavy environments.
+- **Decision**: Standardize on `@playwright/test` with explicit Pixel 5 and iPhone 12 emulation in CI/CD.
+- **Consequences**: Early detection of viewport overflow, touch target sizing issues, and mobile layout regressions before field rollout.
+
+---
+
+## 13. Quality Verification & Sign-Off Checklist
+
+Before merging any feature into `main`:
+- [x] **Static Typing**: `npm run lint` passes with 0 type errors.
+- [x] **Unit Test Suite**: `npm run test:unit` passes (75/75 passing tests).
+- [x] **Offline Resilience**: Field mutations gracefully store to IndexedDB when disconnected (`navigator.onLine = false`).
+- [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 5 roles (`guest`, `client`, `admin`, `technician`, `postal`).
+- [x] **PWA Manifest & Assets**: Icons, theme colors (`#0A192F`), and service worker registered without console warnings.
+- [x] **End-to-End Validation**: `npm run test:e2e` completes successfully in Playwright headless runners.
+
+---
+*Signed off by:*  
+**Principal Full Stack Engineer & QA Automation Specialist**  
+*AJW Marine Electrical Services — Gosport & Solent*
