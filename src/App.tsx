@@ -1683,7 +1683,7 @@ export default function App() {
 
       {/* Automated Stock Depletion Toast Notification (Admin Zero-Stock Alert) */}
       {activeStockAlertToast && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-md w-full p-4 rounded-2xl bg-slate-900/98 border-2 border-rose-500/80 shadow-2xl shadow-rose-950/80 backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="fixed bottom-6 right-6 z-40 max-w-md w-full p-4 rounded-2xl bg-slate-900/98 border-2 border-rose-500/80 shadow-2xl shadow-rose-950/80 backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="p-2.5 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-400 shrink-0 shadow-inner">
               <AlertTriangle className="w-5 h-5 animate-bounce" />
@@ -1746,7 +1746,7 @@ export default function App() {
 
       {/* Real-Time Simulated Postal Dispatch Notification Toast */}
       {activeToast && !activeStockAlertToast && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-md w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="fixed bottom-6 right-6 z-40 max-w-md w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="p-2.5 rounded-xl bg-sky-950 border border-sky-500/40 text-sky-400 shrink-0">
               <Bell className="w-5 h-5 animate-bounce" />
@@ -1808,7 +1808,7 @@ export default function App() {
 
       {/* Authentication / Sign Off Status Toast */}
       {authToast && (
-        <div data-testid="auth-toast" className="fixed bottom-6 left-6 z-50 max-w-sm w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div data-testid="auth-toast" className="fixed bottom-6 left-6 z-40 max-w-sm w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className={`p-2.5 rounded-xl border shrink-0 ${
               authToast.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-400' : 'bg-sky-950/90 border-sky-500/40 text-sky-400'

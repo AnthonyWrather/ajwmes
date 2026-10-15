@@ -99,6 +99,7 @@ test.describe('Hardware Inventory & Category Split Save/Restore E2E', () => {
     // Apply import
     const applyImportBtn = page.getByTestId('apply-import-items-button');
     await expect(applyImportBtn).toBeEnabled();
+    await applyImportBtn.scrollIntoViewIfNeeded();
     await applyImportBtn.click({ force: true });
 
     // Modal should close and the new item should be visible in the catalog
@@ -151,6 +152,7 @@ test.describe('Hardware Inventory & Category Split Save/Restore E2E', () => {
 
     const applyCatsBtn = page.getByTestId('apply-import-categories-button');
     await expect(applyCatsBtn).toBeEnabled();
+    await applyCatsBtn.scrollIntoViewIfNeeded();
     await applyCatsBtn.click({ force: true });
 
     // Verify modal closes and category is listed
