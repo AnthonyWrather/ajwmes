@@ -1,6 +1,6 @@
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { enrichUserProfile, canAccessRoute } from './auth';
+import { enrichUserProfile, canAccessRoute, registerUserAccount, registerVesselAccount } from './auth';
 import { ROUTE_ACCESS_MATRIX, AppRoute } from './rbac';
 import { UserProfile, UserRole } from '../types';
 
@@ -283,6 +283,75 @@ describe('canAccessRoute', () => {
         }
       }
     });
+  });
+});
+
+describe('registerUserAccount', () => {
+  it('creates a client profile without requiring vessel details', async () => {
+    const uniqueEmail = `test.client.${Date.now()}.${Math.random().toString(36).substring(2, 7)}@solent-test.co.uk`;
+    const profile = await registerUserAccount({
+      name: 'Oliver Queen',
+      email: uniqueEmail,
+      password: 'password123',
+      phone: '07700 900333'
+    });
+
+    assert.ok(profile.id, 'Expected an auto-generated id');
+    assert.equal(profile.name, 'Oliver Queen');
+    assert.equal(profile.email, uniqueEmail);
+    assert.equal(profile.phone, '07700 900333');
+    assert.equal(profile.role, 'client');
+    assert.equal(profile.vesselName, '', 'Expected vesselName to default to empty string');
+    assert.equal(profile.vesselType, '', 'Expected vesselType to default to empty string');
+    assert.equal(profile.marinaBerth, '', 'Expected marinaBerth to default to empty string');
+    assert.deepEqual(profile.vesselIds, []);
+  });
+
+  it('rejects registration with empty or blank email', async () => {
+    await assert.rejects(
+      async () => {
+        await registerUserAccount({
+          name: 'Anonymous Sailor',
+          email: '   '
+        });
+      },
+      {
+        message: 'Please enter a valid email address.'
+      }
+    );
+  });
+
+  it('rejects duplicate registration when email already exists', async () => {
+    const existingEmail = `dup.${Date.now()}.${Math.random().toString(36).substring(2, 7)}@solent-test.co.uk`;
+    await registerUserAccount({
+      name: 'First User',
+      email: existingEmail
+    });
+
+    await assert.rejects(
+      async () => {
+        await registerUserAccount({
+          name: 'Second User',
+          email: existingEmail
+        });
+      },
+      {
+        message: 'An account with this email address already exists. Please sign in with your password.'
+      }
+    );
+  });
+
+  it('registerVesselAccount backward-compatible alias functions identically', async () => {
+    const uniqueEmail = `alias.${Date.now()}.${Math.random().toString(36).substring(2, 7)}@solent-test.co.uk`;
+    const aliasedProfile = await registerVesselAccount({
+      name: 'Arthur Dent',
+      email: uniqueEmail,
+      phone: '07700 900444'
+    });
+
+    assert.equal(aliasedProfile.name, 'Arthur Dent');
+    assert.equal(aliasedProfile.email, uniqueEmail);
+    assert.equal(aliasedProfile.role, 'client');
   });
 });
 

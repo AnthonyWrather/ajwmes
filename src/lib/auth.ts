@@ -274,9 +274,9 @@ export function encodePassword(password: string): string {
 }
 
 /**
- * Register a new vessel owner account and sync to Firestore.
+ * Register a new user account (boat owner / client) and sync to Firestore.
  */
-export async function registerVesselAccount(details: {
+export async function registerUserAccount(details: {
   name: string;
   email: string;
   password?: string;
@@ -313,14 +313,15 @@ export async function registerVesselAccount(details: {
   const pwdHash = encodePassword(rawPwd);
   const profile: UserProfile = {
     id,
-    name: details.name.trim() || 'Vessel Owner',
+    name: details.name.trim() || 'Client',
     email: cleanEmail,
     phone: details.phone?.trim() || '',
     role: assignedRole,
     vesselName: details.vesselName?.trim() || '',
-    vesselType: details.vesselType?.trim() || 'Sailing Yacht',
-    marinaBerth: details.marinaBerth?.trim() || 'Solent Marina',
+    vesselType: details.vesselType?.trim() || '',
+    marinaBerth: details.marinaBerth?.trim() || '',
     systemVoltage: '12V',
+    vesselIds: [],
     notifyJobUpdates: true,
     notifyDispatchSms: true,
     createdAt: now,
@@ -343,6 +344,22 @@ export async function registerVesselAccount(details: {
   }
 
   return profile;
+}
+
+/**
+ * Register a new vessel owner account and sync to Firestore.
+ * @deprecated Use registerUserAccount instead. Retained for backward compatibility.
+ */
+export async function registerVesselAccount(details: {
+  name: string;
+  email: string;
+  password?: string;
+  phone?: string;
+  vesselName?: string;
+  vesselType?: string;
+  marinaBerth?: string;
+}): Promise<UserProfile> {
+  return registerUserAccount(details);
 }
 
 /**

@@ -5,6 +5,7 @@ import {
   DEMO_PROFILES, 
   getActiveDemoProfiles,
   signInWithEmailOrAccount, 
+  registerUserAccount,
   registerVesselAccount,
   saveAndSyncUserProfile 
 } from '../../lib/auth';
@@ -12,6 +13,7 @@ import {
   X, 
   Key, 
   User, 
+  UserPlus,
   Mail, 
   Lock, 
   Shield, 
@@ -33,7 +35,7 @@ interface SignInModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUserRole: UserRole;
-  onSuccessSignIn: (profile: UserProfile) => void;
+  onSuccessSignIn: (profile: UserProfile, options?: { isNewRegistration?: boolean }) => void;
   onOpenRegisterTab?: boolean;
   initialTab?: 'signin' | 'register' | 'quick_personas';
   initialEmail?: string;
@@ -77,16 +79,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Register form state
+  // Register form state (streamlined credentials without vessel details)
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regPhone, setRegPhone] = useState('');
-  const [regVesselName, setRegVesselName] = useState('');
-  const [regVesselType, setRegVesselType] = useState('Sailing Yacht');
-  const [regMarina, setRegMarina] = useState('Haslar Marina');
 
   // Loading & feedback
   const [isLoading, setIsLoading] = useState(false);
@@ -114,7 +113,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           onClose();
         }, 500);
       } else if (res.notFound) {
-        // Refuse login, transfer email and redirect to vessel registration
+        // Refuse login, transfer email and redirect to account registration
         const cleanEnteredEmail = email.trim().toLowerCase();
         setRegEmail(cleanEnteredEmail);
         if (password && password.length >= 6) {
@@ -122,7 +121,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           setRegConfirmPassword(password);
         }
         setActiveTab('register');
-        setErrorMessage(`No account found for "${cleanEnteredEmail}". Login refused. We have redirected you to the registration page with your email address copied over.`);
+        setErrorMessage(`No account found for "${cleanEnteredEmail}". Please enter your details below to create your account.`);
       } else {
         setErrorMessage(res.error || 'Could not verify account credentials.');
       }
@@ -153,19 +152,16 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     setSuccessMessage(null);
 
     try {
-      const profile = await registerVesselAccount({
+      const profile = await registerUserAccount({
         name: regName,
         email: regEmail,
         password: regPassword,
-        phone: regPhone,
-        vesselName: regVesselName,
-        vesselType: regVesselType,
-        marinaBerth: regMarina
+        phone: regPhone
       });
 
-      setSuccessMessage(`Vessel owner account created for ${profile.name}! Opening portal...`);
+      setSuccessMessage(`Account created for ${profile.name}! Opening Vessel Portal...`);
       setTimeout(() => {
-        onSuccessSignIn(profile);
+        onSuccessSignIn(profile, { isNewRegistration: true });
         onClose();
       }, 700);
     } catch (err: any) {
@@ -233,6 +229,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           </button>
 
           <button
+            data-testid="tab-register"
             onClick={() => { 
               if (email.trim() && !regEmail.trim()) {
                 setRegEmail(email.trim().toLowerCase());
@@ -246,8 +243,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 : 'text-slate-400 hover:text-white hover:bg-slate-900'
             }`}
           >
-            <Ship className="w-3.5 h-3.5" />
-            <span>Register Vessel</span>
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Create Account</span>
           </button>
 
           <button
@@ -401,7 +398,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                   }}
                   className="text-sky-400 hover:underline cursor-pointer"
                 >
-                  Create boat account →
+                  Create account →
                 </button>
               </div>
 
@@ -425,15 +422,15 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           </div>
         )}
 
-        {/* Tab 2: Register Vessel Owner Account */}
+        {/* Tab 2: Create Account */}
         {activeTab === 'register' && (
           <form onSubmit={handleRegisterSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
             <div className="bg-sky-950/40 border border-sky-500/30 p-3.5 rounded-2xl text-xs text-sky-200 flex items-start gap-2.5">
-              <Ship className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+              <UserPlus className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold block">Register Your Vessel with AJWMES</span>
+                <span className="font-bold block">Create Your AJWMES Account</span>
                 <span className="text-[11px] text-sky-300">
-                  Save your vessel's electrical specs, request diagnostic bookings (£25/hr), order custom panels, and direct message Anthony aboard your yacht.
+                  Set up your customer credentials in seconds. You can register your vessel details and manage 12V/24V electrical specs directly in the Vessel Portal.
                 </span>
               </div>
             </div>
@@ -444,6 +441,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    data-testid="auth-reg-name-input"
                     type="text"
                     required
                     value={regName}
@@ -466,6 +464,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    data-testid="auth-reg-email-input"
                     type="email"
                     required
                     value={regEmail}
@@ -481,6 +480,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    data-testid="auth-reg-password-input"
                     type={showRegPassword ? 'text' : 'password'}
                     required
                     minLength={6}
@@ -504,6 +504,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    data-testid="auth-reg-confirm-password-input"
                     type={showRegPassword ? 'text' : 'password'}
                     required
                     minLength={6}
@@ -515,11 +516,15 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Mobile / VHF Contact</label>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span>Mobile / VHF Contact</span>
+                  <span className="text-[10px] text-slate-500 font-normal">Optional for SMS booking &amp; dispatch alerts</span>
+                </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    data-testid="auth-reg-phone-input"
                     type="tel"
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
@@ -528,59 +533,16 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                   />
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Vessel Name</label>
-                <div className="relative">
-                  <Ship className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={regVesselName}
-                    onChange={(e) => setRegVesselName(e.target.value)}
-                    placeholder="Westerly Discus 33"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Vessel Type / Make</label>
-                <select
-                  value={regVesselType}
-                  onChange={(e) => setRegVesselType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                >
-                  <option value="Sailing Yacht">Sailing Yacht (Monohull)</option>
-                  <option value="Motor Cruiser">Motor Cruiser / Sports Cruiser</option>
-                  <option value="Catamaran">Catamaran / Multihull</option>
-                  <option value="Commercial Fishing">Commercial Fishing / Workboat</option>
-                  <option value="RIB / Tender">RIB / Fast Tender</option>
-                  <option value="Narrowboat / Barge">Narrowboat / Inland Barge</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Home Marina / Mooring</label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={regMarina}
-                    onChange={(e) => setRegMarina(e.target.value)}
-                    placeholder="Haslar Marina, Berth E-14"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
             </div>
 
             <button
+              data-testid="auth-register-submit-button"
               type="submit"
               disabled={isLoading}
               className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 mt-2"
             >
-              <Ship className="w-4 h-4" />
-              <span>{isLoading ? 'Creating Vessel Account...' : 'Complete Registration & Open Vessel Portal'}</span>
+              <UserPlus className="w-4 h-4" />
+              <span>{isLoading ? 'Creating Account...' : 'Create Account & Open Vessel Portal'}</span>
             </button>
           </form>
         )}

@@ -229,7 +229,7 @@ export default function App() {
     setCurrentTab(getDefaultRouteForRole(newRole));
   };
 
-  const handleSuccessSignIn = (profile: UserProfile) => {
+  const handleSuccessSignIn = (profile: UserProfile, options?: { isNewRegistration?: boolean }) => {
     const enriched = enrichUserProfile(profile);
     setCurrentUserProfile(enriched);
     setCurrentUserRole(enriched.role);
@@ -248,12 +248,18 @@ export default function App() {
     }
 
     setAuthToast({
-      title: `Welcome, ${enriched.name}`,
-      message: `Signed in successfully with ${ROLE_CONFIGS[enriched.role].label} permissions. Active in Firestore database.`,
+      title: options?.isNewRegistration ? `Account Created, ${enriched.name}` : `Welcome, ${enriched.name}`,
+      message: options?.isNewRegistration
+        ? 'Your account is ready. Welcome to your Vessel Portal where you can register your boat and electrical specs.'
+        : `Signed in successfully with ${ROLE_CONFIGS[enriched.role].label} permissions. Active in Firestore database.`,
       type: 'success'
     });
-    // Immediately navigate to the primary workspace for this role
-    setCurrentTab(getDefaultRouteForRole(enriched.role));
+    // Immediately navigate to the primary workspace for this role (or portal on new registration)
+    if (options?.isNewRegistration || enriched.role === 'client') {
+      setCurrentTab('portal');
+    } else {
+      setCurrentTab(getDefaultRouteForRole(enriched.role));
+    }
   };
 
   const handleConfirmSignOff = () => {

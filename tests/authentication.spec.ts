@@ -160,4 +160,59 @@ test.describe('Landing & Authentication E2E Flows', () => {
     // Verify success feedback
     await expect(accountModal).toContainText('Account profile updated');
   });
+
+  test('should display Create Account tab with vessel fields removed and route to Vessel Portal', async ({ page }) => {
+    await page.goto('/');
+
+    // 1. Open authentication modal
+    const signInNavButton = page.getByTestId('nav-signin-button');
+    await expect(signInNavButton).toBeVisible();
+    await signInNavButton.click();
+
+    const authModal = page.getByTestId('auth-modal');
+    await expect(authModal).toBeVisible();
+
+    // 2. Click the Create Account tab
+    const registerTab = page.getByTestId('tab-register');
+    await expect(registerTab).toBeVisible();
+    await expect(registerTab).toContainText('Create Account');
+    await registerTab.click();
+
+    // 3. Verify user credential fields are present
+    const nameInput = page.getByTestId('auth-reg-name-input');
+    const emailInput = page.getByTestId('auth-reg-email-input');
+    const passwordInput = page.getByTestId('auth-reg-password-input');
+    const confirmPasswordInput = page.getByTestId('auth-reg-confirm-password-input');
+    const phoneInput = page.getByTestId('auth-reg-phone-input');
+    const submitButton = page.getByTestId('auth-register-submit-button');
+
+    await expect(nameInput).toBeVisible();
+    await expect(emailInput).toBeVisible();
+    await expect(passwordInput).toBeVisible();
+    await expect(confirmPasswordInput).toBeVisible();
+    await expect(phoneInput).toBeVisible();
+    await expect(submitButton).toContainText('Create Account & Open Vessel Portal');
+
+    // 4. Assert vessel-specific inputs are NOT present on this screen
+    await expect(page.locator('input[placeholder="Westerly Discus 33"]')).toHaveCount(0);
+    await expect(page.locator('input[placeholder="Haslar Marina, Berth E-14"]')).toHaveCount(0);
+
+    // 5. Fill registration credentials
+    await nameInput.fill('Sarah Connor');
+    await emailInput.fill('sarah.connor@solent-sail.co.uk');
+    await passwordInput.fill('securepass123');
+    await confirmPasswordInput.fill('securepass123');
+    await phoneInput.fill('07700 900777');
+
+    // 6. Submit registration
+    await submitButton.click();
+
+    // 7. Verify navigation to the Vessel Portal
+    const userProfileName = page.getByTestId('user-profile-name');
+    await expect(userProfileName).toBeVisible({ timeout: 10000 });
+    await expect(userProfileName).toContainText('Sarah Connor');
+
+    // 8. Verify user is on the Vessel Portal route
+    await expect(page.getByText('Vessel Portal', { exact: false })).toBeVisible();
+  });
 });
