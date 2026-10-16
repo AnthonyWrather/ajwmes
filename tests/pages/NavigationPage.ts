@@ -27,11 +27,10 @@ export class NavigationPage {
   }
 
   async navigateToStore(): Promise<void> {
-    // Wait for header to be mounted
-    const anyNav = this.page.locator('[data-testid="nav-tab-store"], [data-testid="mobile-menu-toggle"]').first();
-    await expect(anyNav).toBeVisible({ timeout: 10000 });
+    const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
-    if (await this.mobileMenuToggle.isVisible()) {
+    if (isMobile) {
+      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
       await this.mobileMenuToggle.click({ force: true });
       await expect(this.mobileStoreTab).toBeVisible({ timeout: 10000 });
       await this.mobileStoreTab.click({ force: true });
