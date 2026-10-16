@@ -302,7 +302,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                       className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-slate-200 flex items-center gap-2 cursor-pointer font-medium"
                     >
                       <User className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Manage Account &amp; Specs</span>
+                      <span>{canAccessRoute(currentUserRole, 'portal') ? 'Manage Account & Specs' : 'Manage Account'}</span>
                     </button>
 
                     {currentUserRole === 'client' && (

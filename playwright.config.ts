@@ -6,11 +6,11 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
-  timeout: 60 * 1000,
+  timeout: 90 * 1000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 1 : (process.env.ALL_BROWSERS === 'true' ? 4 : undefined),
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }]

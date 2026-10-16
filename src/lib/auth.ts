@@ -429,11 +429,14 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
   const demoMatch = activeProfiles.find(p => p.email.toLowerCase() === cleanEmail) || (detectEnvironment().envCode !== 'github-deployed' ? DEMO_PROFILES.find(p => p.email.toLowerCase() === cleanEmail) : undefined);
 
   // 1. Look up existing user in Firestore 'users' collection first if API key is present
-  if (firebaseConfig.apiKey) {
+  if (firebaseConfig.apiKey && typeof window !== 'undefined' && (typeof navigator === 'undefined' || navigator.onLine)) {
     try {
       const usersCol = collection(db, getScopedCollection('users'));
       const q = query(usersCol, where('email', '==', cleanEmail));
-      const snap = await getDocs(q);
+      const snap = await Promise.race([
+        getDocs(q),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500))
+      ]);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
         const data = docSnap.data();
@@ -472,7 +475,7 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
           passwordHash: data.passwordHash || providedHash || demoMatch?.passwordHash || encodePassword('ajwmes2026')
         });
 
-        // Update last login and ensure password is saved in database
+        // Update last login and ensure password is saved in database without blocking
         const updatePayload: any = {
           lastLoginAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -480,7 +483,9 @@ export async function signInWithEmailOrAccount(email: string, password?: string)
           passwordHash: existingProfile.passwordHash
         };
 
-        await setDoc(doc(db, getScopedCollection('users'), existingProfile.id), updatePayload, { merge: true });
+        setDoc(doc(db, getScopedCollection('users'), existingProfile.id), updatePayload, { merge: true }).catch((err) => {
+          console.warn('Notice: Background lastLoginAt update skipped:', err);
+        });
         saveUserProfile(existingProfile);
         return { success: true, profile: existingProfile };
       }

@@ -167,6 +167,23 @@ test.describe('Landing & Authentication E2E Flows', () => {
 
     // Verify success feedback
     await expect(accountModal).toContainText('Account profile updated');
+
+    // 10. Verify Vessel Specifications tab visibility matches Vessel Portal access by role
+    const vesselTab = page.getByTestId('account-tab-vessel');
+    await expect(vesselTab).toBeVisible();
+    await expect(vesselTab).toContainText('Vessel Specifications');
+
+    // Switch to Role & Permissions tab and test roles without Vessel Portal access
+    await page.getByTestId('account-tab-role').click({ force: true });
+    await page.getByTestId('switch-persona-technician').click({ force: true });
+    await expect(vesselTab).toHaveCount(0);
+
+    await page.getByTestId('switch-persona-postal').click({ force: true });
+    await expect(vesselTab).toHaveCount(0);
+
+    // Switch to Client (has Vessel Portal access) and verify tab is restored
+    await page.getByTestId('switch-persona-client').click({ force: true });
+    await expect(vesselTab).toBeVisible();
   });
 
   test('should display Create Account tab with vessel fields removed and route to Vessel Portal', async ({ page }) => {
@@ -306,5 +323,6 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(headerBadge).toBeEnabled();
   });
 });
+
 
 

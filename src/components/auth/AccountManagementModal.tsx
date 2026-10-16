@@ -37,6 +37,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { resizeImageToDataUrl } from '../../utils/imageResize';
+import { canAccessRoute } from '../../lib/rbac';
 
 interface AccountManagementModalProps {
   isOpen: boolean;
@@ -78,6 +79,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   postalOrders = []
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'vessel' | 'role' | 'activity' | 'security'>('profile');
+  const canAccessVesselPortal = canAccessRoute(currentUserRole, 'portal');
 
   // Form states initialized with current profile
   const [name, setName] = useState(currentUserProfile.name);
@@ -99,6 +101,13 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   const [notifyJobUpdates, setNotifyJobUpdates] = useState(currentUserProfile.notifyJobUpdates ?? true);
   const [notifyDispatchSms, setNotifyDispatchSms] = useState(currentUserProfile.notifyDispatchSms ?? true);
   const [systemVoltagePref, setSystemVoltagePref] = useState<'12V' | '24V'>(currentUserProfile.systemVoltage || '12V');
+
+  // Ensure activeTab falls back to 'profile' if current role does not have access to the Vessel Portal
+  useEffect(() => {
+    if (!canAccessVesselPortal && activeTab === 'vessel') {
+      setActiveTab('profile');
+    }
+  }, [canAccessVesselPortal, activeTab]);
 
   // Synchronize form values whenever modal opens or active user ID changes
   useEffect(() => {
@@ -276,6 +285,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         {/* Navigation Tabs */}
         <div className="px-6 py-2 bg-slate-950/60 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs font-semibold scrollbar-none">
           <button
+            data-testid="account-tab-profile"
             onClick={() => setActiveTab('profile')}
             className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'profile'
@@ -287,19 +297,23 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
             <span>Profile &amp; Details</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('vessel')}
-            className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'vessel'
-                ? 'bg-sky-600 text-white font-bold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
-            }`}
-          >
-            <Ship className="w-3.5 h-3.5" />
-            <span>Vessel Specifications</span>
-          </button>
+          {canAccessVesselPortal && (
+            <button
+              data-testid="account-tab-vessel"
+              onClick={() => setActiveTab('vessel')}
+              className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'vessel'
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <Ship className="w-3.5 h-3.5" />
+              <span>Vessel Specifications</span>
+            </button>
+          )}
 
           <button
+            data-testid="account-tab-role"
             onClick={() => setActiveTab('role')}
             className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'role'
@@ -312,6 +326,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
           </button>
 
           <button
+            data-testid="account-tab-activity"
             onClick={() => setActiveTab('activity')}
             className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'activity'
@@ -324,6 +339,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
           </button>
 
           <button
+            data-testid="account-tab-security"
             onClick={() => setActiveTab('security')}
             className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'security'
@@ -628,7 +644,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
         )}
 
         {/* Tab 2: Vessel Specifications */}
-        {activeTab === 'vessel' && (
+        {activeTab === 'vessel' && canAccessVesselPortal && (
           <form onSubmit={handleSaveChanges} className="p-6 overflow-y-auto space-y-5 flex-1">
             <div className="p-3.5 rounded-2xl bg-sky-950/40 border border-sky-500/30 text-xs text-sky-200 flex items-start justify-between gap-3">
               <div className="flex items-start gap-2.5">
@@ -800,6 +816,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                   return (
                     <button
                       key={r}
+                      data-testid={`switch-persona-${r}`}
                       onClick={() => {
                         onSelectRole(r);
                         if (profileMatch) onUpdateUserProfile(profileMatch);
@@ -896,52 +913,54 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
             </div>
 
             {/* Recent Diagnostic Jobs */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h5 className="font-bold text-white text-xs">Vessel Work &amp; Diagnostic Jobs</h5>
-                {onNavigateToPortal && (
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onNavigateToPortal();
-                    }}
-                    className="text-[11px] text-sky-400 hover:underline cursor-pointer"
-                  >
-                    View Job Sheets →
-                  </button>
-                )}
-              </div>
-
-              {userJobs.length === 0 ? (
-                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-center">
-                  No active diagnostic jobs recorded. Book an on-vessel inspection at £25/hr.
+            {canAccessVesselPortal && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-bold text-white text-xs">Vessel Work &amp; Diagnostic Jobs</h5>
+                  {onNavigateToPortal && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onNavigateToPortal();
+                      }}
+                      className="text-[11px] text-sky-400 hover:underline cursor-pointer"
+                    >
+                      View Job Sheets →
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {userJobs.slice(0, 3).map(job => (
-                    <div key={job.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-amber-400 font-bold">{job.reference}</span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 capitalize">
-                            {job.status.replace(/_/g, ' ')}
+
+                {userJobs.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-center">
+                    No active diagnostic jobs recorded. Book an on-vessel inspection at £25/hr.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {userJobs.slice(0, 3).map(job => (
+                      <div key={job.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-amber-400 font-bold">{job.reference}</span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 capitalize">
+                              {job.status.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {job.vesselName} ({job.serviceCategory})
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-[11px] text-emerald-400 font-bold">
+                            {job.diagnosticHours}h logged (£{job.totalLabor})
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                          {job.vesselName} ({job.serviceCategory})
-                        </p>
                       </div>
-
-                      <div className="text-right">
-                        <span className="text-[11px] text-emerald-400 font-bold">
-                          {job.diagnosticHours}h logged (£{job.totalLabor})
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
