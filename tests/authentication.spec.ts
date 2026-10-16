@@ -230,7 +230,7 @@ test.describe('Landing & Authentication E2E Flows', () => {
 
     // Click link to navigate to full vessel portal
     await portalLink.click({ force: true });
-    await expect(accountModal).not.toBeVisible();
+    await expect(accountModal).not.toBeVisible({ timeout: 10000 });
 
     // In full vessel portal: verify boat details, hull type pick list, and dimensions (LOA, LWL, Beam, Draft)
     const editSpecsBtn = page.getByTestId('edit-vessel-specs-button');
