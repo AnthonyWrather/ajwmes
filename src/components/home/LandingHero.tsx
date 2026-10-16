@@ -22,7 +22,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/60 p-6 sm:p-10 lg:p-14">
         <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-3xl space-y-6">
+        <div className="relative z-10 w-full space-y-6">
           <div className="inline-flex items-center gap-2 text-xs font-semibold text-sky-300 bg-sky-950/80 border border-sky-500/30 px-3 py-1.5 rounded-full">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Gosport Based · From 16ft Day Boats &amp; Anglers to Offshore Cruisers · Solent Wide</span>
@@ -33,7 +33,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span className="text-sky-400">Every Boat &amp; Budget.</span>
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
+          <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
             Whether you need 1 hour to trace a dead battery drain on a 20ft day-cruiser, a clean fuse-box rewire on an angling boat, a full lithium LiFePO4 refit, or you just want to <strong>order marine tinned cable cut to length &amp; parts online posted to your boat</strong>.
           </p>
 

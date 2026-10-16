@@ -22,7 +22,6 @@ import { ROLE_CONFIGS } from '../lib/auth';
 import { canAccessRoute } from '../lib/rbac';
 import { detectEnvironment, getEnvironmentBadge } from '../lib/environment';
 import { APP_VERSION, FULL_VERSION_TAG, GIT_COMMIT_SHA } from '../version';
-import { Layers } from 'lucide-react';
 
 interface NavigationProps {
   currentTab: string;
@@ -325,33 +324,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                 )}
               </div>
             )}
-
-          {/* Real-time Environment / Firestore Cloud Sync Status */}
-          {isFirebaseConnected ? (
-            <button 
-              onClick={onOpenEnvironmentSettings}
-              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-950/70 hover:bg-emerald-900/60 border border-emerald-500/30 rounded-lg text-[10px] font-mono text-emerald-300 transition-colors cursor-pointer"
-              title="Connected to live Firebase Firestore database · Click to inspect environments"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Live Firestore</span>
-            </button>
-          ) : (
-            <button
-              onClick={onOpenEnvironmentSettings || onRetrySync}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-sky-950/80 hover:bg-sky-900/80 border border-sky-500/40 rounded-lg text-[10px] font-mono text-sky-300 transition-colors cursor-pointer group"
-              title="Operating in isolated test storage · Click to open Environment & Data Manager"
-            >
-              <Layers className="w-3 h-3 text-sky-400 shrink-0" />
-              <span className="group-hover:underline">
-                {detectEnvironment().envCode === 'aistudio-dev'
-                  ? 'AI Studio Test Data'
-                  : detectEnvironment().envCode === 'aistudio-preview'
-                  ? 'Preview Sandbox'
-                  : 'Isolated Storage'}
-              </span>
-            </button>
-          )}
 
           {/* In-App PWA Install Button */}
           <PWAInstallButton />
