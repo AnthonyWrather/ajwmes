@@ -26,7 +26,7 @@ export const StockAlertEmailModal: React.FC<StockAlertEmailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div data-testid="stock-alert-modal" className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-3xl p-5 sm:p-6 text-slate-100 shadow-2xl space-y-5 my-auto animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-start justify-between pb-3 border-b border-slate-800">
@@ -51,7 +51,8 @@ export const StockAlertEmailModal: React.FC<StockAlertEmailModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+            data-testid="close-stock-alert-modal-btn"
+            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -85,7 +86,8 @@ export const StockAlertEmailModal: React.FC<StockAlertEmailModalProps> = ({
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors"
+            data-testid="copy-stock-alert-btn"
+            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copied ? 'Copied to clipboard' : 'Copy Email Raw Text'}</span>
@@ -95,18 +97,20 @@ export const StockAlertEmailModal: React.FC<StockAlertEmailModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+              data-testid="close-stock-alert-btn"
+              className="px-4 py-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Close
             </button>
 
             <button
               type="button"
+              data-testid="stock-alert-reorder-btn"
               onClick={() => {
                 onClose();
                 onOpenSupplierReorder(alert.itemId);
               }}
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-md shadow-sky-600/30 transition-colors"
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-md shadow-sky-600/30 transition-colors cursor-pointer"
             >
               <span>Reorder from Supplier</span>
               <ArrowRight className="w-3.5 h-3.5" />

@@ -252,6 +252,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-950 border border-slate-800 rounded-xl self-start md:self-auto">
           <button
             onClick={() => setActiveAdminTab('jobs')}
+            data-testid="admin-tab-jobs"
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAdminTab === 'jobs' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -265,6 +266,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               setFocusedExpenseJobId('');
               setActiveAdminTab('expenses');
             }}
+            data-testid="admin-tab-expenses"
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
               activeAdminTab === 'expenses' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -275,6 +277,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveAdminTab('panels')}
+            data-testid="admin-tab-panels"
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAdminTab === 'panels' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -285,6 +288,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveAdminTab('orders')}
+            data-testid="admin-tab-orders"
             className={`relative flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAdminTab === 'orders' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -319,6 +323,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveAdminTab('accounts')}
+            data-testid="admin-tab-accounts"
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAdminTab === 'accounts' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -329,6 +334,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveAdminTab('print')}
+            data-testid="admin-tab-print"
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAdminTab === 'print' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -341,7 +347,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Critical Zero-Stock Depletion Warning Banner */}
       {zeroStockCount > 0 && (
-        <div className="bg-rose-950/40 border border-rose-500/50 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl shadow-rose-950/40 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div data-testid="zero-stock-banner" className="bg-rose-950/40 border border-rose-500/50 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl shadow-rose-950/40 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-start sm:items-center gap-3">
             <div className="p-2.5 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-400 shrink-0">
               <AlertTriangle className="w-5 h-5 animate-bounce" />
@@ -366,26 +372,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </p>
             </div>
           </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {onOpenSupplierReorder && zeroStockItems.length > 0 && (
+              <button
+                type="button"
+                data-testid="banner-reorder-btn"
+                onClick={() => onOpenSupplierReorder(zeroStockItems[0])}
+                className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>Reorder Item</span>
+              </button>
+            )}
+            <button
+              type="button"
+              data-testid="banner-view-catalog-btn"
+              onClick={() => setActiveAdminTab('catalog')}
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Stock Catalog</span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-total-workload" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Total Workload</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-white mt-1 block">
             {jobs.length} Vessels
           </span>
           <span className="text-[10px] text-slate-500 mt-0.5 block">{inProgressCount} aboard right now</span>
         </div>
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-hours-labor" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Hours Diagnostic Labor</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-sky-400 mt-1 block">
             {totalHours}h Logged
           </span>
           <span className="text-[10px] text-slate-500 mt-0.5 block">@ £25/hr rate</span>
         </div>
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-gross-recorded" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Gross Recorded</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-400 mt-1 block">
             £{totalBilled.toFixed(2)}
@@ -393,6 +422,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <span className="text-[10px] text-slate-500 mt-0.5 block">Labor &amp; hardware parts</span>
         </div>
         <div 
+          data-testid="metric-non-catalog-expenses"
           onClick={() => {
             setFocusedExpenseJobId('');
             setActiveAdminTab('expenses');
@@ -409,7 +439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </span>
           <span className="text-[10px] text-slate-500 mt-0.5 block">{expenses.length} out-of-pocket costs</span>
         </div>
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-pending-quotes" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Pending Quotes</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-amber-400 mt-1 block">
             {quotePendingCount} Inquiries

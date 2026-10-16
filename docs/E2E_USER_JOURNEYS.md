@@ -33,6 +33,7 @@ graph TD
         J4["4. Field Technician Diagnostic & Sign-Off\n(tests/technician-diagnostic-flow.spec.ts)"]
         J5["5. Postal Fulfillment & Dispatch\n(tests/postal-fulfillment-dispatch.spec.ts)"]
         J6["6. Consignment Timeline Tracker\n(tests/consignment-tracker.spec.ts)"]
+        J7["7. Master Workshop Admin & Expenses (UJ-10)\n(tests/admin-workshop-management.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -41,6 +42,7 @@ graph TD
     J4 -->|"Stopwatch, Materials & Canvas Signature"| POM4["TechnicianWorkspacePage\nCustomerSignOffModal"]
     J5 -->|"Queue, Cable Cut & Dispatch Modal"| POM5["PostalWorkstationPage\nDispatchModalPage"]
     J6 -->|"Milestones, Checkpoints & Status Simulator"| POM6["ConsignmentTrackerPage"]
+    J7 -->|"Expenses, POs, Rollups & Snapshots"| POM7["AdminDashboardPage"]
 ```
 
 ---
@@ -179,6 +181,37 @@ graph TD
 
 ---
 
+### Journey 7: Master Workshop Administration, Expenses & Restock (UJ-10)
+- **Test File:** [`tests/admin-workshop-management.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/admin-workshop-management.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `AdminDashboardPage`
+- **Target Personas:** `admin` (`anthonywrather@gmail.com`)
+
+#### Scenarios Verified:
+1. **Workshop Admin Authentication & Dashboard Redirection**:
+   - Authenticate with administrator credentials (`anthonywrather@gmail.com`), asserting redirection to Anthony's Operations Dashboard (`/admin`) and profile badge rehydration.
+2. **Top-Level Operational KPI Metrics Audit**:
+   - Verify primary metric cards: Total Workload, Hours Diagnostic Labor, Gross Recorded Revenue (£), Non-Catalog Field Expenses (£), and Pending Replica/Custom Panel Quotes.
+3. **Critical Depletion Warning & Supplier Reorder PO Flow**:
+   - Inspect zero-stock alert banner for depleted workshop components.
+   - Trigger Supplier Purchase Order modal, configure restock quantity, set express Solent courier speed, copy generated PO email to clipboard, dispatch purchase order, and execute instant stock replenishment.
+4. **Non-Catalog Job Expenses & Financial KPI Accounting Summary**:
+   - Access Non-Catalog Job Expenses tab and verify financial rollup summary: Total Recorded Disbursements, Fuel & Solent Travel, External Sub-Contractor Fees, and Client Billable vs Overhead absorbed.
+5. **Field Non-Catalog Expense Recording with Client Billable Classification**:
+   - Record a new out-of-pocket field disbursement (e.g. water taxi mooring launch, harbor fees, specialist gear hire) linked to an active vessel job with payee, receipt reference, date, payment method, and billable recharge designation.
+6. **Search Filtering, Job Focus & Job Financial Rollup Summary**:
+   - Filter disbursements by receipt reference and keyword search query, verifying real-time table filtering and filter reset.
+   - Focus on an individual vessel job to audit the comprehensive Job Financial Rollup card: Diagnostic Labor, Catalog Materials, Non-Catalog Expenses, Client Total Billable, and Gross Job Margin (£ and %).
+7. **Inline Billable vs Workshop Overhead Dynamic Recalculation**:
+   - Toggle expense reimbursement status inline (`Workshop Overhead` <-> `Billable to Client`), verifying instantaneous state toggling and badge restyling.
+8. **Expense Editing & Safe Deletion Confirmation**:
+   - Open edit modal to modify disbursement amounts, verify optimistic update, and trigger safe deletion confirmation modal to permanently purge test expenses.
+9. **Stock & Catalog Point-in-Time Save Points (Snapshots)**:
+   - Switch to Stock & Catalog tab, open Save Points drawer, and generate a point-in-time rollback snapshot verifying timestamped catalog preservation.
+10. **Accounting CSV Export Trigger**:
+    - Trigger CSV export download for workshop accounting and bookkeeping.
+
+---
+
 ## 2. Future User Journeys Requiring Test Coverage
 
 The following table identifies the remaining operational workflows across AJWMES to be automated:
@@ -188,10 +221,10 @@ The following table identifies the remaining operational workflows across AJWMES
 | **UJ-04** | **Solent Field Technician Diagnostics & Sign-off** | `/technician` | `technician`, `admin` | **Critical (P0)** | High (Canvas, Timer, Offline) | **Done (Automated)** |
 | **UJ-05** | **Postal Workshop Order Fulfillment & Dispatch** | `/postal` | `postal`, `admin` | **High (P0)** | Medium (Queue, Cable cutting, Packing slip) | **Done (Automated)** |
 | **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | **Done (Automated)** |
+| **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | Medium-High (Financial rollups, POs) | **Done (Automated)** |
 | **UJ-07** | **Custom Carling Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Next Recommended** |
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | Pending |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | Pending |
-| **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | Medium-High (Financial rollups, POs) | Pending |
 | **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | Pending |
 
 ---
@@ -205,12 +238,12 @@ gantt
     section Phase 1 (Core Operations)
     Technician Diagnostic & Sign-off Flow (UJ-04) :done, 2026-10-16, 1d
     Postal Workshop Order Fulfillment (UJ-05)     :done, 2026-10-16, 1d
+    Workshop Admin, Expenses & Restock (UJ-10)    :done, 2026-10-17, 1d
     section Phase 2 (Customer Experience)
     Consignment Tracker Timeline (UJ-06)          :done, 2026-10-17, 1d
     Custom Switch Panel CAD Designer (UJ-07)      :crit, active, 2026-10-18, 2d
     Vessel Portal & PDF Certificate Export (UJ-09):2026-10-20, 2d
     section Phase 3 (Admin & Resilience)
-    Workshop Admin, Expenses & Restock (UJ-10)    :2026-10-22, 3d
     Offline Pontoon Resilience & Mutation Sync (UJ-11):2026-10-25, 3d
     Photo Replica Quoter (UJ-08)                  :2026-10-28, 2d
 ```

@@ -7,6 +7,8 @@ export class NavigationPage {
   readonly mobileMenuToggle: Locator;
   readonly mobileStoreTab: Locator;
   readonly mobileTrackerTab: Locator;
+  readonly desktopAdminTab: Locator;
+  readonly mobileAdminTab: Locator;
   readonly cartButton: Locator;
   readonly signInNavButton: Locator;
   readonly userProfileName: Locator;
@@ -16,9 +18,11 @@ export class NavigationPage {
     this.page = page;
     this.desktopStoreTab = page.getByTestId('nav-tab-store');
     this.desktopTrackerTab = page.getByTestId('nav-tab-tracker');
+    this.desktopAdminTab = page.getByTestId('nav-tab-admin');
     this.mobileMenuToggle = page.getByTestId('mobile-menu-toggle');
     this.mobileStoreTab = page.getByTestId('mobile-nav-tab-store');
     this.mobileTrackerTab = page.getByTestId('mobile-nav-tab-tracker');
+    this.mobileAdminTab = page.getByTestId('mobile-nav-tab-admin');
     this.cartButton = page.getByTestId('nav-cart-button');
     this.signInNavButton = page.getByTestId('nav-signin-button');
     this.userProfileName = page.getByTestId('user-profile-name');
@@ -71,6 +75,20 @@ export class NavigationPage {
       const desktopPostal = this.page.getByTestId('nav-tab-postal');
       await expect(desktopPostal).toBeVisible({ timeout: 10000 });
       await desktopPostal.click({ force: true });
+    }
+  }
+
+  async navigateToAdmin(): Promise<void> {
+    const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
+
+    if (isMobile) {
+      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
+      await this.mobileMenuToggle.click({ force: true });
+      await expect(this.mobileAdminTab).toBeVisible({ timeout: 10000 });
+      await this.mobileAdminTab.click({ force: true });
+    } else {
+      await expect(this.desktopAdminTab).toBeVisible({ timeout: 10000 });
+      await this.desktopAdminTab.click({ force: true });
     }
   }
 
