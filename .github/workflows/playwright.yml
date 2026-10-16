@@ -1,4 +1,4 @@
-name: Playwright E2E Tests
+name: Playwright Cross-Browser Matrix Tests
 
 on:
   push:
@@ -11,9 +11,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    timeout-minutes: 60
+  validate:
+    name: Lint & Unit Tests
+    timeout-minutes: 15
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci || npm install
+          else
+            npm install
+          fi
+
+      - name: Run TypeScript Lint
+        run: npm run lint
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+        env:
+          CI: true
+
+  e2e:
+    name: E2E (${{ matrix.project }})
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: 'chromium'
+            slug: 'desktop-chrome'
+          - project: 'firefox'
+            slug: 'desktop-firefox'
+          - project: 'webkit'
+            slug: 'desktop-safari'
+          - project: 'Mobile Chrome'
+            slug: 'mobile-chrome'
+          - project: 'Mobile Safari'
+            slug: 'mobile-safari'
 
     steps:
       - name: Checkout repository
@@ -51,13 +95,8 @@ jobs:
         run: npx playwright install-deps
         if: steps.playwright-cache.outputs.cache-hit == 'true'
 
-      - name: Run Unit Tests (Auth, Electrical Calculations, Form Validation)
-        run: npm run test:unit
-        env:
-          CI: true
-
-      - name: Run Playwright E2E tests
-        run: npm run test:e2e
+      - name: Run Playwright E2E (${{ matrix.project }})
+        run: npx playwright test --project="${{ matrix.project }}"
         env:
           CI: true
           ALL_BROWSERS: 'true'
@@ -67,6 +106,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-html-report
+          name: playwright-report-${{ matrix.slug }}
           path: playwright-report/
-          retention-days: 30
+          retention-days: 14

@@ -45,26 +45,25 @@ jobs:
         id: playwright-version
         run: echo "version=$(npx playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
 
-      - name: Cache Playwright browser binaries
+      - name: Cache Playwright Chromium binaries
         uses: actions/cache@v4
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          key: ${{ runner.os }}-playwright-chromium-${{ steps.playwright-version.outputs.version }}
 
-      - name: Install Playwright Browsers and System Dependencies
-        run: npx playwright install --with-deps
+      - name: Install Chromium & System Dependencies
+        run: npx playwright install --with-deps chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Install Playwright System Dependencies Only
-        run: npx playwright install-deps
+        run: npx playwright install-deps chromium
         if: steps.playwright-cache.outputs.cache-hit == 'true'
 
-      - name: Run Playwright E2E Tests
-        run: npm run test:e2e
+      - name: Run Playwright E2E Fast Deployment Gate (Desktop & Mobile Chromium)
+        run: npx playwright test
         env:
           CI: true
-          ALL_BROWSERS: 'true'
           PLAYWRIGHT_WORKERS: 2
 
       - name: Upload Playwright Test Report Artifact

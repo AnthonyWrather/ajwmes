@@ -17,7 +17,8 @@ export default defineConfig({
         : (process.env.CI ? 2 : (process.env.ALL_BROWSERS === 'true' ? 4 : undefined))),
   reporter: [
     ['list'],
-    ['html', { outputFolder: 'playwright-report', open: 'never' }]
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ...(process.env.CI ? [['github'] as const] : [])
   ],
   use: {
     baseURL: 'http://127.0.0.1:5173',
