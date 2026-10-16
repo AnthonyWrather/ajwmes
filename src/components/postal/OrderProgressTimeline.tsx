@@ -103,6 +103,7 @@ export const OrderProgressTimeline: React.FC<OrderProgressTimelineProps> = ({
 
         {currentTier === 0 && (
           <button
+            data-testid="advance-to-packed-btn"
             onClick={() => onUpdateStatus(order.id, 'packed')}
             className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-sky-900/30 cursor-pointer"
           >
@@ -113,6 +114,7 @@ export const OrderProgressTimeline: React.FC<OrderProgressTimelineProps> = ({
 
         {currentTier <= 1 && (
           <button
+            data-testid="advance-to-dispatched-btn"
             onClick={() => {
               const defaultTracking = order.trackingNumber || `GB${Math.floor(100000000 + Math.random() * 900000000)}RM`;
               const defaultCarrier = order.trackingCarrier || 'Royal Mail Tracked 24';
@@ -127,6 +129,7 @@ export const OrderProgressTimeline: React.FC<OrderProgressTimelineProps> = ({
 
         {currentTier === 2 && (
           <button
+            data-testid="advance-to-delivered-btn"
             onClick={() => onUpdateStatus(order.id, 'delivered')}
             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-emerald-900/30 cursor-pointer"
           >
@@ -156,7 +159,7 @@ export const OrderProgressTimeline: React.FC<OrderProgressTimelineProps> = ({
   };
 
   return (
-    <div className={`bg-slate-950/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 ${className}`}>
+    <div data-testid="order-progress-timeline" className={`bg-slate-950/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 ${className}`}>
       {/* Top Header Summary */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-1">
@@ -230,6 +233,7 @@ export const OrderProgressTimeline: React.FC<OrderProgressTimelineProps> = ({
           return (
             <div
               key={step.key}
+              data-testid={`timeline-step-${step.key}`}
               className={`relative rounded-xl p-3.5 border transition-all space-y-2 ${
                 isCurrent
                   ? 'bg-gradient-to-b from-slate-900 to-slate-950 border-sky-500/80 ring-1 ring-sky-500/30 shadow-lg shadow-sky-950/50'

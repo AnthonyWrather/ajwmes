@@ -39,9 +39,6 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
   const [showPrintLabel, setShowPrintLabel] = useState<PostalOrder | null>(null);
   const [packingSlipOrder, setPackingSlipOrder] = useState<PostalOrder | null>(null);
   const [autoPrintSlip, setAutoPrintSlip] = useState<boolean>(false);
-
-  const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0];
-
   const handleOpenPackingSlip = (order: PostalOrder, triggerAutoPrint = false) => {
     setPackingSlipOrder(order);
     setAutoPrintSlip(triggerAutoPrint);
@@ -65,6 +62,8 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
     }
     return true;
   });
+
+  const selectedOrder = orders.find(o => o.id === selectedOrderId) || filteredOrders[0] || orders[0];
 
   const handleDispatch = (orderId: string) => {
     const tracking = trackingInputs[orderId] || {
@@ -119,7 +118,14 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setFilterStatus(tab.id)}
+              data-testid={`orders-filter-${tab.id}`}
+              onClick={() => {
+                setFilterStatus(tab.id);
+                if (tab.id !== 'all') {
+                  const match = orders.find(o => o.orderStatus === tab.id);
+                  if (match) setSelectedOrderId(match.id);
+                }
+              }}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
                 filterStatus === tab.id
                   ? 'bg-sky-600 text-white'
@@ -135,6 +141,7 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
           <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
+            data-testid="orders-search-input"
             placeholder="Search order #, customer, postcode..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
@@ -161,6 +168,7 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
               {filteredOrders.map(order => (
                 <div
                   key={order.id}
+                  data-testid={`order-card-${order.id}`}
                   onClick={() => setSelectedOrderId(order.id)}
                   className={`p-4 rounded-2xl border cursor-pointer transition-all space-y-2.5 ${
                     selectedOrderId === order.id
@@ -226,13 +234,13 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
         {/* Selected Order Detail Panel (Right Column) */}
         <div className="lg:col-span-7">
           {selectedOrder ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6">
+            <div data-testid="selected-order-details" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6">
               {/* Order Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-5">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold text-white font-mono">{selectedOrder.orderNumber}</h3>
-                    <span className={`text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border ${
+                    <h3 data-testid="selected-order-number" className="text-xl font-bold text-white font-mono">{selectedOrder.orderNumber}</h3>
+                    <span data-testid="selected-order-status" className={`text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full border ${
                       selectedOrder.orderStatus === 'received'
                         ? 'bg-amber-950 text-amber-300 border-amber-500/30'
                         : selectedOrder.orderStatus === 'packed'
@@ -249,8 +257,9 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
 
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => handleOpenPackingSlip(selectedOrder, true)}
-                    className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-sky-950/40 cursor-pointer"
+                    data-testid="open-packing-slip-btn"
+                    onClick={() => handleOpenPackingSlip(selectedOrder, false)}
+                    className="scroll-mt-28 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-sky-950/40 cursor-pointer"
                     title="Format and print standard packing slip"
                   >
                     <Printer className="w-3.5 h-3.5" />
@@ -258,6 +267,7 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                   </button>
 
                   <button
+                    data-testid="open-address-label-btn"
                     onClick={() => setShowPrintLabel(selectedOrder)}
                     className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Print dispatch address label"
@@ -381,7 +391,7 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                 {selectedOrder.orderStatus === 'received' && (
                   <div className="flex flex-wrap items-center gap-3">
                     <button
-                      onClick={() => handleOpenPackingSlip(selectedOrder, true)}
+                      onClick={() => handleOpenPackingSlip(selectedOrder, false)}
                       className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-white border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer"
                       title="Print workshop packing slip before boxing"
                     >
@@ -389,13 +399,15 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                       <span>Print Packing Slip</span>
                     </button>
                     <button
+                      data-testid="mark-packed-btn"
                       onClick={() => onUpdateOrderStatus(selectedOrder.id, 'packed')}
-                      className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-sky-600/20 cursor-pointer"
+                      className="scroll-mt-28 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-sky-600/20 cursor-pointer"
                     >
                       <Package className="w-4 h-4" />
                       <span>Mark Packed in Workshop Box</span>
                     </button>
                     <button
+                      data-testid="quick-dispatch-btn"
                       onClick={() => handleDispatch(selectedOrder.id)}
                       className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer"
                     >
@@ -411,6 +423,7 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                       <div>
                         <label className="block text-[10px] text-slate-400 mb-1">Carrier</label>
                         <select
+                          data-testid="carrier-select"
                           value={trackingInputs[selectedOrder.id]?.carrier || 'Royal Mail Tracked 24'}
                           onChange={e => setTrackingInputs({
                             ...trackingInputs,
@@ -432,6 +445,7 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                         <label className="block text-[10px] text-slate-400 mb-1">Tracking Number</label>
                         <input
                           type="text"
+                          data-testid="tracking-number-input"
                           placeholder="e.g. GB289192482RM"
                           value={trackingInputs[selectedOrder.id]?.number || `GB${Math.floor(100000000 + Math.random() * 900000000)}RM`}
                           onChange={e => setTrackingInputs({
@@ -447,8 +461,9 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                     </div>
 
                     <button
+                      data-testid="confirm-dispatch-btn"
                       onClick={() => handleDispatch(selectedOrder.id)}
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
+                      className="scroll-mt-28 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Confirm Postal Dispatch &amp; Email Customer Tracking</span>
@@ -469,8 +484,9 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                         </div>
                       </div>
                       <button
+                        data-testid="mark-delivered-btn"
                         onClick={() => onUpdateOrderStatus(selectedOrder.id, 'delivered')}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow transition-all shrink-0"
+                        className="scroll-mt-28 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow transition-all shrink-0 cursor-pointer"
                       >
                         Mark Delivered
                       </button>

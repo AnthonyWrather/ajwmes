@@ -53,6 +53,7 @@ export class AuthModalPage {
     await this.signInPasswordInput.fill(pass);
     await this.signInSubmitButton.scrollIntoViewIfNeeded();
     await this.signInSubmitButton.click({ force: true });
+    await expect(this.authModal).not.toBeVisible({ timeout: 10000 });
   }
 
   async switchToRegisterTab(): Promise<void> {
