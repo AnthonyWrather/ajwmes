@@ -349,12 +349,35 @@ export interface ElectricalLogEntry {
   jobReference?: string;
 }
 
+export const HULL_TYPES = [
+  'Monohull Fin Keel',
+  'Monohull Wing Keel',
+  'Monohull Bilge Keel',
+  'Monohull Long Keel',
+  'Monohull Lifting Keel',
+  'Catamaran',
+  'Trimaran',
+  'Tender',
+  'RIB',
+  'Motor Cruiser',
+  'Displacement Trawler',
+  'Other'
+] as const;
+
+export type HullType = typeof HULL_TYPES[number] | string;
+
 export interface VesselSpec {
   id: string;
   userId?: string;
   vesselName: string;
   makeModel: string;
   year: number;
+  hullType?: HullType;
+  lengthOverall?: string; // LOA (e.g. 30.00 ft / 9.14 m)
+  lengthWaterline?: string; // LWL (e.g. 29.00 ft / 8.84 m)
+  beam?: string; // Beam (e.g. 15.33 ft / 4.67 m)
+  draft?: string; // Draft (e.g. 2.00 ft / 0.61 m)
+  displacement?: string; // Displacement (e.g. 10,500 lbs / 4,763 kg)
   hinNumber: string;
   sailNumber: string;
   homeMarina: string;

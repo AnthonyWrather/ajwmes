@@ -1593,6 +1593,12 @@ export default function App() {
         onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
         onNavigateToPortal={() => setCurrentTab('portal')}
         onNavigateToTracker={() => setCurrentTab('tracker')}
+        onSelectVessel={(id) => {
+          setActiveVesselId(id);
+          const match = vessels.find(v => v.id === id);
+          if (match) setVesselSpec(match);
+        }}
+        vessels={vessels}
         jobs={jobs}
         postalOrders={postalOrders}
       />

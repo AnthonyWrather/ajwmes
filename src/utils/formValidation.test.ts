@@ -202,6 +202,31 @@ describe('formValidation', () => {
       assert.equal(oldResult.isValid, false);
       assert.ok(oldResult.errors.year);
     });
+
+    it('passes for complete vessel specifications with hull type and dimensions', () => {
+      const specWithHull: Partial<VesselSpec> = {
+        vesselName: 'Oceanic 30',
+        systemVoltage: '12V',
+        hullType: 'Catamaran',
+        lengthOverall: '30.00 ft / 9.14 m',
+        lengthWaterline: '29.00 ft / 8.84 m',
+        beam: '15.33 ft / 4.67 m',
+        draft: '2.00 ft / 0.61 m',
+        year: 1980
+      };
+      const result = validateVesselSpecForm(specWithHull);
+      assert.equal(result.isValid, true);
+      assert.deepEqual(result.errors, {});
+    });
+
+    it('rejects blank hull type when provided as empty string', () => {
+      const result = validateVesselSpecForm({
+        vesselName: 'Windbird III',
+        hullType: '   '
+      });
+      assert.equal(result.isValid, false);
+      assert.ok(result.errors.hullType);
+    });
   });
 
   describe('validateSwitchConfig', () => {

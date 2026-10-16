@@ -152,6 +152,10 @@ export function validateVesselSpecForm(spec: Partial<VesselSpec>): FormValidatio
     }
   }
 
+  if (spec.hullType !== undefined && typeof spec.hullType === 'string' && spec.hullType.trim().length === 0) {
+    errors.hullType = 'Hull type cannot be empty.';
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors

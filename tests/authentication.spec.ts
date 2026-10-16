@@ -184,6 +184,62 @@ test.describe('Landing & Authentication E2E Flows', () => {
     // Switch to Client (has Vessel Portal access) and verify tab is restored
     await page.getByTestId('switch-persona-client').click({ force: true });
     await expect(vesselTab).toBeVisible();
+
+    // 11. Click Vessel Specifications tab: verify registered boats list & portal link
+    await vesselTab.click({ force: true });
+    const vesselTabContent = page.getByTestId('account-vessel-tab-content');
+    await expect(vesselTabContent).toBeVisible();
+
+    // Verify it only displays registered boats list and does not render the old input form
+    await expect(vesselTabContent).toContainText('Registered Vessels');
+    await expect(vesselTabContent).toContainText('Windbird III');
+    await expect(page.locator('input[placeholder="Westerly Discus 33"]')).toHaveCount(0);
+    await expect(page.locator('button:has-text("Save Vessel Details")')).toHaveCount(0);
+
+    // Verify the link to the full vessel portal remains
+    const portalLink = page.getByTestId('vessel-portal-link-btn');
+    await expect(portalLink).toBeVisible();
+    await expect(portalLink).toContainText('Open Full Portal');
+
+    // Click link to navigate to full vessel portal
+    await portalLink.click({ force: true });
+    await expect(accountModal).not.toBeVisible();
+
+    // In full vessel portal: verify boat details, hull type pick list, and dimensions (LOA, LWL, Beam, Draft)
+    const editSpecsBtn = page.getByTestId('edit-vessel-specs-button');
+    await expect(editSpecsBtn).toBeVisible();
+    await editSpecsBtn.click({ force: true });
+
+    // Verify Hull Type pick list exists and has options
+    const hullTypeSelect = page.getByTestId('vessel-edit-hull-type');
+    await expect(hullTypeSelect).toBeVisible();
+    await expect(hullTypeSelect).toContainText('Monohull Fin Keel');
+    await expect(hullTypeSelect).toContainText('Monohull Wing Keel');
+    await expect(hullTypeSelect).toContainText('Monohull Bilge Keel');
+    await expect(hullTypeSelect).toContainText('Catamaran');
+    await expect(hullTypeSelect).toContainText('Tender');
+    await expect(hullTypeSelect).toContainText('RIB');
+
+    // Verify dimensions fields exist (LOA, LWL, Beam, Draft)
+    const loaInput = page.getByTestId('vessel-edit-loa');
+    const lwlInput = page.getByTestId('vessel-edit-lwl');
+    const beamInput = page.getByTestId('vessel-edit-beam');
+    const draftInput = page.getByTestId('vessel-edit-draft');
+
+    await expect(loaInput).toBeVisible();
+    await expect(lwlInput).toBeVisible();
+    await expect(beamInput).toBeVisible();
+    await expect(draftInput).toBeVisible();
+
+    // Test editing draft, then saving
+    await draftInput.scrollIntoViewIfNeeded();
+    await draftInput.fill('4.80 ft / 1.46 m');
+    const saveSpecsBtn = page.getByTestId('save-vessel-specs-button');
+    await saveSpecsBtn.scrollIntoViewIfNeeded();
+    await saveSpecsBtn.click();
+
+    // Verify saved value in display mode
+    await expect(page.getByText('4.80 ft / 1.46 m')).toBeVisible();
   });
 
   test('should display Create Account tab with vessel fields removed and route to Vessel Portal', async ({ page }) => {

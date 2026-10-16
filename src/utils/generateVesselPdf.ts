@@ -191,12 +191,14 @@ export function createVesselPdfDoc(spec: VesselSpec, options: VesselPdfOptions =
   doc.setFontSize(isOnePage ? 7.5 : 8.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`${spec.makeModel} (${spec.year})`, margin + 4, y + (isOnePage ? 11 : 13));
+  const hullInfo = [spec.hullType, spec.lengthOverall ? `LOA: ${spec.lengthOverall}` : ''].filter(Boolean).join(' · ');
+  doc.text(`${spec.makeModel} (${spec.year})${hullInfo ? ` · ${hullInfo}` : ''}`, margin + 4, y + (isOnePage ? 11 : 13));
   doc.text(`Mooring: ${spec.homeMarina} (${spec.berthPontoon})`, margin + 4, y + (isOnePage ? 16 : 19));
 
   // Right Details
   const midX = margin + contentWidth / 2 + 10;
-  doc.text(`HIN: ${spec.hinNumber || 'Not specified'}`, midX, y + (isOnePage ? 6 : 7));
+  const dims = [spec.beam ? `Beam: ${spec.beam}` : '', spec.draft ? `Draft: ${spec.draft}` : ''].filter(Boolean).join(' · ');
+  doc.text(`HIN: ${spec.hinNumber || 'Not specified'}${dims ? ` · ${dims}` : ''}`, midX, y + (isOnePage ? 6 : 7));
   doc.text(`Sail / Reg: ${spec.sailNumber || 'Not specified'}`, midX, y + (isOnePage ? 11 : 13));
   doc.text(`Last Survey: ${spec.lastInspectionDate}`, midX, y + (isOnePage ? 16 : 19));
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { JobRecord, MessageItem, VesselSpec, PostalOrder } from '../../types';
+import { JobRecord, MessageItem, VesselSpec, PostalOrder, HULL_TYPES, HullType } from '../../types';
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { VesselSpecManager } from './VesselSpecManager';
 import { PostalOrderTracker } from '../orders/PostalOrderTracker';
@@ -80,6 +80,12 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
     vesselName: '',
     makeModel: '',
     year: new Date().getFullYear() - 10,
+    hullType: 'Monohull Fin Keel' as HullType,
+    lengthOverall: '',
+    lengthWaterline: '',
+    beam: '',
+    draft: '',
+    displacement: '',
     systemVoltage: '12V' as '12V' | '24V',
     homeMarina: 'Haslar Marina, Gosport',
     berthPontoon: 'Berth 12',
@@ -189,6 +195,12 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
       vesselName: boatForm.vesselName.trim(),
       makeModel: boatForm.makeModel.trim() || 'Cruising Yacht',
       year: Number(boatForm.year) || 2015,
+      hullType: boatForm.hullType,
+      lengthOverall: boatForm.lengthOverall.trim() || undefined,
+      lengthWaterline: boatForm.lengthWaterline.trim() || undefined,
+      beam: boatForm.beam.trim() || undefined,
+      draft: boatForm.draft.trim() || undefined,
+      displacement: boatForm.displacement.trim() || undefined,
       hinNumber: `GB-AJW-${Math.floor(1000 + Math.random() * 9000)}`,
       sailNumber: `GBR-${Math.floor(1000 + Math.random() * 9000)}K`,
       homeMarina: boatForm.homeMarina.trim() || 'Solent Marina',
@@ -231,6 +243,12 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
       vesselName: '',
       makeModel: '',
       year: new Date().getFullYear() - 10,
+      hullType: 'Monohull Fin Keel',
+      lengthOverall: '',
+      lengthWaterline: '',
+      beam: '',
+      draft: '',
+      displacement: '',
       systemVoltage: '12V',
       homeMarina: 'Haslar Marina, Gosport',
       berthPontoon: 'Berth 12',
@@ -317,7 +335,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
           <p className="text-xs text-slate-400">
             {hasBoats && activeVessel
-              ? `${activeVessel.makeModel || 'Vessel'} · ${activeVessel.homeMarina} (${activeVessel.berthPontoon}) · ${activeVessel.systemVoltage} DC System`
+              ? `${activeVessel.makeModel || 'Vessel'}${activeVessel.hullType ? ` · ${activeVessel.hullType}` : ''}${activeVessel.lengthOverall ? ` · LOA: ${activeVessel.lengthOverall}` : ''} · ${activeVessel.homeMarina} (${activeVessel.berthPontoon}) · ${activeVessel.systemVoltage} DC System`
               : `${clientEmail} · Direct customer account (Boatless orders supported)`}
           </p>
         </div>
@@ -798,6 +816,82 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     onChange={e => setBoatForm(prev => ({ ...prev, year: Number(e.target.value) }))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Hull Type / Keel Configuration
+                </label>
+                <select
+                  data-testid="vessel-hull-type-select"
+                  value={boatForm.hullType}
+                  onChange={e => setBoatForm(prev => ({ ...prev, hullType: e.target.value as HullType }))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                >
+                  {HULL_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+                <span className="text-[11px] font-mono uppercase text-sky-400 font-bold block">
+                  Vessel Dimensions (SailboatData Spec)
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Length Overall (LOA)
+                    </label>
+                    <input
+                      type="text"
+                      data-testid="vessel-loa-input"
+                      placeholder="e.g. 30.00 ft / 9.14 m"
+                      value={boatForm.lengthOverall}
+                      onChange={e => setBoatForm(prev => ({ ...prev, lengthOverall: e.target.value }))}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Waterline (LWL)
+                    </label>
+                    <input
+                      type="text"
+                      data-testid="vessel-lwl-input"
+                      placeholder="e.g. 29.00 ft / 8.84 m"
+                      value={boatForm.lengthWaterline}
+                      onChange={e => setBoatForm(prev => ({ ...prev, lengthWaterline: e.target.value }))}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Beam
+                    </label>
+                    <input
+                      type="text"
+                      data-testid="vessel-beam-input"
+                      placeholder="e.g. 15.33 ft / 4.67 m"
+                      value={boatForm.beam}
+                      onChange={e => setBoatForm(prev => ({ ...prev, beam: e.target.value }))}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Draft
+                    </label>
+                    <input
+                      type="text"
+                      data-testid="vessel-draft-input"
+                      placeholder="e.g. 2.00 ft / 0.61 m"
+                      value={boatForm.draft}
+                      onChange={e => setBoatForm(prev => ({ ...prev, draft: e.target.value }))}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VesselSpec, ElectricalLogEntry } from '../../types';
+import { VesselSpec, ElectricalLogEntry, HULL_TYPES, HullType } from '../../types';
 import { generateVesselPdf } from '../../utils/generateVesselPdf';
 import { VesselPdfSummaryModal } from './VesselPdfSummaryModal';
 import { Anchor, Battery, Sun, Zap, Shield, Wrench, Plus, Check, Edit3, Save, Printer, Calendar, FileText, ChevronDown, ChevronUp, AlertCircle, Download, FileDown } from 'lucide-react';
@@ -138,8 +138,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
               </button>
 
               <button
+                data-testid="edit-vessel-specs-button"
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Edit Vessel Specs</span>
@@ -163,13 +164,14 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                   setFormData(vesselSpec);
                   setIsEditing(false);
                 }}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium"
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                data-testid="save-vessel-specs-button"
                 onClick={handleSaveAll}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save All Changes</span>
@@ -293,6 +295,116 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 ) : (
                   <p className="font-bold text-white text-sm bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono">
                     {formData.year}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Hull Type / Keel</label>
+                {isEditing ? (
+                  <select
+                    data-testid="vessel-edit-hull-type"
+                    value={formData.hullType || 'Monohull Fin Keel'}
+                    onChange={e => handleFieldChange('hullType', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                  >
+                    {HULL_TYPES.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="font-bold text-sky-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                    {formData.hullType || 'Not specified'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Length Overall (LOA)</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    data-testid="vessel-edit-loa"
+                    value={formData.lengthOverall || ''}
+                    placeholder="e.g. 30.00 ft / 9.14 m"
+                    onChange={e => handleFieldChange('lengthOverall', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                ) : (
+                  <p className="font-semibold text-white bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono">
+                    {formData.lengthOverall || 'Not specified'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Length at Waterline (LWL)</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    data-testid="vessel-edit-lwl"
+                    value={formData.lengthWaterline || ''}
+                    placeholder="e.g. 29.00 ft / 8.84 m"
+                    onChange={e => handleFieldChange('lengthWaterline', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                ) : (
+                  <p className="font-semibold text-white bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono">
+                    {formData.lengthWaterline || 'Not specified'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Beam</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    data-testid="vessel-edit-beam"
+                    value={formData.beam || ''}
+                    placeholder="e.g. 15.33 ft / 4.67 m"
+                    onChange={e => handleFieldChange('beam', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                ) : (
+                  <p className="font-semibold text-white bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono">
+                    {formData.beam || 'Not specified'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Draft</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    data-testid="vessel-edit-draft"
+                    value={formData.draft || ''}
+                    placeholder="e.g. 2.00 ft / 0.61 m"
+                    onChange={e => handleFieldChange('draft', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                ) : (
+                  <p className="font-semibold text-white bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono">
+                    {formData.draft || 'Not specified'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Displacement</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    data-testid="vessel-edit-displacement"
+                    value={formData.displacement || ''}
+                    placeholder="e.g. 10,500 lbs / 4,763 kg"
+                    onChange={e => handleFieldChange('displacement', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                ) : (
+                  <p className="font-semibold text-white bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 font-mono">
+                    {formData.displacement || 'Not specified'}
                   </p>
                 )}
               </div>

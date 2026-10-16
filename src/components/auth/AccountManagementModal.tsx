@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserProfile, UserRole, JobRecord, PostalOrder } from '../../types';
+import { UserProfile, UserRole, JobRecord, PostalOrder, VesselSpec } from '../../types';
 import { 
   ROLE_CONFIGS, 
   DEMO_PROFILES, 
@@ -50,6 +50,8 @@ interface AccountManagementModalProps {
   onOpenPermissionsMatrix?: () => void;
   onNavigateToPortal?: () => void;
   onNavigateToTracker?: () => void;
+  onSelectVessel?: (vesselId: string) => void;
+  vessels?: VesselSpec[];
   jobs?: JobRecord[];
   postalOrders?: PostalOrder[];
 }
@@ -75,6 +77,8 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   onOpenPermissionsMatrix,
   onNavigateToPortal,
   onNavigateToTracker,
+  onSelectVessel,
+  vessels = [],
   jobs = [],
   postalOrders = []
 }) => {
@@ -86,9 +90,6 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   const [email, setEmail] = useState(currentUserProfile.email);
   const [phone, setPhone] = useState(currentUserProfile.phone || '');
   const [avatarUrl, setAvatarUrl] = useState(currentUserProfile.avatarUrl || '');
-  const [vesselName, setVesselName] = useState(currentUserProfile.vesselName || '');
-  const [vesselType, setVesselType] = useState(currentUserProfile.vesselType || 'Sailing Yacht');
-  const [marinaBerth, setMarinaBerth] = useState(currentUserProfile.marinaBerth || '');
 
   // Photo upload and dragging states
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +101,6 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   // Preferences
   const [notifyJobUpdates, setNotifyJobUpdates] = useState(currentUserProfile.notifyJobUpdates ?? true);
   const [notifyDispatchSms, setNotifyDispatchSms] = useState(currentUserProfile.notifyDispatchSms ?? true);
-  const [systemVoltagePref, setSystemVoltagePref] = useState<'12V' | '24V'>(currentUserProfile.systemVoltage || '12V');
 
   // Ensure activeTab falls back to 'profile' if current role does not have access to the Vessel Portal
   useEffect(() => {
@@ -118,12 +118,8 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
       setEmail(currentUserProfile.email || demoFallback?.email || '');
       setPhone(currentUserProfile.phone || demoFallback?.phone || '');
       setAvatarUrl(currentUserProfile.avatarUrl || currentUserProfile.photoURL || demoFallback?.avatarUrl || '');
-      setVesselName(currentUserProfile.vesselName || demoFallback?.vesselName || '');
-      setVesselType(currentUserProfile.vesselType || demoFallback?.vesselType || 'Sailing Yacht');
-      setMarinaBerth(currentUserProfile.marinaBerth || demoFallback?.marinaBerth || '');
       setNotifyJobUpdates(currentUserProfile.notifyJobUpdates ?? demoFallback?.notifyJobUpdates ?? true);
       setNotifyDispatchSms(currentUserProfile.notifyDispatchSms ?? demoFallback?.notifyDispatchSms ?? true);
-      setSystemVoltagePref(currentUserProfile.systemVoltage || demoFallback?.systemVoltage || '12V');
       setPhotoError(null);
       setPhotoMeta(null);
     }
@@ -193,10 +189,6 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
       email: email.trim(),
       phone: phone.trim(),
       avatarUrl: avatarUrl.trim() || undefined,
-      vesselName: vesselName.trim() || undefined,
-      vesselType: vesselType.trim() || undefined,
-      marinaBerth: marinaBerth.trim() || undefined,
-      systemVoltage: systemVoltagePref,
       notifyJobUpdates,
       notifyDispatchSms,
       updatedAt: new Date().toISOString()
@@ -215,6 +207,13 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
   };
 
   const roleConfig = ROLE_CONFIGS[currentUserRole] || ROLE_CONFIGS.guest;
+
+  // Resolve all registered vessels for this user
+  const userVessels = (vessels || []).filter(v => 
+    (currentUserProfile.id && v.userId === currentUserProfile.id) ||
+    (currentUserProfile.email && v.userId && v.userId.toLowerCase() === currentUserProfile.email.toLowerCase()) ||
+    (currentUserProfile.vesselIds && currentUserProfile.vesselIds.includes(v.id))
+  );
 
   // Filter jobs and orders for this user strictly by UUID / email
   const userJobs = jobs.filter(j => 
@@ -645,7 +644,7 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
 
         {/* Tab 2: Vessel Specifications */}
         {activeTab === 'vessel' && canAccessVesselPortal && (
-          <form onSubmit={handleSaveChanges} className="p-6 overflow-y-auto space-y-5 flex-1">
+          <div className="p-6 overflow-y-auto space-y-5 flex-1" data-testid="account-vessel-tab-content">
             <div className="p-3.5 rounded-2xl bg-sky-950/40 border border-sky-500/30 text-xs text-sky-200 flex items-start justify-between gap-3">
               <div className="flex items-start gap-2.5">
                 <Ship className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
@@ -660,11 +659,12 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
               {onNavigateToPortal && (
                 <button
                   type="button"
+                  data-testid="vessel-portal-link-btn"
                   onClick={() => {
                     onClose();
                     onNavigateToPortal();
                   }}
-                  className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <span>Open Full Portal</span>
                   <ExternalLink className="w-3 h-3" />
@@ -672,67 +672,108 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Vessel Name</label>
-                <input
-                  type="text"
-                  value={vesselName}
-                  onChange={(e) => setVesselName(e.target.value)}
-                  placeholder="Westerly Discus 33"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                />
-              </div>
+            {/* List of boats registered or no boats registered */}
+            {userVessels.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-slate-400">
+                    Registered Vessels ({userVessels.length})
+                  </h4>
+                  <span className="text-[11px] text-slate-400">Technical specs configured in Vessel Portal</span>
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Vessel Type / Hull</label>
-                <input
-                  type="text"
-                  value={vesselType}
-                  onChange={(e) => setVesselType(e.target.value)}
-                  placeholder="Sailing Yacht / Motor Cruiser"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                />
-              </div>
+                <div className="space-y-3">
+                  {userVessels.map(vessel => (
+                    <div
+                      key={vessel.id}
+                      data-testid={`registered-vessel-card-${vessel.id}`}
+                      className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm">{vessel.vesselName}</span>
+                          <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-sky-950 text-sky-300 border border-sky-800/60 font-semibold">
+                            {vessel.systemVoltage} DC
+                          </span>
+                          {vessel.hullType && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-medium border border-slate-700/60">
+                              {vessel.hullType}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-300 font-medium">
+                          {vessel.makeModel} {vessel.year ? `(${vessel.year})` : ''}
+                        </p>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
+                          {vessel.homeMarina && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-500" />
+                              {vessel.homeMarina} {vessel.berthPontoon ? `· ${vessel.berthPontoon}` : ''}
+                            </span>
+                          )}
+                          {vessel.lengthOverall && (
+                            <span>LOA: {vessel.lengthOverall}</span>
+                          )}
+                          {vessel.lengthWaterline && (
+                            <span>LWL: {vessel.lengthWaterline}</span>
+                          )}
+                          {vessel.beam && (
+                            <span>Beam: {vessel.beam}</span>
+                          )}
+                          {vessel.draft && (
+                            <span>Draft: {vessel.draft}</span>
+                          )}
+                        </div>
+                      </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Home Marina &amp; Berth</label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={marinaBerth}
-                    onChange={(e) => setMarinaBerth(e.target.value)}
-                    placeholder="Haslar Marina (Berth E-14)"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                  />
+                      {onNavigateToPortal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onSelectVessel) onSelectVessel(vessel.id);
+                            onClose();
+                            onNavigateToPortal();
+                          }}
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-sky-600 hover:text-white text-slate-300 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <span>Open in Portal</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">System DC Voltage</label>
-                <select
-                  value={systemVoltagePref}
-                  onChange={(e) => setSystemVoltagePref(e.target.value as '12V' | '24V')}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-sky-500"
-                >
-                  <option value="12V">12V DC System (Standard Solent leisure crafts)</option>
-                  <option value="24V">24V DC System (Heavy yachts &amp; commercial)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="pt-3 flex items-center justify-end border-t border-slate-800">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-sky-600/30 transition-all cursor-pointer"
+            ) : (
+              <div
+                data-testid="no-vessels-registered"
+                className="p-8 rounded-2xl bg-slate-950/60 border border-slate-800 text-center space-y-3"
               >
-                <Save className="w-3.5 h-3.5" />
-                <span>{isSaving ? 'Saving...' : 'Save Vessel Details'}</span>
-              </button>
-            </div>
-          </form>
+                <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-500">
+                  <Ship className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-white">No boats registered</h4>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                    You have no vessels linked to your account yet. Register your boat in the full vessel portal to configure battery banks, solar arrays, and switchboard schematics.
+                  </p>
+                </div>
+                {onNavigateToPortal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onNavigateToPortal();
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all cursor-pointer"
+                  >
+                    <span>Register a Boat in Vessel Portal</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Tab 3: Role & Permissions */}
