@@ -14,7 +14,7 @@ export default defineConfig({
     ? parseInt(process.env.PLAYWRIGHT_WORKERS, 10)
     : (process.env.WORKERS
         ? parseInt(process.env.WORKERS, 10)
-        : (process.env.CI ? 4 : (process.env.ALL_BROWSERS === 'true' ? 4 : undefined))),
+        : (process.env.CI ? 2 : (process.env.ALL_BROWSERS === 'true' ? 4 : undefined))),
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }]
