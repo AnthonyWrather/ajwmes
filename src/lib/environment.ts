@@ -232,16 +232,17 @@ export interface AuthModalEnvironmentConfig {
 
 /**
  * Returns authentication modal UI configuration based on the active environment.
- * Preserves test helpers and AJWMES titles in AI Studio and preview environments,
- * while removing test credentials/quick roles and simplifying titles in Production.
+ * Preserves test helpers in AI Studio and preview environments,
+ * while removing test credentials/quick roles in Production.
+ * Uses 'Sign In' and 'Create Your Account' headings across all environments.
  */
 export function getAuthModalEnvironmentConfig(envCode: AppEnvironment): AuthModalEnvironmentConfig {
   const isProd = isProductionEnvironment(envCode);
   return {
     showTestCredentials: !isProd,
     showQuickPersonasTab: !isProd,
-    signInHeading: isProd ? 'Sign In' : 'AJWMES Portal Sign In',
-    createAccountHeading: isProd ? 'Create Your Account' : 'Create Your AJWMES Account'
+    signInHeading: 'Sign In',
+    createAccountHeading: 'Create Your Account'
   };
 }
 

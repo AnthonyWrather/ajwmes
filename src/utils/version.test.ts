@@ -109,8 +109,8 @@ describe('Version & Release Tag Verification', () => {
       const cfg = getAuthModalEnvironmentConfig(env);
       assert.strictEqual(cfg.showTestCredentials, true);
       assert.strictEqual(cfg.showQuickPersonasTab, true);
-      assert.strictEqual(cfg.signInHeading, 'AJWMES Portal Sign In');
-      assert.strictEqual(cfg.createAccountHeading, 'Create Your AJWMES Account');
+      assert.strictEqual(cfg.signInHeading, 'Sign In');
+      assert.strictEqual(cfg.createAccountHeading, 'Create Your Account');
     }
 
     const prodCfg = getAuthModalEnvironmentConfig('github-deployed');

@@ -180,11 +180,20 @@ test.describe('Landing & Authentication E2E Flows', () => {
     const authModal = page.getByTestId('auth-modal');
     await expect(authModal).toBeVisible();
 
+    const signInHeading = page.getByTestId('signin-modal-heading');
+    await expect(signInHeading).toBeVisible();
+    await expect(signInHeading).toContainText('Sign In');
+    await expect(signInHeading).not.toContainText('AJWMES Portal Sign In');
+
     // 2. Click the Create Account tab
     const registerTab = page.getByTestId('tab-register');
     await expect(registerTab).toBeVisible();
     await expect(registerTab).toContainText('Create Account');
     await registerTab.click();
+
+    const registerHeading = page.getByTestId('register-banner-heading');
+    await expect(registerHeading).toBeVisible();
+    await expect(registerHeading).toHaveText('Create Your Account');
 
     // 3. Verify user credential fields are present
     const nameInput = page.getByTestId('auth-reg-name-input');
