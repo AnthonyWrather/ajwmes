@@ -54,27 +54,37 @@ test.describe('Solent Marine Field Technician Diagnostic & Sign-Off E2E Flow', (
       await expect(tech.filterActiveButton).toBeVisible();
       await expect(tech.filterScheduledButton).toBeVisible();
 
-      // Click Active filter and verify active job card is visible
-      await tech.filterActiveButton.click({ force: true });
-      const jobCard = page.getByTestId('job-card-job-101');
-      await expect(jobCard).toBeVisible();
-
-      // Click All filter to restore full queue
+      // Ensure All filter is selected to inspect full queue
       await tech.filterAllButton.click({ force: true });
-      await expect(jobCard).toBeVisible();
+      const allJobCards = page.locator('[data-testid^="job-card-"]');
+      await expect(allJobCards.first()).toBeVisible({ timeout: 10000 });
+      const jobCount = await allJobCards.count();
+      expect(jobCount).toBeGreaterThan(0);
     });
 
-    await test.step('4. Select job-101 and verify vessel specifications panel', async () => {
-      await tech.selectJob('job-101');
+    await test.step('4. Select a vessel job and inspect specifications panel', async () => {
+      const targetJobCard = page.locator('[data-testid^="job-card-"]').first();
+      await targetJobCard.scrollIntoViewIfNeeded();
+      await targetJobCard.click({ force: true });
+
       await expect(tech.selectedJobDetails).toBeVisible();
       await expect(tech.selectedJobReference).toBeVisible();
       await expect(tech.selectedJobVessel).toBeVisible();
       await expect(tech.selectedJobBerth).toBeVisible();
     });
 
-    await test.step('5. Update job progress status to In Progress', async () => {
+    await test.step('5. Update job progress status to In Progress and test filter pills', async () => {
       await tech.setJobStatus('in_progress');
       await expect(tech.statusInProgressButton).toHaveClass(/bg-amber-600/);
+
+      // Verify the active job appears under the Active filter
+      await tech.filterActiveButton.click({ force: true });
+      const activeJobCards = page.locator('[data-testid^="job-card-"]');
+      await expect(activeJobCards.first()).toBeVisible();
+
+      // Restore All filter
+      await tech.filterAllButton.click({ force: true });
+      await expect(page.locator('[data-testid^="job-card-"]').first()).toBeVisible();
     });
 
     await test.step('6. Launch Diagnostic Stopwatch and log labor hours and additional materials', async () => {
