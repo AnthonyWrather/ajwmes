@@ -123,6 +123,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         <nav className="hidden xl:flex items-center gap-4 text-xs font-semibold text-slate-400">
 
           <button
+            data-testid="nav-tab-store"
             onClick={() => setCurrentTab('store')}
             className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${currentTab === 'store' ? 'text-sky-400 font-bold' : ''}`}
           >
@@ -215,6 +216,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Cart Icon & Badge Trigger */}
             <button
+              data-testid="nav-cart-button"
               onClick={() => {
                 if (onOpenCart) {
                   onOpenCart();
@@ -348,6 +350,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           {/* Mobile menu toggle */}
           <button
+            data-testid="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="xl:hidden p-2 text-slate-400 hover:text-white cursor-pointer"
             aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
@@ -464,6 +467,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           <div className="grid grid-cols-2 gap-2 text-xs font-semibold pt-2 border-t border-slate-900">
             <button
+              data-testid="mobile-nav-tab-store"
               onClick={() => { setCurrentTab('store'); setMobileMenuOpen(false); }}
               className="p-2.5 rounded-lg bg-slate-900 border border-sky-500/40 text-left text-sky-400 font-bold flex items-center gap-1.5"
             >

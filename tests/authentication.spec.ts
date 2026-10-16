@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { NavigationPage } from './pages/NavigationPage';
+import { AuthModalPage } from './pages/AuthModalPage';
+import { StorePage } from './pages/StorePage';
+import { CartDrawerPage } from './pages/CartDrawerPage';
+import { VesselPortalPage } from './pages/VesselPortalPage';
 
 test.describe('Landing & Authentication E2E Flows', () => {
   test.beforeEach(async ({ page }) => {
@@ -9,21 +14,64 @@ test.describe('Landing & Authentication E2E Flows', () => {
     });
   });
 
-  test('should navigate to landing page and verify title and hero header text', async ({ page }) => {
-    // 1. Navigate to the root URL (configured as http://localhost:5173 in playwright.config.ts)
-    await page.goto('/');
+  test('As a guest, I want to order a product for collection', async ({ page }) => {
+    const nav = new NavigationPage(page);
+    const store = new StorePage(page);
+    const cart = new CartDrawerPage(page);
 
-    // 2. Verify HTML document title matches expected branding
-    await expect(page).toHaveTitle(/AJW Marine Electrical Services/i);
+    await test.step('1. Navigate to landing page and verify branding', async () => {
+      await nav.navigateToLanding();
+      const heroHeading = page.getByTestId('landing-hero-heading');
+      await expect(heroHeading).toBeVisible();
+      await expect(heroHeading).toContainText('Reliable Marine Electrics');
+      await expect(heroHeading).toContainText('Every Boat & Budget');
+    });
 
-    // 3. Verify main landing hero heading contains key value proposition
-    const heroHeading = page.getByTestId('landing-hero-heading');
-    await expect(heroHeading).toBeVisible();
-    await expect(heroHeading).toContainText('Reliable Marine Electrics');
-    await expect(heroHeading).toContainText('Every Boat & Budget');
+    await test.step('2. Navigate to Parts Store via responsive navigation', async () => {
+      await nav.navigateToStore();
+      await store.verifyStoreVisible();
+    });
+
+    await test.step('3. Select marine product and add to postal order basket', async () => {
+      await store.addProductToCart(0);
+    });
+
+    await test.step('4. Open basket and select Gosport Workshop Collection', async () => {
+      await store.openCartDrawer();
+      await cart.verifyDrawerOpen();
+      await cart.selectCollectionMethod();
+    });
+
+    await test.step('5. Proceed to delivery step and enter guest contact details', async () => {
+      await cart.proceedToShippingDetails();
+      await cart.fillShippingAddress({
+        name: 'Guest Sailor',
+        email: 'guest.sailor@solent-yachting.co.uk',
+        phone: '07700 900123',
+        address: 'Haslar Pontoon A-12',
+        city: 'Gosport',
+        postcode: 'PO12 1NU'
+      });
+    });
+
+    await test.step('6. Proceed to payment and place workshop collection order', async () => {
+      await cart.proceedToPayment();
+      await cart.selectPaymentMethod('card');
+      await cart.placeOrder();
+    });
+
+    await test.step('7. Verify order confirmation screen and collection status', async () => {
+      await cart.verifyOrderConfirmation({
+        expectedCustomer: 'Guest Sailor',
+        expectedMethod: 'solent pickup'
+      });
+    });
   });
 
   test('should complete authentication flow and display authenticated dashboard message', async ({ page }) => {
+    const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
+
     // Mock network auth endpoints if intercepted at network layer
     await page.route('**/api/auth/**', async (route) => {
       await route.fulfill({
@@ -43,34 +91,16 @@ test.describe('Landing & Authentication E2E Flows', () => {
     });
 
     // 1. Navigate to application root
-    await page.goto('/');
+    await nav.navigateToLanding();
 
-    // 2. Locate and click the Sign In button in navigation
-    const signInNavButton = page.getByTestId('nav-signin-button');
-    await expect(signInNavButton).toBeVisible();
-    await signInNavButton.click();
+    // 2. Open authentication modal
+    await nav.openSignInModal();
+    await auth.verifyModalVisible();
 
-    // 3. Ensure the authentication modal opened
-    const authModal = page.getByTestId('auth-modal');
-    await expect(authModal).toBeVisible();
+    // 3. Fill in user credentials and submit
+    await auth.signIn('anthonywrather@gmail.com', 'ajwmes2026');
 
-    // 4. Fill in user credentials using explicit data-testid selectors
-    const emailInput = page.getByTestId('auth-email-input');
-    const passwordInput = page.getByTestId('auth-password-input');
-    const submitButton = page.getByTestId('auth-submit-button');
-
-    await expect(emailInput).toBeVisible();
-    await emailInput.fill('anthonywrather@gmail.com');
-
-    await expect(passwordInput).toBeVisible();
-    await passwordInput.fill('ajwmes2026');
-
-    // 5. Submit credentials
-    await submitButton.scrollIntoViewIfNeeded();
-    await submitButton.click({ force: true });
-
-    // 6. Assert successful redirect to workspace / dashboard and verify account state
-    // Admin role automatically routes to the Admin Operations Dashboard
+    // 4. Assert successful redirect to workspace / dashboard and verify account state
     const adminDashboard = page.getByTestId('admin-dashboard');
     await expect(adminDashboard).toBeVisible({ timeout: 10000 });
 
@@ -78,13 +108,14 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(dashboardTitle).toBeVisible();
     await expect(dashboardTitle).toContainText("Anthony's Operations Dashboard");
 
-    // 7. Verify navigation updates to display authenticated user profile badge
-    const userProfileName = page.getByTestId('user-profile-name');
-    await expect(userProfileName).toBeVisible();
-    await expect(userProfileName).toContainText('Anthony Wrather');
+    // 5. Verify navigation updates to display authenticated user profile badge
+    await nav.expectUserProfile('Anthony Wrather');
   });
 
   test('should allow user to pick system preset avatar and custom photo in Profile & Details', async ({ page }) => {
+    const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
+
     await page.route('**/api/auth/**', async (route) => {
       await route.fulfill({
         status: 200,
@@ -102,15 +133,11 @@ test.describe('Landing & Authentication E2E Flows', () => {
       });
     });
 
-    await page.goto('/');
+    await nav.navigateToLanding();
 
     // 1. Sign in as admin
-    await page.getByTestId('nav-signin-button').click();
-    await page.getByTestId('auth-email-input').fill('anthonywrather@gmail.com');
-    await page.getByTestId('auth-password-input').fill('ajwmes2026');
-    const adminSubmitButton = page.getByTestId('auth-submit-button');
-    await adminSubmitButton.scrollIntoViewIfNeeded();
-    await adminSubmitButton.click({ force: true });
+    await nav.openSignInModal();
+    await auth.signIn('anthonywrather@gmail.com', 'ajwmes2026');
     await expect(page.getByTestId('admin-dashboard')).toBeVisible({ timeout: 10000 });
 
     // 2. Open User Account Dropdown and click Manage Account & Specs
@@ -242,74 +269,80 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(page.getByText('4.80 ft / 1.46 m')).toBeVisible();
   });
 
-  test('should display Create Account tab with vessel fields removed and route to Vessel Portal', async ({ page }) => {
-    await page.goto('/');
+  test('As a boat owner without a registered boat, I want to order a product for collection', async ({ page }) => {
+    const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
+    const portal = new VesselPortalPage(page);
+    const store = new StorePage(page);
+    const cart = new CartDrawerPage(page);
 
-    // 1. Open authentication modal
-    const signInNavButton = page.getByTestId('nav-signin-button');
-    await expect(signInNavButton).toBeVisible();
-    await signInNavButton.click();
-
-    const authModal = page.getByTestId('auth-modal');
-    await expect(authModal).toBeVisible();
-
-    const signInHeading = page.getByTestId('signin-modal-heading');
-    await expect(signInHeading).toBeVisible();
-    await expect(signInHeading).toContainText('Sign In');
-    await expect(signInHeading).not.toContainText('AJWMES Portal Sign In');
-
-    // 2. Click the Create Account tab
-    const registerTab = page.getByTestId('tab-register');
-    await expect(registerTab).toBeVisible();
-    await expect(registerTab).toContainText('Create Account');
-    await registerTab.click();
-
-    const registerHeading = page.getByTestId('register-banner-heading');
-    await expect(registerHeading).toBeVisible();
-    await expect(registerHeading).toHaveText('Create Your Account');
-
-    // 3. Verify user credential fields are present
-    const nameInput = page.getByTestId('auth-reg-name-input');
-    const emailInput = page.getByTestId('auth-reg-email-input');
-    const passwordInput = page.getByTestId('auth-reg-password-input');
-    const confirmPasswordInput = page.getByTestId('auth-reg-confirm-password-input');
-    const phoneInput = page.getByTestId('auth-reg-phone-input');
-    const submitButton = page.getByTestId('auth-register-submit-button');
-
-    await expect(nameInput).toBeVisible();
-    await expect(emailInput).toBeVisible();
-    await expect(passwordInput).toBeVisible();
-    await expect(confirmPasswordInput).toBeVisible();
-    await expect(phoneInput).toBeVisible();
-    await expect(submitButton).toContainText('Create Account & Open Vessel Portal');
-
-    // 4. Assert vessel-specific inputs are NOT present on this screen
-    await expect(page.locator('input[placeholder="Westerly Discus 33"]')).toHaveCount(0);
-    await expect(page.locator('input[placeholder="Haslar Marina, Berth E-14"]')).toHaveCount(0);
-
-    // 5. Fill registration credentials with isolated test email
     const testEmail = `sarah.connor.${Date.now()}@solent-sail.co.uk`;
-    await nameInput.fill('Sarah Connor');
-    await emailInput.fill(testEmail);
-    await passwordInput.fill('securepass123');
-    await confirmPasswordInput.fill('securepass123');
-    await phoneInput.fill('07700 900777');
 
-    // 6. Submit registration
-    await submitButton.scrollIntoViewIfNeeded();
-    await submitButton.click({ force: true });
+    await test.step('1. Open authentication modal and navigate to Create Account tab', async () => {
+      await nav.navigateToLanding();
+      await nav.openSignInModal();
+      await auth.verifyModalVisible();
+      await auth.switchToRegisterTab();
+    });
 
-    // 7. Verify navigation to the Vessel Portal
-    const userProfileName = page.getByTestId('user-profile-name');
-    await expect(userProfileName).toBeVisible({ timeout: 10000 });
-    await expect(userProfileName).toContainText('Sarah Connor');
+    await test.step('2. Register new boat owner account verifying vessel fields are omitted', async () => {
+      await auth.verifyVesselFieldsAbsent();
+      await auth.registerNewBoatOwner({
+        name: 'Sarah Connor',
+        email: testEmail,
+        password: 'securepass123',
+        phone: '07700 900777'
+      });
+    });
 
-    // 8. Verify user is on the Vessel Portal route
-    await expect(page.getByText('Boat Owner Vessel Portal')).toBeVisible();
+    await test.step('3. Verify landing on Vessel Portal in unregistered boat state', async () => {
+      await nav.expectUserProfile('Sarah Connor');
+      await portal.verifyNoVesselRegisteredBanner();
+    });
+
+    await test.step('4. Click "Order Parts from Workshop" to navigate to Parts Store', async () => {
+      await portal.clickOrderPartsFromWorkshop();
+      await store.verifyStoreVisible();
+    });
+
+    await test.step('5. Select product and add to postal order basket', async () => {
+      await store.addProductToCart(0);
+    });
+
+    await test.step('6. Open basket and select Gosport Workshop Collection', async () => {
+      await store.openCartDrawer();
+      await cart.verifyDrawerOpen();
+      await cart.selectCollectionMethod();
+    });
+
+    await test.step('7. Proceed to shipping details and confirm contact information', async () => {
+      await cart.proceedToShippingDetails();
+      await cart.fillShippingAddress({
+        name: 'Sarah Connor',
+        email: testEmail,
+        phone: '07700 900777',
+        address: 'Workshop Bench Collection, Haslar Marina',
+        city: 'Gosport',
+        postcode: 'PO12 1NU'
+      });
+    });
+
+    await test.step('8. Complete checkout and verify workshop collection confirmation', async () => {
+      await cart.proceedToPayment();
+      await cart.selectPaymentMethod('card');
+      await cart.placeOrder();
+      await cart.verifyOrderConfirmation({
+        expectedCustomer: 'Sarah Connor',
+        expectedMethod: 'solent pickup'
+      });
+    });
   });
 
   test('should display GitHub commit-linked version in header and open Multi-Environment Manager', async ({ page }) => {
-    await page.goto('/');
+    const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
+
+    await nav.navigateToLanding();
 
     // 1. Verify header version badge displays SemVer with commit SHA
     const headerBadge = page.getByTestId('header-version-badge');
@@ -348,13 +381,10 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(headerBadge).toBeDisabled();
 
     // 7. Open Sign In modal in Production and verify production UI rules
-    const signInNavBtn = page.getByTestId('nav-signin-button');
-    await signInNavBtn.scrollIntoViewIfNeeded();
-    await signInNavBtn.click({ force: true });
-    const signInHeading = page.getByTestId('signin-modal-heading');
-    await expect(signInHeading).toBeVisible();
-    await expect(signInHeading).toContainText('Sign In');
-    await expect(signInHeading).not.toContainText('AJWMES Portal Sign In');
+    await nav.openSignInModal();
+    await auth.verifyModalVisible();
+    await expect(auth.signInHeading).toContainText('Sign In');
+    await expect(auth.signInHeading).not.toContainText('AJWMES Portal Sign In');
 
     // Verify Test Accounts & Roles, Test Password hint, and 1-Click Team Roles tab are removed in production
     await expect(page.getByTestId('test-accounts-box')).toHaveCount(0);
@@ -362,23 +392,15 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(page.getByTestId('tab-quick-personas')).toHaveCount(0);
 
     // 8. Switch to Create Account tab in Production and verify heading is "Create Your Account"
-    await page.getByTestId('tab-register').click({ force: true });
-    const registerHeading = page.getByTestId('register-banner-heading');
-    await expect(registerHeading).toBeVisible();
-    await expect(registerHeading).toHaveText('Create Your Account');
+    await auth.switchToRegisterTab();
+    await expect(auth.registerHeading).toBeVisible();
+    await expect(auth.registerHeading).toHaveText('Create Your Account');
 
     // 9. Sign in as Administrator in Production and verify header version badge becomes enabled
     await page.getByTestId('tab-signin').click({ force: true });
-    await page.getByTestId('auth-email-input').fill('anthonywrather@gmail.com');
-    await page.getByTestId('auth-password-input').fill('ajwmes2026');
-    const submitBtn = page.getByTestId('auth-submit-button');
-    await submitBtn.scrollIntoViewIfNeeded();
-    await submitBtn.click({ force: true });
+    await auth.signIn('anthonywrather@gmail.com', 'ajwmes2026');
 
     await expect(page.getByTestId('admin-dashboard')).toBeVisible({ timeout: 10000 });
     await expect(headerBadge).toBeEnabled();
   });
 });
-
-
-

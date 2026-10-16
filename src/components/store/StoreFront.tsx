@@ -331,6 +331,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
 
             {/* Cart Trigger Button */}
             <button
+              data-testid="store-cart-trigger-button"
               onClick={() => {
                 setCheckoutStep('cart');
                 setIsCartOpen(true);
@@ -350,7 +351,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
       </section>
 
       {/* Product Catalog Grid */}
-      <section>
+      <section data-testid="store-catalog-grid">
         {filteredCatalog.length === 0 ? (
           <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-3">
             <Package className="w-12 h-12 text-slate-600 mx-auto" />
@@ -379,6 +380,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
               return (
                 <div
                   key={product.id}
+                  data-testid="product-card"
                   className="group flex flex-col bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl overflow-hidden transition-all duration-200 shadow-md hover:shadow-xl hover:-translate-y-0.5"
                 >
                   {/* Product Image Box */}
@@ -511,6 +513,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
 
                       {/* Add to Postal Order Button */}
                       <button
+                        data-testid="add-to-cart-button"
                         onClick={() => handleAdd(product, selectedLen)}
                         disabled={product.stockCount <= 0}
                         className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
@@ -548,6 +551,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
       {!isCartOpen && cart.length > 0 && (
         <div className="fixed bottom-6 right-6 z-30">
           <button
+            data-testid="view-cart-drawer-button"
             onClick={() => {
               setCheckoutStep('cart');
               setIsCartOpen(true);
@@ -579,7 +583,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
           />
 
           {/* Drawer container */}
-          <div className="relative z-10 w-full max-w-lg bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col h-full text-slate-100">
+          <div data-testid="cart-drawer" className="relative z-10 w-full max-w-lg bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col h-full text-slate-100">
             {/* Header */}
             <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
               <div className="flex items-center gap-2">
@@ -592,6 +596,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                 </h2>
               </div>
               <button
+                data-testid="close-cart-drawer-button"
                 onClick={() => setIsCartOpen(false)}
                 className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
               >
@@ -741,6 +746,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
 
                         <div className="grid grid-cols-1 gap-2">
                           <label 
+                            data-testid="shipping-method-royal-mail"
                             onClick={() => setShippingMethod('royal_mail_tracked')}
                             className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer ${
                               shippingMethod === 'royal_mail_tracked' 
@@ -758,6 +764,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           </label>
 
                           <label 
+                            data-testid="shipping-method-dpd"
                             onClick={() => setShippingMethod('dpd_heavy')}
                             className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer ${
                               shippingMethod === 'dpd_heavy' 
@@ -773,6 +780,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           </label>
 
                           <label 
+                            data-testid="shipping-method-solent-pickup"
                             onClick={() => setShippingMethod('solent_pickup')}
                             className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer ${
                               shippingMethod === 'solent_pickup' 
@@ -830,6 +838,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                         Full Name / Boat Owner *
                       </label>
                       <input
+                        data-testid="checkout-name-input"
                         type="text"
                         required
                         placeholder="e.g. Captain David Mercer"
@@ -845,6 +854,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           Email (for postal tracking) *
                         </label>
                         <input
+                          data-testid="checkout-email-input"
                           type="email"
                           required
                           placeholder="david@example.co.uk"
@@ -858,6 +868,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           Phone Number (for courier) *
                         </label>
                         <input
+                          data-testid="checkout-phone-input"
                           type="tel"
                           required
                           placeholder="07700 900123"
@@ -922,6 +933,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                             Postal Address Line 1 *
                           </label>
                           <input
+                            data-testid="checkout-address1-input"
                             type="text"
                             required
                             placeholder="House number & street name"
@@ -952,6 +964,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           Town / City *
                         </label>
                         <input
+                          data-testid="checkout-city-input"
                           type="text"
                           required
                           value={formData.city}
@@ -964,6 +977,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           UK Postcode *
                         </label>
                         <input
+                          data-testid="checkout-postcode-input"
                           type="text"
                           required
                           placeholder="e.g. PO12 1NU"
@@ -1011,6 +1025,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <button
+                        data-testid="payment-method-card"
                         type="button"
                         onClick={() => setPaymentMethod('card')}
                         className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 font-bold transition-all ${
@@ -1024,6 +1039,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                       </button>
 
                       <button
+                        data-testid="payment-method-bacs"
                         type="button"
                         onClick={() => setPaymentMethod('bank_transfer')}
                         className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 font-bold transition-all ${
@@ -1112,15 +1128,15 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
 
               {/* STEP 4: ORDER CONFIRMATION */}
               {checkoutStep === 'confirmation' && lastPlacedOrder && (
-                <div className="text-center py-6 space-y-5">
+                <div data-testid="order-confirmation-container" className="text-center py-6 space-y-5">
                   <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-emerald-400">
                     <Check className="w-8 h-8" />
                   </div>
 
                   <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-white">Order Confirmed!</h3>
+                    <h3 data-testid="order-confirmation-heading" className="text-xl font-bold text-white">Order Confirmed!</h3>
                     <p className="text-xs text-slate-400">
-                      Reference: <span className="font-mono font-bold text-sky-400">{lastPlacedOrder.orderNumber}</span>
+                      Reference: <span data-testid="order-confirmation-number" className="font-mono font-bold text-sky-400">{lastPlacedOrder.orderNumber}</span>
                     </p>
                   </div>
 
@@ -1128,7 +1144,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                   <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-left text-xs space-y-3">
                     <div className="flex justify-between border-b border-slate-800 pb-2">
                       <span className="text-slate-400">Customer:</span>
-                      <span className="font-semibold text-white">{lastPlacedOrder.customerName}</span>
+                      <span data-testid="order-confirmation-customer" className="font-semibold text-white">{lastPlacedOrder.customerName}</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-800 pb-2">
                       <span className="text-slate-400">Delivery Address:</span>
@@ -1138,13 +1154,13 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                     </div>
                     <div className="flex justify-between border-b border-slate-800 pb-2">
                       <span className="text-slate-400">Method:</span>
-                      <span className="font-semibold text-white capitalize">
+                      <span data-testid="order-confirmation-method" className="font-semibold text-white capitalize">
                         {lastPlacedOrder.shippingMethod.replace(/_/g, ' ')}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm font-bold text-white pt-1">
                       <span>Total Paid:</span>
-                      <span className="text-emerald-400">£{lastPlacedOrder.total.toFixed(2)}</span>
+                      <span data-testid="order-confirmation-total" className="text-emerald-400">£{lastPlacedOrder.total.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -1230,6 +1246,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                 {/* Primary Action Button by Step */}
                 {checkoutStep === 'cart' && (
                   <button
+                    data-testid="proceed-to-shipping-button"
                     onClick={() => setCheckoutStep('shipping')}
                     className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/25 transition-all"
                   >
@@ -1240,6 +1257,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
 
                 {checkoutStep === 'shipping' && (
                   <button
+                    data-testid="proceed-to-payment-button"
                     onClick={() => {
                       if (!formData.fullName || !formData.addressLine1 || !formData.postcode) {
                         alert('Please fill in your name, delivery address line 1, and UK postcode to proceed.');
@@ -1256,6 +1274,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
 
                 {checkoutStep === 'payment' && (
                   <button
+                    data-testid="place-order-button"
                     onClick={handlePlaceOrder}
                     disabled={isProcessingPayment}
                     className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
