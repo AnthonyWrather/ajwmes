@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../lib/auth';
 import { canAccessRoute } from '../lib/rbac';
-import { detectEnvironment, getEnvironmentBadge } from '../lib/environment';
+import { detectEnvironment, getEnvironmentBadge, canAccessEnvironmentSettings } from '../lib/environment';
 import { APP_VERSION, FULL_VERSION_TAG, GIT_COMMIT_SHA } from '../version';
 
 interface NavigationProps {
@@ -70,6 +70,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   const envInfo = detectEnvironment();
   const envBadge = getEnvironmentBadge(envInfo.envCode);
+  const canOpenEnvSettings = canAccessEnvironmentSettings(envInfo.envCode, currentUserRole);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -98,9 +99,18 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Release Version & Environment Tracker Tag */}
           <button
             data-testid="header-version-badge"
-            onClick={onOpenEnvironmentSettings}
-            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-mono font-medium transition-all cursor-pointer shadow-xs active:scale-95 group ${envBadge.badgeClass}`}
-            title={`Release ${FULL_VERSION_TAG} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Click to open Multi-Environment & Release Manager`}
+            disabled={!canOpenEnvSettings}
+            onClick={canOpenEnvSettings ? onOpenEnvironmentSettings : undefined}
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-mono font-medium transition-all shadow-xs ${
+              canOpenEnvSettings
+                ? `cursor-pointer active:scale-95 group ${envBadge.badgeClass}`
+                : 'cursor-not-allowed opacity-75 bg-emerald-950/50 text-emerald-300/80 border-emerald-500/30'
+            }`}
+            title={
+              canOpenEnvSettings
+                ? `Release ${FULL_VERSION_TAG} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Click to open Multi-Environment & Release Manager`
+                : `Release ${FULL_VERSION_TAG} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Multi-Environment & Release Manager requires Administrator privileges`
+            }
           >
             <span className={`w-1.5 h-1.5 rounded-full ${envBadge.dotColor} animate-pulse`} />
             <span className="font-bold tracking-tight text-white group-hover:underline">{FULL_VERSION_TAG}</span>
@@ -435,11 +445,18 @@ export const Navigation: React.FC<NavigationProps> = ({
               </div>
             </div>
             <button
+              data-testid="mobile-version-settings-button"
+              disabled={!canOpenEnvSettings}
               onClick={() => {
+                if (!canOpenEnvSettings) return;
                 setMobileMenuOpen(false);
                 onOpenEnvironmentSettings?.();
               }}
-              className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer ${envBadge.badgeClass}`}
+              className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold uppercase transition-colors ${
+                canOpenEnvSettings
+                  ? `cursor-pointer ${envBadge.badgeClass}`
+                  : 'cursor-not-allowed opacity-50 bg-emerald-950/40 text-emerald-300/60 border-emerald-500/20'
+              }`}
             >
               {envBadge.shortLabel} Settings
             </button>

@@ -253,6 +253,49 @@ test.describe('Landing & Authentication E2E Flows', () => {
     const githubLink = page.getByTestId('view-github-commit-link');
     await expect(githubLink).toBeVisible();
     await expect(githubLink).toHaveAttribute('href', /https:\/\/github\.com\/anthonywrather\/ajwmes\/commit\/[a-f0-9]+/i);
+
+    // 5. Switch to Production Live ('github-deployed') and close modal
+    const prodSwitchBtn = page.getByTestId('env-switch-github-deployed');
+    await prodSwitchBtn.scrollIntoViewIfNeeded();
+    await prodSwitchBtn.click({ force: true });
+
+    const closeEnvModalBtn = page.getByTestId('close-env-settings-modal');
+    await closeEnvModalBtn.click({ force: true });
+
+    // 6. In Production as Guest, the header version badge must be disabled
+    await expect(headerBadge).toBeDisabled();
+
+    // 7. Open Sign In modal in Production and verify production UI rules
+    const signInNavBtn = page.getByTestId('nav-signin-button');
+    await signInNavBtn.scrollIntoViewIfNeeded();
+    await signInNavBtn.click({ force: true });
+    const signInHeading = page.getByTestId('signin-modal-heading');
+    await expect(signInHeading).toBeVisible();
+    await expect(signInHeading).toContainText('Sign In');
+    await expect(signInHeading).not.toContainText('AJWMES Portal Sign In');
+
+    // Verify Test Accounts & Roles, Test Password hint, and 1-Click Team Roles tab are removed in production
+    await expect(page.getByTestId('test-accounts-box')).toHaveCount(0);
+    await expect(page.getByTestId('test-password-hint')).toHaveCount(0);
+    await expect(page.getByTestId('tab-quick-personas')).toHaveCount(0);
+
+    // 8. Switch to Create Account tab in Production and verify heading is "Create Your Account"
+    await page.getByTestId('tab-register').click({ force: true });
+    const registerHeading = page.getByTestId('register-banner-heading');
+    await expect(registerHeading).toBeVisible();
+    await expect(registerHeading).toHaveText('Create Your Account');
+
+    // 9. Sign in as Administrator in Production and verify header version badge becomes enabled
+    await page.getByTestId('tab-signin').click({ force: true });
+    await page.getByTestId('auth-email-input').fill('anthonywrather@gmail.com');
+    await page.getByTestId('auth-password-input').fill('ajwmes2026');
+    const submitBtn = page.getByTestId('auth-submit-button');
+    await submitBtn.scrollIntoViewIfNeeded();
+    await submitBtn.click({ force: true });
+
+    await expect(page.getByTestId('admin-dashboard')).toBeVisible({ timeout: 10000 });
+    await expect(headerBadge).toBeEnabled();
   });
 });
+
 

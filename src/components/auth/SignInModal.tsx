@@ -9,6 +9,7 @@ import {
   registerVesselAccount,
   saveAndSyncUserProfile 
 } from '../../lib/auth';
+import { detectEnvironment, getAuthModalEnvironmentConfig } from '../../lib/environment';
 import { 
   X, 
   Key, 
@@ -50,14 +51,22 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   initialTab,
   initialEmail = ''
 }) => {
+  const envInfo = detectEnvironment();
+  const authEnvConfig = getAuthModalEnvironmentConfig(envInfo.envCode);
+
   const [activeTab, setActiveTab] = useState<'signin' | 'register' | 'quick_personas'>(
-    initialTab || (onOpenRegisterTab ? 'register' : 'signin')
+    initialTab === 'quick_personas' && !authEnvConfig.showQuickPersonasTab
+      ? 'signin'
+      : (initialTab || (onOpenRegisterTab ? 'register' : 'signin'))
   );
 
   // Sync activeTab and prefilled email when modal opens or initialTab/initialEmail changes
   React.useEffect(() => {
     if (isOpen) {
-      if (initialTab) {
+      const currentEnvConfig = getAuthModalEnvironmentConfig(detectEnvironment().envCode);
+      if (initialTab === 'quick_personas' && !currentEnvConfig.showQuickPersonasTab) {
+        setActiveTab('signin');
+      } else if (initialTab) {
         setActiveTab(initialTab);
       } else if (onOpenRegisterTab) {
         setActiveTab('register');
@@ -192,8 +201,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               <Anchor className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <span>AJWMES Portal Sign In</span>
+              <h3 data-testid="signin-modal-heading" className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <span>{authEnvConfig.signInHeading}</span>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-500/30">
                   Solent Verified
                 </span>
@@ -247,17 +256,20 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             <span>Create Account</span>
           </button>
 
-          <button
-            onClick={() => { setActiveTab('quick_personas'); setErrorMessage(null); }}
-            className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ml-auto ${
-              activeTab === 'quick_personas'
-                ? 'bg-amber-600 text-white font-bold shadow-sm shadow-amber-600/30'
-                : 'text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 border border-amber-500/20'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>1-Click Team Roles</span>
-          </button>
+          {authEnvConfig.showQuickPersonasTab && (
+            <button
+              data-testid="tab-quick-personas"
+              onClick={() => { setActiveTab('quick_personas'); setErrorMessage(null); }}
+              className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ml-auto ${
+                activeTab === 'quick_personas'
+                  ? 'bg-amber-600 text-white font-bold shadow-sm shadow-amber-600/30'
+                  : 'text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 border border-amber-500/20'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>1-Click Team Roles</span>
+            </button>
+          )}
         </div>
 
         {/* Feedback Alerts */}
@@ -290,36 +302,38 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {activeTab === 'signin' && (
           <div className="p-6 overflow-y-auto space-y-5 flex-1">
             {/* Quick Test Accounts Filler */}
-            <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Test Accounts &amp; Roles (Password: <code className="text-amber-300 font-mono font-bold bg-amber-950/60 px-1 py-0.5 rounded border border-amber-500/30">ajwmes2026</code>)</span>
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono">1-click fill</span>
+            {authEnvConfig.showTestCredentials && (
+              <div data-testid="test-accounts-box" className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Test Accounts &amp; Roles (Password: <code className="text-amber-300 font-mono font-bold bg-amber-950/60 px-1 py-0.5 rounded border border-amber-500/30">ajwmes2026</code>)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">1-click fill</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Admin (Anthony)', email: 'anthonywrather@gmail.com' },
+                    { label: 'Technician (Jack)', email: 'jack.tech@ajwmes.co.uk' },
+                    { label: 'Postal (Sarah)', email: 'sarah.postal@ajwmes.co.uk' },
+                    { label: 'Client (David)', email: 'd.mercer@solent-sail.co.uk' },
+                    { label: 'Guest', email: 'guest@solent-visitor.co.uk' }
+                  ].map(acc => (
+                    <button
+                      key={acc.email}
+                      type="button"
+                      onClick={() => {
+                        setEmail(acc.email);
+                        setPassword('ajwmes2026');
+                      }}
+                      className="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-sky-500/50 rounded-lg text-[11px] text-slate-300 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {acc.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: 'Admin (Anthony)', email: 'anthonywrather@gmail.com' },
-                  { label: 'Technician (Jack)', email: 'jack.tech@ajwmes.co.uk' },
-                  { label: 'Postal (Sarah)', email: 'sarah.postal@ajwmes.co.uk' },
-                  { label: 'Client (David)', email: 'd.mercer@solent-sail.co.uk' },
-                  { label: 'Guest', email: 'guest@solent-visitor.co.uk' }
-                ].map(acc => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => {
-                      setEmail(acc.email);
-                      setPassword('ajwmes2026');
-                    }}
-                    className="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-sky-500/50 rounded-lg text-[11px] text-slate-300 hover:text-white transition-colors cursor-pointer"
-                  >
-                    {acc.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             <form onSubmit={handleEmailSignIn} className="space-y-4">
               <div className="space-y-1.5">
@@ -344,12 +358,14 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-300">Password / Access Passphrase</label>
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className="text-slate-500">Test Password:</span>
-                    <code className="text-amber-300 font-mono font-bold bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">
-                      ajwmes2026
-                    </code>
-                  </div>
+                  {authEnvConfig.showTestCredentials && (
+                    <div data-testid="test-password-hint" className="flex items-center gap-1.5 text-[11px]">
+                      <span className="text-slate-500">Test Password:</span>
+                      <code className="text-amber-300 font-mono font-bold bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">
+                        ajwmes2026
+                      </code>
+                    </div>
+                  )}
                 </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -428,7 +444,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             <div className="bg-sky-950/40 border border-sky-500/30 p-3.5 rounded-2xl text-xs text-sky-200 flex items-start gap-2.5">
               <UserPlus className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold block">Create Your AJWMES Account</span>
+                <span data-testid="register-banner-heading" className="font-bold block">{authEnvConfig.createAccountHeading}</span>
                 <span className="text-[11px] text-sky-300">
                   Set up your customer credentials in seconds. You can register your vessel details and manage 12V/24V electrical specs directly in the Vessel Portal.
                 </span>
@@ -548,7 +564,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         )}
 
         {/* Tab 3: Quick Switch Personas */}
-        {activeTab === 'quick_personas' && (
+        {activeTab === 'quick_personas' && authEnvConfig.showQuickPersonasTab && (
           <div className="p-6 overflow-y-auto space-y-4 flex-1">
             <div className="text-xs text-slate-300 bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800">
               One-click instant authentication: test all functionality with operational accounts for the active environment.

@@ -87,7 +87,7 @@ import {
   getEnvironmentSeedData, 
   resetEnvironmentToTestData 
 } from './lib/envStorage';
-import { detectEnvironment } from './lib/environment';
+import { detectEnvironment, canAccessEnvironmentSettings } from './lib/environment';
 import { EnvironmentSettingsModal } from './components/modals/EnvironmentSettingsModal';
 import { 
   sendOrderConfirmationEmail, 
@@ -1355,7 +1355,11 @@ export default function App() {
         }}
         onOpenSignOffModal={() => setIsSignOffModalOpen(true)}
         onOpenAccountModal={() => setIsAccountModalOpen(true)}
-        onOpenEnvironmentSettings={() => setIsEnvironmentModalOpen(true)}
+        onOpenEnvironmentSettings={() => {
+          if (canAccessEnvironmentSettings(detectEnvironment().envCode, currentUserRole)) {
+            setIsEnvironmentModalOpen(true);
+          }
+        }}
       />
 
       {/* Main Container with Centralized RBAC Route Middleware Guard */}

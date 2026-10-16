@@ -253,6 +253,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
             </div>
           </div>
           <button
+            data-testid="close-env-settings-modal"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -537,6 +538,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </button>
 
                   <button
+                    data-testid="env-switch-github-deployed"
                     onClick={() => handleSwitchEnvironment('github-deployed')}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       envInfo.envCode === 'github-deployed'

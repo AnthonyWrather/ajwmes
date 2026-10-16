@@ -11,7 +11,12 @@ import {
   getGitHubReleasesUrl,
   getGitHubCompareUrl
 } from '../version';
-import { getEnvironmentBadge } from '../lib/environment';
+import { 
+  getEnvironmentBadge, 
+  isProductionEnvironment, 
+  canAccessEnvironmentSettings, 
+  getAuthModalEnvironmentConfig 
+} from '../lib/environment';
 
 describe('Version & Release Tag Verification', () => {
   it('should export valid semantic version number', () => {
@@ -70,4 +75,49 @@ describe('Version & Release Tag Verification', () => {
     assert.strictEqual(liveBadge.shortLabel, 'Live');
     assert.ok(liveBadge.badgeClass.includes('emerald'));
   });
+
+  it('should identify production vs non-production environments accurately', () => {
+    assert.strictEqual(isProductionEnvironment('aistudio-dev'), false);
+    assert.strictEqual(isProductionEnvironment('aistudio-preview'), false);
+    assert.strictEqual(isProductionEnvironment('github-preview'), false);
+    assert.strictEqual(isProductionEnvironment('github-deployed'), true);
+  });
+
+  it('should restrict Multi-Environment & Release Manager link to admins in production while allowing all roles in dev/preview', () => {
+    const nonProdEnvs = ['aistudio-dev', 'aistudio-preview', 'github-preview'] as const;
+    const roles = ['guest', 'client', 'technician', 'postal', 'admin'] as const;
+
+    for (const env of nonProdEnvs) {
+      for (const role of roles) {
+        assert.strictEqual(
+          canAccessEnvironmentSettings(env, role),
+          true,
+          `Expected ${role} to access environment settings in ${env}`
+        );
+      }
+    }
+
+    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'admin'), true);
+    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'guest'), false);
+    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'client'), false);
+    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'technician'), false);
+    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'postal'), false);
+  });
+
+  it('should return appropriate AuthModal UI configuration for dev/preview vs production', () => {
+    for (const env of ['aistudio-dev', 'aistudio-preview', 'github-preview'] as const) {
+      const cfg = getAuthModalEnvironmentConfig(env);
+      assert.strictEqual(cfg.showTestCredentials, true);
+      assert.strictEqual(cfg.showQuickPersonasTab, true);
+      assert.strictEqual(cfg.signInHeading, 'AJWMES Portal Sign In');
+      assert.strictEqual(cfg.createAccountHeading, 'Create Your AJWMES Account');
+    }
+
+    const prodCfg = getAuthModalEnvironmentConfig('github-deployed');
+    assert.strictEqual(prodCfg.showTestCredentials, false);
+    assert.strictEqual(prodCfg.showQuickPersonasTab, false);
+    assert.strictEqual(prodCfg.signInHeading, 'Sign In');
+    assert.strictEqual(prodCfg.createAccountHeading, 'Create Your Account');
+  });
 });
+

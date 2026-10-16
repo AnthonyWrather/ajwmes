@@ -9,6 +9,7 @@
  */
 
 import { firebaseConfig } from './firebaseConfig';
+import { UserRole } from '../types';
 
 export type AppEnvironment = 'aistudio-dev' | 'aistudio-preview' | 'github-preview' | 'github-deployed';
 
@@ -202,3 +203,45 @@ export function getEnvironmentBadge(envCode: AppEnvironment): EnvironmentBadgeCo
       };
   }
 }
+
+/**
+ * Returns true if the target environment is Production Live ('github-deployed')
+ */
+export function isProductionEnvironment(envCode: AppEnvironment): boolean {
+  return envCode === 'github-deployed';
+}
+
+/**
+ * Determines whether the Multi-Environment & Release Manager link is enabled.
+ * In AI Studio and preview environments, all roles can open it.
+ * In Production ('github-deployed'), only administrators ('admin') can open it.
+ */
+export function canAccessEnvironmentSettings(envCode: AppEnvironment, userRole: UserRole): boolean {
+  if (isProductionEnvironment(envCode)) {
+    return userRole === 'admin';
+  }
+  return true;
+}
+
+export interface AuthModalEnvironmentConfig {
+  showTestCredentials: boolean;
+  showQuickPersonasTab: boolean;
+  signInHeading: string;
+  createAccountHeading: string;
+}
+
+/**
+ * Returns authentication modal UI configuration based on the active environment.
+ * Preserves test helpers and AJWMES titles in AI Studio and preview environments,
+ * while removing test credentials/quick roles and simplifying titles in Production.
+ */
+export function getAuthModalEnvironmentConfig(envCode: AppEnvironment): AuthModalEnvironmentConfig {
+  const isProd = isProductionEnvironment(envCode);
+  return {
+    showTestCredentials: !isProd,
+    showQuickPersonasTab: !isProd,
+    signInHeading: isProd ? 'Sign In' : 'AJWMES Portal Sign In',
+    createAccountHeading: isProd ? 'Create Your Account' : 'Create Your AJWMES Account'
+  };
+}
+
