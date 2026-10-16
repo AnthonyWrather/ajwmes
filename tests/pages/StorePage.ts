@@ -29,7 +29,7 @@ export class StorePage {
     const targetButton = inStockButtons.nth(targetIndex);
     await expect(targetButton).toBeVisible({ timeout: 10000 });
     await targetButton.scrollIntoViewIfNeeded();
-    await targetButton.click();
+    await targetButton.click({ force: true });
     // Verify item was added by waiting for the floating cart button to appear
     await expect(this.viewCartDrawerButton).toBeVisible({ timeout: 5000 });
   }

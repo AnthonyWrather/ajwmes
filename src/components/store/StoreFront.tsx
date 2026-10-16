@@ -526,15 +526,15 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                       >
                         {isAdded ? (
                           <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Added to Postal Order</span>
+                            <Check className="w-3.5 h-3.5 pointer-events-none" />
+                            <span className="pointer-events-none">Added to Postal Order</span>
                           </>
                         ) : product.stockCount <= 0 ? (
-                          <span>Out of Stock</span>
+                          <span className="pointer-events-none">Out of Stock</span>
                         ) : (
                           <>
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Add {isCable ? `${selectedLen}m Wire` : `${selectedLen} to Order`}</span>
+                            <Plus className="w-3.5 h-3.5 pointer-events-none" />
+                            <span className="pointer-events-none">Add {isCable ? `${selectedLen}m Wire` : `${selectedLen} to Order`}</span>
                           </>
                         )}
                       </button>

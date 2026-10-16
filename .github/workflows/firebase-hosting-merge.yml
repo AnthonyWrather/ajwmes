@@ -65,6 +65,7 @@ jobs:
         env:
           CI: true
           ALL_BROWSERS: 'true'
+          PLAYWRIGHT_WORKERS: 4
 
       - name: Upload Playwright Test Report Artifact
         uses: actions/upload-artifact@v4
