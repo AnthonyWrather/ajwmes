@@ -348,6 +348,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           <button
             onClick={handleExportCsv}
             disabled={filteredExpenses.length === 0}
+            data-testid="export-expenses-csv-btn"
             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
             title="Download CSV for accounting"
           >
@@ -357,6 +358,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
           <button
             onClick={() => handleOpenCreateModal()}
+            data-testid="open-create-expense-btn"
             className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-amber-500/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -367,7 +369,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-total-recorded-expenses" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-slate-400">Total Recorded</span>
             <Receipt className="w-3.5 h-3.5 text-amber-400" />
@@ -380,7 +382,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           </span>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-travel-expenses" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-slate-400">Fuel &amp; Solent Travel</span>
             <Fuel className="w-3.5 h-3.5 text-sky-400" />
@@ -393,7 +395,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           </span>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-subcontractor-expenses" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-slate-400">Sub-Contractor Fees</span>
             <Briefcase className="w-3.5 h-3.5 text-purple-400" />
@@ -406,7 +408,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           </span>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-billable-expenses" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-slate-400">Client Billable</span>
             <Coins className="w-3.5 h-3.5 text-emerald-400" />
@@ -422,7 +424,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
       {/* When a specific job is selected: Job Financial Rollup Card */}
       {selectedJobObj && selectedJobFinancials && (
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/40 border border-sky-500/40 rounded-2xl p-5 shadow-xl">
+        <div data-testid="job-financial-rollup-card" className="bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/40 border border-sky-500/40 rounded-2xl p-5 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
             <div>
               <div className="flex items-center gap-2">
@@ -439,7 +441,8 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleOpenCreateModal(selectedJobObj.id)}
-                className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                data-testid="add-expense-to-job-btn"
+                className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Expense to This Job</span>
@@ -447,7 +450,8 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
               <button
                 onClick={() => setSelectedJobFilter('')}
-                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
+                data-testid="clear-job-focus-btn"
+                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                 title="Clear job focus filter"
               >
                 <X className="w-3.5 h-3.5" />
@@ -518,6 +522,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              data-testid="expenses-search-input"
               placeholder="Search expenses, vendors, receipts..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -529,6 +534,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           <div className="md:col-span-3">
             <select
               value={selectedJobFilter}
+              data-testid="expenses-job-filter"
               onChange={e => setSelectedJobFilter(e.target.value)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden focus:border-amber-500/60 cursor-pointer"
             >
@@ -545,6 +551,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           <div className="md:col-span-2">
             <select
               value={selectedCategoryFilter}
+              data-testid="expenses-category-filter"
               onChange={e => setSelectedCategoryFilter(e.target.value)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden focus:border-amber-500/60 cursor-pointer"
             >
@@ -561,6 +568,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           <div className="md:col-span-2">
             <select
               value={selectedBillableFilter}
+              data-testid="expenses-billable-filter"
               onChange={e => setSelectedBillableFilter(e.target.value as any)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden focus:border-amber-500/60 cursor-pointer"
             >
@@ -575,7 +583,8 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="w-full px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                data-testid="expenses-reset-filters-btn"
+                className="w-full px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
                 title="Reset filters"
               >
                 <X className="w-3.5 h-3.5" />
@@ -590,7 +599,8 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
           <span className="text-slate-500 text-[11px] font-mono mr-1 shrink-0">Quick Filter:</span>
           <button
             onClick={() => setSelectedCategoryFilter('all')}
-            className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap shrink-0 text-[11px] font-medium ${
+            data-testid="expense-quick-filter-all"
+            className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap shrink-0 text-[11px] font-medium cursor-pointer ${
               selectedCategoryFilter === 'all'
                 ? 'bg-amber-500 text-slate-950 font-bold'
                 : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
@@ -605,7 +615,8 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
               <button
                 key={cat}
                 onClick={() => setSelectedCategoryFilter(cat)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap shrink-0 text-[11px] font-medium ${
+                data-testid={`expense-quick-filter-${cat}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap shrink-0 text-[11px] font-medium cursor-pointer ${
                   selectedCategoryFilter === cat
                     ? 'bg-amber-500 text-slate-950 font-bold'
                     : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
@@ -666,7 +677,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
                 {filteredExpenses.map(expense => (
-                  <tr key={expense.id} className="hover:bg-slate-800/40 transition-colors group">
+                  <tr key={expense.id} data-testid={`expense-row-${expense.id}`} className="hover:bg-slate-800/40 transition-colors group">
                     {/* Date */}
                     <td className="py-3 px-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">
                       {expense.date}
@@ -735,6 +746,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                     <td className="py-3 px-4 whitespace-nowrap">
                       <button
                         onClick={() => handleToggleBillable(expense)}
+                        data-testid={`toggle-billable-${expense.id}`}
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold border cursor-pointer transition-colors ${
                           expense.isBillableToClient
                             ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/60'
@@ -770,6 +782,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => handleOpenEditModal(expense)}
+                          data-testid={`edit-expense-${expense.id}`}
                           className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
                           title="Edit expense details"
                         >
@@ -778,6 +791,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
                         <button
                           onClick={() => setDeleteConfirmId(expense.id)}
+                          data-testid={`delete-expense-${expense.id}`}
                           className="p-1.5 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 rounded-lg transition-colors cursor-pointer"
                           title="Delete expense"
                         >
@@ -814,7 +828,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+        <div data-testid="delete-expense-modal" className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3 text-rose-400">
               <div className="p-2.5 bg-rose-500/20 border border-rose-500/40 rounded-xl">
@@ -833,6 +847,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setDeleteConfirmId(null)}
+                data-testid="cancel-delete-expense-btn"
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
               >
                 Cancel
@@ -842,6 +857,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   onDeleteExpense(deleteConfirmId);
                   setDeleteConfirmId(null);
                 }}
+                data-testid="confirm-delete-expense-btn"
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
               >
                 Delete Expense
@@ -853,7 +869,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
       {/* Create / Edit Expense Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in overflow-y-auto">
+        <div data-testid="expense-modal" className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl my-8">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
@@ -872,6 +888,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
 
               <button
                 onClick={() => setIsModalOpen(false)}
+                data-testid="expense-modal-close-btn"
                 className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -879,7 +896,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
             </div>
 
             {formError && (
-              <div className="p-3 bg-rose-950/80 border border-rose-500/50 rounded-xl text-xs text-rose-300 flex items-center gap-2">
+              <div data-testid="expense-form-error" className="p-3 bg-rose-950/80 border border-rose-500/50 rounded-xl text-xs text-rose-300 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                 <span>{formError}</span>
               </div>
@@ -893,6 +910,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                 </label>
                 <select
                   value={formJobId}
+                  data-testid="expense-form-job-select"
                   onChange={e => setFormJobId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
                   required
@@ -916,6 +934,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   </label>
                   <select
                     value={formCategory}
+                    data-testid="expense-form-category-select"
                     onChange={e => setFormCategory(e.target.value as ExpenseCategory)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
                   >
@@ -938,6 +957,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                       step="0.01"
                       min="0.01"
                       placeholder="0.00"
+                      data-testid="expense-form-amount-input"
                       value={formAmount}
                       onChange={e => setFormAmount(e.target.value)}
                       className="w-full pl-7 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:outline-hidden focus:border-amber-500/60"
@@ -955,6 +975,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                 <input
                   type="text"
                   placeholder="e.g. Van diesel to Swanwick Marina / Hydraulic lug crimper hire"
+                  data-testid="expense-form-description-input"
                   value={formDescription}
                   onChange={e => setFormDescription(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
@@ -970,6 +991,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   </label>
                   <input
                     type="date"
+                    data-testid="expense-form-date-input"
                     value={formDate}
                     onChange={e => setFormDate(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
@@ -984,6 +1006,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   <input
                     type="text"
                     placeholder="e.g. Shell Gosport / Solent Rigging Ltd"
+                    data-testid="expense-form-vendor-input"
                     value={formVendor}
                     onChange={e => setFormVendor(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
@@ -1000,6 +1023,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   <input
                     type="text"
                     placeholder="e.g. REC-9921 / INV-2026-44"
+                    data-testid="expense-form-receipt-input"
                     value={formReceiptRef}
                     onChange={e => setFormReceiptRef(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:outline-hidden focus:border-amber-500/60"
@@ -1012,6 +1036,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   </label>
                   <select
                     value={formPaymentMethod}
+                    data-testid="expense-form-payment-select"
                     onChange={e => setFormPaymentMethod(e.target.value as any)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
                   >
@@ -1029,6 +1054,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                 <label className="flex items-center gap-2.5 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-slate-700">
                   <input
                     type="checkbox"
+                    data-testid="expense-form-billable-checkbox"
                     checked={formIsBillable}
                     onChange={e => setFormIsBillable(e.target.checked)}
                     className="w-4 h-4 text-emerald-500 rounded border-slate-700 bg-slate-900 focus:ring-emerald-500"
@@ -1047,6 +1073,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   </label>
                   <select
                     value={formStatus}
+                    data-testid="expense-form-status-select"
                     onChange={e => setFormStatus(e.target.value as any)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
                   >
@@ -1065,6 +1092,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                 <textarea
                   rows={2}
                   placeholder="Additional context, sub-contractor deliverables, or ferry booking details..."
+                  data-testid="expense-form-notes-input"
                   value={formNotes}
                   onChange={e => setFormNotes(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-hidden focus:border-amber-500/60"
@@ -1076,12 +1104,14 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
+                  data-testid="expense-form-cancel-btn"
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  data-testid="expense-form-submit-btn"
                   className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow-lg shadow-amber-500/20 cursor-pointer"
                 >
                   {editingExpense ? 'Save Changes' : 'Record Expense'}

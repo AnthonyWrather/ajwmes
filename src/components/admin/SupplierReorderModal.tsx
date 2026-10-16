@@ -119,7 +119,7 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
   const mailtoLink = `mailto:${encodeURIComponent(customSupplierEmail || selectedSupplier.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div data-testid="supplier-reorder-modal" className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 max-w-4xl w-full rounded-3xl p-5 sm:p-7 text-slate-100 shadow-2xl space-y-6 my-auto animate-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="flex items-start justify-between pb-4 border-b border-slate-800">
@@ -143,7 +143,8 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+            data-testid="close-supplier-reorder-modal-btn"
+            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -238,8 +239,9 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
             <div className="space-y-2">
               <select
                 value={selectedSupplierId}
+                data-testid="reorder-supplier-select"
                 onChange={e => setSelectedSupplierId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
               >
                 {MARINE_SUPPLIERS.map(sup => (
                   <option key={sup.id} value={sup.id}>
@@ -314,6 +316,7 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
                     type="number"
                     min="1"
                     max="1000"
+                    data-testid="reorder-quantity-input"
                     value={reorderQty}
                     onChange={e => setReorderQty(Math.max(1, Number(e.target.value) || 1))}
                     className="w-full bg-slate-900 border border-slate-700 text-sm font-mono px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500 font-bold"
@@ -333,6 +336,7 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
                     type="number"
                     step="0.05"
                     min="0"
+                    data-testid="reorder-unit-cost-input"
                     value={unitCost}
                     onChange={e => setUnitCost(Math.max(0, Number(e.target.value) || 0))}
                     className="w-full bg-slate-900 border border-slate-700 text-xs font-mono px-3 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500"
@@ -345,8 +349,9 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
                   </label>
                   <select
                     value={shippingSpeed}
+                    data-testid="reorder-shipping-speed-select"
                     onChange={e => setShippingSpeed(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 text-xs px-2 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-slate-900 border border-slate-700 text-xs px-2 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                   >
                     <option value="next_day_solent">Next-Day Solent Priority</option>
                     <option value="standard_courier">Standard 48hr Courier</option>
@@ -385,7 +390,8 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
               <button
                 type="button"
                 onClick={handleCopyEmail}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg flex items-center gap-1 transition-colors"
+                data-testid="copy-po-email-btn"
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
                 title="Copy entire PO email to clipboard"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-sky-400" />}
@@ -424,7 +430,8 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+              data-testid="cancel-reorder-btn"
+              className="px-4 py-2.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -432,7 +439,8 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
             <button
               type="button"
               onClick={handleInstantReceive}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold rounded-xl flex items-center gap-1.5 transition-colors"
+              data-testid="restock-now-btn"
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
               title="Instantly update inventory stock count"
             >
               <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
@@ -443,7 +451,8 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
               type="button"
               onClick={handleSendOrder}
               disabled={isSent}
-              className={`px-5 py-2.5 font-bold rounded-xl flex items-center gap-2 transition-all shadow-md ${
+              data-testid="send-po-email-btn"
+              className={`px-5 py-2.5 font-bold rounded-xl flex items-center gap-2 transition-all shadow-md cursor-pointer ${
                 isSent
                   ? 'bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 cursor-default'
                   : 'bg-sky-600 hover:bg-sky-500 text-white shadow-sky-600/30'
