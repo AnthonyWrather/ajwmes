@@ -31,12 +31,16 @@ graph TD
         J2["2. Hardware Catalog & Stock Sync\n(tests/inventory-stock-sync.spec.ts)"]
         J3["3. Diagnostic Booking & Email Dispatch\n(tests/resend.spec.ts)"]
         J4["4. Field Technician Diagnostic & Sign-Off\n(tests/technician-diagnostic-flow.spec.ts)"]
+        J5["5. Postal Fulfillment & Dispatch\n(tests/postal-fulfillment-dispatch.spec.ts)"]
+        J6["6. Consignment Timeline Tracker\n(tests/consignment-tracker.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
     J2 -->|"Stock Sync & Cart Interactions"| POM2["StorePage\nCartDrawerPage\nAdmin Dashboard"]
     J3 -->|"Resend Multi-Env Outbox"| POM3["EnvironmentSettingsModal\nBookingQuoteModal"]
     J4 -->|"Stopwatch, Materials & Canvas Signature"| POM4["TechnicianWorkspacePage\nCustomerSignOffModal"]
+    J5 -->|"Queue, Cable Cut & Dispatch Modal"| POM5["PostalWorkstationPage\nDispatchModalPage"]
+    J6 -->|"Milestones, Checkpoints & Status Simulator"| POM6["ConsignmentTrackerPage"]
 ```
 
 ---
@@ -125,6 +129,56 @@ graph TD
 
 ---
 
+### Journey 5: Postal Workshop Order Fulfillment, Cable Cutting & Dispatch
+- **Test File:** [`tests/postal-fulfillment-dispatch.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/postal-fulfillment-dispatch.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `PostalWorkstationPage`, `DispatchModalPage`
+- **Target Personas:** `postal`, `admin`
+
+#### Scenarios Verified:
+1. **Postal Workstation Authentication & RBAC Gating**:
+   - Sign in using workshop postal credentials (`sarah.postal@ajwmes.co.uk`), verifying dedicated access to `/postal` with operator identity.
+2. **Pending Consignments Queue & Selection**:
+   - Filter orders by pending/processing status and inspect customer delivery requirements (marina pontoon berth vs UK residential address).
+3. **Custom Marine Cable Cutting & Bench Verification**:
+   - Interactive cable cutting workstation: verify spool measurements, mark cut lengths, and confirm custom preparation.
+4. **Hardware Picking Checklist & Verification**:
+   - Audit individual line items, check off picked hardware components, and track order fulfillment readiness.
+5. **Carrier Consignment Code Generation & Dispatch**:
+   - Open dispatch modal, select carrier service (Royal Mail Tracked 24/48 or DPD Next Day), generate valid carrier consignment reference, and complete dispatch transition.
+6. **Printable Packing Slip & Barcode Generation**:
+   - Render printable HTML5 packing slip with order summary, recipient details, item breakdown, and verified dispatch metadata.
+
+---
+
+### Journey 6: Solent Marine Postal Consignment Timeline Tracker
+- **Test File:** [`tests/consignment-tracker.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/consignment-tracker.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `ConsignmentTrackerPage`
+- **Target Personas:** `guest`, `client`, `admin`
+
+#### Scenarios Verified:
+1. **Navigation & Tab Access**:
+   - Navigate to landing page and access Postal Order Tracker tab from both desktop navigation header and mobile bottom drawer.
+2. **Consignments Queue Inspection & Order Switching**:
+   - Inspect active consignment tabs and switch smoothly between multiple seed and customer orders (`AJW-POST-2841`, `AJW-POST-2839`, `AJW-POST-2845`).
+3. **Postcode & Order Number Filtering**:
+   - Filter consignments using real-time search query by order identifier and UK delivery postcode (e.g. `PO12`, `PO31`), validating instant search clearing.
+4. **4-Stage Visual Timeline Milestones**:
+   - Audit interactive 4-stage visual progress bar (Order Received, Processing & Cut, Dispatched, Delivered) across desktop and mobile viewports with dynamic percentage completion badges.
+5. **Carrier Logistics & Reference Clipboard Interaction**:
+   - Inspect carrier details (Royal Mail / DPD), tracking references, and verify single-click clipboard copy action.
+6. **Simulated Live Carrier Checkpoints Modal**:
+   - Open chronological carrier checkpoints modal, audit milestone logs (Sorted at Hub, Out for Delivery, Signed on Pontoon), and dismiss via close controls.
+7. **Destination Specifications (Marina vs Residential)**:
+   - Compare delivery metadata between Solent marina berths (vessel name, pontoon berth, gate codes) and UK mainland residential addresses.
+8. **Parcel Contents Accordion & BOM Billing Totals**:
+   - Toggle expandable parcel contents drawer to audit itemized bill of materials, quantities, unit prices, delivery fee, and total paid.
+9. **Admin Session Continuity**:
+   - Authenticate as Workshop Admin (`anthonywrather@gmail.com`) and verify active tracker state and profile continuity are preserved.
+10. **Dynamic Order Lifecycle Simulation**:
+    - Trigger quick status transitions (`processing` -> `dispatched` -> `delivered` -> `pending`) and verify real-time timeline recalculation, stage node styling, and fulfillment percentages.
+
+---
+
 ## 2. Future User Journeys Requiring Test Coverage
 
 The following table identifies the remaining operational workflows across AJWMES to be automated:
@@ -133,8 +187,8 @@ The following table identifies the remaining operational workflows across AJWMES
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **UJ-04** | **Solent Field Technician Diagnostics & Sign-off** | `/technician` | `technician`, `admin` | **Critical (P0)** | High (Canvas, Timer, Offline) | **Done (Automated)** |
 | **UJ-05** | **Postal Workshop Order Fulfillment & Dispatch** | `/postal` | `postal`, `admin` | **High (P0)** | Medium (Queue, Cable cutting, Packing slip) | **Done (Automated)** |
-| **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | **Next Recommended** |
-| **UJ-07** | **Custom Carling Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | Pending |
+| **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | **Done (Automated)** |
+| **UJ-07** | **Custom Carling Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Next Recommended** |
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | Pending |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | Pending |
 | **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | Medium-High (Financial rollups, POs) | Pending |
@@ -152,26 +206,28 @@ gantt
     Technician Diagnostic & Sign-off Flow (UJ-04) :done, 2026-10-16, 1d
     Postal Workshop Order Fulfillment (UJ-05)     :done, 2026-10-16, 1d
     section Phase 2 (Customer Experience)
-    Consignment Tracker Timeline (UJ-06)          :crit, active, 2026-10-17, 2d
-    Custom Switch Panel CAD Designer (UJ-07)      :2026-10-19, 3d
-    Vessel Portal & PDF Certificate Export (UJ-09):2026-10-22, 2d
+    Consignment Tracker Timeline (UJ-06)          :done, 2026-10-17, 1d
+    Custom Switch Panel CAD Designer (UJ-07)      :crit, active, 2026-10-18, 2d
+    Vessel Portal & PDF Certificate Export (UJ-09):2026-10-20, 2d
     section Phase 3 (Admin & Resilience)
-    Workshop Admin, Expenses & Restock (UJ-10)    :2026-10-24, 3d
-    Offline Pontoon Resilience & Mutation Sync (UJ-11):2026-10-27, 3d
-    Photo Replica Quoter (UJ-08)                  :2026-10-30, 2d
+    Workshop Admin, Expenses & Restock (UJ-10)    :2026-10-22, 3d
+    Offline Pontoon Resilience & Mutation Sync (UJ-11):2026-10-25, 3d
+    Photo Replica Quoter (UJ-08)                  :2026-10-28, 2d
 ```
 
 ---
 
 ## 4. Recommended Next Journey to Implement
 
-### Recommendation: **Journey 6 — Postal Consignment Timeline Tracker**
-**File Target:** `tests/consignment-tracker.spec.ts`  
-**Page Object Model:** `tests/pages/ConsignmentTrackerPage.ts`
+### Recommendation: **Journey 7 — Custom Carling Switch Panel CAD Configurator**
+**File Target:** `tests/switch-panel-cad.spec.ts`  
+**Page Object Model:** `tests/pages/SwitchPanelCADPage.ts`
 
 ### Architectural & Business Rationale:
-1. **Customer-Facing Tracking Visibility**:
-   - Having completed Journey 5 (Postal Fulfillment & Dispatch), orders transition through Royal Mail and DPD tracking.
-   - Boat owners and skipper clients require real-time visibility into their consignment milestones (`/tracker`).
-2. **Direct Verification of Dispatch Mutations**:
-   - Ensures that carrier consignment codes and status transitions performed by the workshop dispatcher in Journey 5 reflect directly in customer-facing tracking views.
+1. **Interactive Marine CAD Configuration**:
+   - The Carling switch panel configurator (`/designer`) is one of AJWMES's core commercial revenue streams.
+   - Customers design custom CNC-cut acrylic/aluminum switchboards with customizable rows, columns, rocker switches, circuit breakers, voltmeter apertures, and USB charging sockets.
+2. **Real-Time BOM & Electrical Pricing Rollups**:
+   - Every CAD component addition dynamically impacts labor, raw material cutting surcharges, component costs, and laser engraving fees computed via `src/utils/electricalCalculations.ts`.
+3. **Cart Integration & Quote Submission**:
+   - Tests verify that configured panel layouts generate accurate bills of materials, correctly transition into the cart drawer or custom quotation pipeline, and export visual CAD specifications.

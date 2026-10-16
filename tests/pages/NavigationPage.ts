@@ -3,8 +3,10 @@ import { Page, Locator, expect } from '@playwright/test';
 export class NavigationPage {
   readonly page: Page;
   readonly desktopStoreTab: Locator;
+  readonly desktopTrackerTab: Locator;
   readonly mobileMenuToggle: Locator;
   readonly mobileStoreTab: Locator;
+  readonly mobileTrackerTab: Locator;
   readonly cartButton: Locator;
   readonly signInNavButton: Locator;
   readonly userProfileName: Locator;
@@ -13,8 +15,10 @@ export class NavigationPage {
   constructor(page: Page) {
     this.page = page;
     this.desktopStoreTab = page.getByTestId('nav-tab-store');
+    this.desktopTrackerTab = page.getByTestId('nav-tab-tracker');
     this.mobileMenuToggle = page.getByTestId('mobile-menu-toggle');
     this.mobileStoreTab = page.getByTestId('mobile-nav-tab-store');
+    this.mobileTrackerTab = page.getByTestId('mobile-nav-tab-tracker');
     this.cartButton = page.getByTestId('nav-cart-button');
     this.signInNavButton = page.getByTestId('nav-signin-button');
     this.userProfileName = page.getByTestId('user-profile-name');
@@ -37,6 +41,20 @@ export class NavigationPage {
     } else {
       await expect(this.desktopStoreTab).toBeVisible({ timeout: 10000 });
       await this.desktopStoreTab.click({ force: true });
+    }
+  }
+
+  async navigateToTracker(): Promise<void> {
+    const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
+
+    if (isMobile) {
+      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
+      await this.mobileMenuToggle.click({ force: true });
+      await expect(this.mobileTrackerTab).toBeVisible({ timeout: 10000 });
+      await this.mobileTrackerTab.click({ force: true });
+    } else {
+      await expect(this.desktopTrackerTab).toBeVisible({ timeout: 10000 });
+      await this.desktopTrackerTab.click({ force: true });
     }
   }
 

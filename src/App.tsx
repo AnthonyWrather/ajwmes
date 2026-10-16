@@ -354,7 +354,16 @@ export default function App() {
 
     const unsubOrders = subscribePostalOrders((remoteOrders) => {
       if (remoteOrders && remoteOrders.length > 0) {
-        setPostalOrders(remoteOrders);
+        setPostalOrders((prev) => {
+          const map = new Map<string, PostalOrder>();
+          for (const o of prev) {
+            map.set(o.id, o);
+          }
+          for (const o of remoteOrders) {
+            map.set(o.id, o);
+          }
+          return Array.from(map.values());
+        });
       }
       setIsFirebaseConnected(true);
     });

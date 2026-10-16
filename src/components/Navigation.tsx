@@ -132,6 +132,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           </button>
 
           <button
+            data-testid="nav-tab-tracker"
             onClick={() => setCurrentTab('tracker')}
             className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${currentTab === 'tracker' ? 'text-sky-400 font-bold' : ''}`}
           >
@@ -477,6 +478,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               <span>Parts Store {cartCount > 0 ? `(${cartCount})` : ''}</span>
             </button>
             <button
+              data-testid="mobile-nav-tab-tracker"
               onClick={() => { setCurrentTab('tracker'); setMobileMenuOpen(false); }}
               className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-sky-400 flex items-center gap-1.5"
             >

@@ -190,7 +190,10 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
 
   if (orders.length === 0) {
     return (
-      <div className={`bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-4 max-w-2xl mx-auto ${className}`}>
+      <div 
+        data-testid="tracker-empty-state"
+        className={`bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-4 max-w-2xl mx-auto ${className}`}
+      >
         <div className="w-16 h-16 rounded-2xl bg-sky-950/60 border border-sky-500/30 flex items-center justify-center mx-auto text-sky-400">
           <Package className="w-8 h-8" />
         </div>
@@ -200,6 +203,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
         </p>
         {onNavigateToStore && (
           <button
+            data-testid="tracker-shop-stock-btn"
             onClick={onNavigateToStore}
             className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/30 transition-all inline-flex items-center gap-2"
           >
@@ -212,7 +216,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div data-testid="postal-order-tracker" className={`space-y-6 ${className}`}>
       {/* Top Banner / Order Switcher Bar */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 backdrop-blur-sm shadow-xl space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -235,6 +239,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
           <div className="relative min-w-[260px] sm:w-72">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
+              data-testid="tracker-search-input"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -243,6 +248,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
             />
             {searchQuery && (
               <button 
+                data-testid="tracker-clear-search-btn"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs"
               >
@@ -254,7 +260,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
 
         {/* Quick Order Tabs / Selector Pills */}
         <div className="pt-2 border-t border-slate-800/80">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+          <div data-testid="tracker-order-tabs" className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
             <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap mr-1">
               Select Order ({filteredOrders.length}):
             </span>
@@ -266,6 +272,9 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
               return (
                 <button
                   key={ord.id}
+                  data-testid="tracker-order-tab"
+                  data-order-id={ord.id}
+                  data-order-number={ord.orderNumber}
                   onClick={() => handleSelectOrder(ord.id)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border ${
                     isSelected
@@ -297,7 +306,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
       {currentOrder && (
         <div className="space-y-6">
           {/* Main Visual Tracking Timeline Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+          <div data-testid="tracker-active-order-card" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
             {/* Background ambient lighting */}
             <div className="absolute -right-20 -top-20 w-80 h-80 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -306,10 +315,10 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800 relative z-10">
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-xl sm:text-2xl font-extrabold text-white">
+                  <span data-testid="tracker-order-number" className="font-mono text-xl sm:text-2xl font-extrabold text-white">
                     {currentOrder.orderNumber}
                   </span>
-                  <span className={`text-xs font-mono font-bold uppercase px-3 py-1 rounded-full border ${
+                  <span data-testid="tracker-order-status-pill" className={`text-xs font-mono font-bold uppercase px-3 py-1 rounded-full border ${
                     currentOrder.orderStatus === 'delivered'
                       ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'
                       : currentOrder.orderStatus === 'dispatched' || currentOrder.orderStatus === 'ready_for_pickup'
@@ -331,7 +340,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
               </div>
 
               {/* Destination badge */}
-              <div className="flex items-center gap-3 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 text-xs">
+              <div data-testid="tracker-destination-preview" className="flex items-center gap-3 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 text-xs">
                 <div className="p-2 rounded-xl bg-sky-950 text-sky-400 border border-sky-500/20">
                   {currentOrder.shippingAddress.isMarinaDelivery ? (
                     <Anchor className="w-5 h-5 text-sky-400" />
@@ -353,13 +362,14 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
             </div>
 
             {/* THE VISUAL TIMELINE */}
-            <div className="py-8 relative z-10">
+            <div data-testid="tracker-timeline-section" className="py-8 relative z-10">
               {/* Desktop / Tablet Horizontal Timeline Bar */}
-              <div className="hidden md:block">
+              <div data-testid="tracker-desktop-timeline" className="hidden md:block">
                 {/* Connecting Progress Track */}
                 <div className="relative mb-8">
                   <div className="absolute top-1/2 left-0 w-full -translate-y-1/2 h-2 bg-slate-950 rounded-full border border-slate-800 overflow-hidden">
                     <div 
+                      data-testid="tracker-progress-bar"
                       className="h-full bg-gradient-to-r from-amber-500 via-sky-500 to-emerald-400 transition-all duration-700 ease-out"
                       style={{ width: `${progressPercent}%` }}
                     />
@@ -376,6 +386,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                       return (
                         <div 
                           key={stage.key} 
+                          data-testid={`timeline-stage-${stage.key}`}
                           className="flex flex-col items-center cursor-pointer group"
                           onClick={() => onUpdateOrderStatus && handleSimulateStatus(stage.key)}
                           title={`Click to set stage to ${stage.label}`}
@@ -430,7 +441,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
               </div>
 
               {/* Mobile Vertical Stepped Timeline */}
-              <div className="md:hidden space-y-6">
+              <div data-testid="tracker-mobile-timeline" className="md:hidden space-y-6">
                 <div className="space-y-4 relative pl-8 before:absolute before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-800">
                   {TIMELINE_STAGES.map((stage, idx) => {
                     const isCompleted = currentStageIndex > idx;
@@ -440,6 +451,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                     return (
                       <div 
                         key={stage.key}
+                        data-testid={`mobile-timeline-stage-${stage.key}`}
                         onClick={() => onUpdateOrderStatus && handleSimulateStatus(stage.key)}
                         className={`relative p-4 rounded-2xl border transition-all cursor-pointer ${
                           isCurrent
@@ -485,7 +497,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
               </div>
 
               {/* Active Step Detailed Card Banner */}
-              <div className="mt-4 p-5 rounded-2xl bg-slate-950/90 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div data-testid="tracker-active-stage-banner" className="mt-4 p-5 rounded-2xl bg-slate-950/90 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-xs font-semibold">
                     <span className="text-slate-400">Current Status:</span>
@@ -500,7 +512,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Fulfillment Level</div>
-                    <div className="text-base font-extrabold font-mono text-sky-400">{progressPercent}% Completed</div>
+                    <div data-testid="tracker-fulfillment-percent" className="text-base font-extrabold font-mono text-sky-400">{progressPercent}% Completed</div>
                   </div>
                   <div className="w-12 h-12 rounded-full border-4 border-slate-800 flex items-center justify-center relative">
                     <div 
@@ -516,7 +528,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
             {/* Carrier & Tracking Details Section */}
             <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* Carrier Details Box */}
-              <div className="lg:col-span-6 p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
+              <div data-testid="tracker-carrier-box" className="lg:col-span-6 p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Truck className="w-4 h-4 text-sky-400" />
@@ -524,7 +536,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                       Carrier &amp; Dispatch Logistics
                     </span>
                   </div>
-                  <span className="text-[11px] font-mono text-slate-400">
+                  <span data-testid="tracker-shipping-method" className="text-[11px] font-mono text-slate-400">
                     Method: <strong className="text-slate-200 capitalize">{currentOrder.shippingMethod.replace(/_/g, ' ')}</strong>
                   </span>
                 </div>
@@ -534,16 +546,17 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                   <div className="p-3.5 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-mono text-slate-500 uppercase block">Tracking Reference</span>
-                      <div className="font-mono text-sm font-bold text-sky-300 select-all">
+                      <div data-testid="tracker-tracking-number" className="font-mono text-sm font-bold text-sky-300 select-all">
                         {currentOrder.trackingNumber}
                       </div>
-                      <span className="text-[10px] text-slate-400 block">
+                      <span data-testid="tracker-tracking-carrier" className="text-[10px] text-slate-400 block">
                         Carrier: {currentOrder.trackingCarrier || 'Royal Mail Tracked 24'}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
+                        data-testid="tracker-copy-tracking-btn"
                         onClick={() => handleCopyTracking(currentOrder.trackingNumber!)}
                         className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition-colors"
                         title="Copy Tracking Number"
@@ -562,6 +575,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                       </button>
 
                       <button
+                        data-testid="tracker-checkpoints-btn"
                         onClick={() => setActiveCarrierModal(true)}
                         className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium flex items-center gap-1 transition-colors"
                       >
@@ -601,7 +615,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
               </div>
 
               {/* Delivery Address & Notes Box */}
-              <div className="lg:col-span-6 p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
+              <div data-testid="tracker-destination-box" className="lg:col-span-6 p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-sky-400" />
@@ -615,16 +629,16 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                 </div>
 
                 <div className="p-3.5 bg-slate-900 rounded-xl border border-slate-800 text-xs space-y-2">
-                  <div className="font-bold text-white">{currentOrder.shippingAddress.fullName}</div>
+                  <div data-testid="tracker-destination-name" className="font-bold text-white">{currentOrder.shippingAddress.fullName}</div>
                   
                   {currentOrder.shippingAddress.isMarinaDelivery ? (
-                    <div className="text-slate-300 space-y-0.5">
+                    <div data-testid="tracker-destination-address" className="text-slate-300 space-y-0.5">
                       <div className="text-sky-300 font-semibold">{currentOrder.shippingAddress.marinaName}</div>
                       <div>Berth / Pontoon: <span className="font-mono font-bold text-white">{currentOrder.shippingAddress.berthNumber}</span></div>
                       <div className="text-slate-400">{currentOrder.shippingAddress.city}, {currentOrder.shippingAddress.postcode}</div>
                     </div>
                   ) : (
-                    <div className="text-slate-300 space-y-0.5">
+                    <div data-testid="tracker-destination-address" className="text-slate-300 space-y-0.5">
                       <div>{currentOrder.shippingAddress.addressLine1}</div>
                       {currentOrder.shippingAddress.addressLine2 && <div>{currentOrder.shippingAddress.addressLine2}</div>}
                       <div className="text-slate-400">{currentOrder.shippingAddress.city}, {currentOrder.shippingAddress.postcode}</div>
@@ -648,6 +662,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
             {/* Order Items Accordion */}
             <div className="mt-6 pt-6 border-t border-slate-800">
               <button
+                data-testid="tracker-items-toggle"
                 onClick={() => setShowItemDetails(!showItemDetails)}
                 className="w-full flex items-center justify-between text-xs font-bold text-slate-300 hover:text-white transition-colors"
               >
@@ -662,10 +677,10 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
               </button>
 
               {showItemDetails && (
-                <div className="mt-4 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                <div data-testid="tracker-items-container" className="mt-4 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
                   <div className="divide-y divide-slate-800/80 text-xs">
                     {currentOrder.items.map((item, idx) => (
-                      <div key={idx} className="p-3.5 flex items-center justify-between hover:bg-slate-900/40 transition-colors">
+                      <div key={idx} data-testid="tracker-item-row" className="p-3.5 flex items-center justify-between hover:bg-slate-900/40 transition-colors">
                         <div className="space-y-0.5">
                           <span className="font-semibold text-white">{item.name}</span>
                           <div className="text-[11px] text-slate-400">
@@ -687,7 +702,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-400">Total Paid:</span>
-                      <span className="text-base font-mono font-extrabold text-emerald-400">
+                      <span data-testid="tracker-total-paid" className="text-base font-mono font-extrabold text-emerald-400">
                         £{currentOrder.total.toFixed(2)}
                       </span>
                     </div>
@@ -698,7 +713,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
 
             {/* Interactive Timeline Stage Simulator / Admin Quick Toggle */}
             {onUpdateOrderStatus && (
-              <div className="mt-6 pt-6 border-t border-slate-800/80 bg-slate-950/40 -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 p-6 sm:p-8 rounded-b-3xl">
+              <div data-testid="tracker-status-simulator" className="mt-6 pt-6 border-t border-slate-800/80 bg-slate-950/40 -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 p-6 sm:p-8 rounded-b-3xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-bold text-slate-300 block">
@@ -713,6 +728,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                     {TIMELINE_STAGES.map((st) => (
                       <button
                         key={st.key}
+                        data-testid={`simulate-status-${st.key}`}
                         onClick={() => handleSimulateStatus(st.key)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
                           currentOrder.orderStatus === st.key || 
@@ -736,7 +752,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
 
       {/* Simulated Live Courier Checkpoint Modal */}
       {activeCarrierModal && currentOrder && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div data-testid="tracker-checkpoints-modal" className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
@@ -746,6 +762,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                 </h3>
               </div>
               <button 
+                data-testid="tracker-close-checkpoints-btn"
                 onClick={() => setActiveCarrierModal(false)}
                 className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-sm"
               >
@@ -755,12 +772,12 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
 
             <div className="space-y-1 font-mono text-xs">
               <span className="text-slate-500 uppercase block text-[10px]">Tracking Number</span>
-              <span className="text-sky-300 font-bold text-sm">{currentOrder.trackingNumber}</span>
+              <span data-testid="tracker-modal-tracking-number" className="text-sky-300 font-bold text-sm">{currentOrder.trackingNumber}</span>
             </div>
 
             {/* Simulated Logistics Checkpoint Nodes */}
             <div className="space-y-4 relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
-              <div className="relative">
+              <div data-testid="tracker-checkpoint-entry" className="relative">
                 <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-500/20" />
                 <div className="text-xs font-bold text-white">
                   {currentOrder.orderStatus === 'delivered' ? 'Delivered & Signed' : 'In Transit / Out for Delivery'}
@@ -771,21 +788,21 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
                 <div className="text-[10px] font-mono text-slate-500">Today, 08:45 AM</div>
               </div>
 
-              <div className="relative">
+              <div data-testid="tracker-checkpoint-entry" className="relative">
                 <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-sky-400" />
                 <div className="text-xs font-bold text-white">Processed Through Sorting Facility</div>
                 <div className="text-[11px] text-slate-400">Southampton Mail Hub (Inbound Solent)</div>
                 <div className="text-[10px] font-mono text-slate-500">Yesterday, 22:15 PM</div>
               </div>
 
-              <div className="relative">
+              <div data-testid="tracker-checkpoint-entry" className="relative">
                 <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-slate-600" />
                 <div className="text-xs font-bold text-white">Item Received by Post Office</div>
                 <div className="text-[11px] text-slate-400">Gosport High Street / Haslar Collection Point</div>
                 <div className="text-[10px] font-mono text-slate-500">Yesterday, 16:30 PM</div>
               </div>
 
-              <div className="relative">
+              <div data-testid="tracker-checkpoint-entry" className="relative">
                 <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-slate-600" />
                 <div className="text-xs font-bold text-white">Despatch Manifest Generated</div>
                 <div className="text-[11px] text-slate-400">AJWMES Workshop (Gosport)</div>
@@ -795,6 +812,7 @@ export const PostalOrderTracker: React.FC<PostalOrderTrackerProps> = ({
 
             <div className="pt-3 border-t border-slate-800 flex justify-end">
               <button
+                data-testid="tracker-modal-close-action-btn"
                 onClick={() => setActiveCarrierModal(false)}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-colors"
               >
