@@ -132,8 +132,8 @@ The following table identifies the remaining operational workflows across AJWMES
 | Journey ID | Journey Title | Target Route | Primary Persona | Business Impact | Test Complexity | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **UJ-04** | **Solent Field Technician Diagnostics & Sign-off** | `/technician` | `technician`, `admin` | **Critical (P0)** | High (Canvas, Timer, Offline) | **Done (Automated)** |
-| **UJ-05** | **Postal Workshop Order Fulfillment & Dispatch** | `/postal` | `postal`, `admin` | **High (P0)** | Medium (Queue, Cable cutting, Packing slip) | **Next Recommended** |
-| **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | Pending |
+| **UJ-05** | **Postal Workshop Order Fulfillment & Dispatch** | `/postal` | `postal`, `admin` | **High (P0)** | Medium (Queue, Cable cutting, Packing slip) | **Done (Automated)** |
+| **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | **Next Recommended** |
 | **UJ-07** | **Custom Carling Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | Pending |
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | Pending |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | Pending |
@@ -150,31 +150,28 @@ gantt
     dateFormat  YYYY-MM-DD
     section Phase 1 (Core Operations)
     Technician Diagnostic & Sign-off Flow (UJ-04) :done, 2026-10-16, 1d
-    Postal Workshop Order Fulfillment (UJ-05)       :crit, active, 2026-10-17, 2d
+    Postal Workshop Order Fulfillment (UJ-05)     :done, 2026-10-16, 1d
     section Phase 2 (Customer Experience)
-    Consignment Tracker Timeline (UJ-06)            :2026-10-19, 2d
-    Custom Switch Panel CAD Designer (UJ-07)        :2026-10-21, 3d
-    Vessel Portal & PDF Certificate Export (UJ-09)  :2026-10-24, 2d
+    Consignment Tracker Timeline (UJ-06)          :crit, active, 2026-10-17, 2d
+    Custom Switch Panel CAD Designer (UJ-07)      :2026-10-19, 3d
+    Vessel Portal & PDF Certificate Export (UJ-09):2026-10-22, 2d
     section Phase 3 (Admin & Resilience)
-    Workshop Admin, Expenses & Restock (UJ-10)      :2026-10-26, 3d
-    Offline Pontoon Resilience & Mutation Sync (UJ-11):2026-10-29, 3d
-    Photo Replica Quoter (UJ-08)                    :2026-11-01, 2d
+    Workshop Admin, Expenses & Restock (UJ-10)    :2026-10-24, 3d
+    Offline Pontoon Resilience & Mutation Sync (UJ-11):2026-10-27, 3d
+    Photo Replica Quoter (UJ-08)                  :2026-10-30, 2d
 ```
 
 ---
 
 ## 4. Recommended Next Journey to Implement
 
-### Recommendation: **Journey 5 — Postal Workshop Order Fulfillment & Dispatch Flow**
-**File Target:** `tests/postal-fulfillment-dispatch.spec.ts`  
-**Page Object Model:** `tests/pages/PostalWorkspacePage.ts`
+### Recommendation: **Journey 6 — Postal Consignment Timeline Tracker**
+**File Target:** `tests/consignment-tracker.spec.ts`  
+**Page Object Model:** `tests/pages/ConsignmentTrackerPage.ts`
 
 ### Architectural & Business Rationale:
-1. **Closing the Physical E-Commerce Fulfillment Loop**:
-   - We already have the store and cart ordering journey (`tests/inventory-stock-sync.spec.ts` and `tests/authentication.spec.ts`).
-   - When orders are placed, workshop dispatchers must cut tinned marine cable, package orders, generate waterproof A4 packing slips (`PackingSlipModal.tsx`), and assign Royal Mail / DPD tracking numbers.
-2. **High Interaction Surface with State Machine Transitions**:
-   - Exercises the 6-stage order fulfillment pipeline: `received` $\to$ `processing` $\to$ `packed` $\to$ `ready_for_pickup` $\to$ `dispatched` $\to$ `delivered`.
-   - Tests carrier selection and consignment number validation.
-3. **Precursor to Journey 6 (Consignment Tracker)**:
-   - Fulfilling orders and assigning tracking numbers generates the data consumed by the customer tracking portal (`tests/pages/OrderTrackingPage.ts`).
+1. **Customer-Facing Tracking Visibility**:
+   - Having completed Journey 5 (Postal Fulfillment & Dispatch), orders transition through Royal Mail and DPD tracking.
+   - Boat owners and skipper clients require real-time visibility into their consignment milestones (`/tracker`).
+2. **Direct Verification of Dispatch Mutations**:
+   - Ensures that carrier consignment codes and status transitions performed by the workshop dispatcher in Journey 5 reflect directly in customer-facing tracking views.

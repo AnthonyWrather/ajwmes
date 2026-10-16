@@ -189,6 +189,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Postal Exclusive Dispatch Tab */}
           {canAccessRoute(currentUserRole, 'postal') && (
             <button
+              data-testid="nav-tab-postal"
               onClick={() => setCurrentTab('postal')}
               className={`hover:text-purple-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 ${
                 currentTab === 'postal' 
@@ -523,6 +524,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
             {canAccessRoute(currentUserRole, 'postal') && (
               <button
+                data-testid="mobile-nav-tab-postal"
                 onClick={() => { setCurrentTab('postal'); setMobileMenuOpen(false); }}
                 className="p-2.5 rounded-lg bg-purple-950/60 border border-purple-500/40 text-left text-purple-300 font-bold col-span-2 flex items-center gap-2"
               >

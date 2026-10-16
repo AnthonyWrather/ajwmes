@@ -78,6 +78,7 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
   const modalContent = (
     <div 
       id="packing-slip-portal-root"
+      data-testid="packing-slip-modal"
       className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-md overflow-y-auto p-3 sm:p-6 flex flex-col items-center packing-slip-overlay"
     >
       {/* Top Floating Control Toolbar (Hidden in Print) */}
@@ -89,7 +90,7 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono uppercase text-sky-400 font-bold">Standard Document Layout</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+              <span data-testid="packing-slip-order-number" className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
                 {order.orderNumber}
               </span>
             </div>
@@ -104,6 +105,7 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
           <label className="flex items-center gap-2 text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 cursor-pointer select-none hover:border-slate-700">
             <input
               type="checkbox"
+              data-testid="toggle-show-prices"
               checked={showPrices}
               onChange={(e) => setShowPrices(e.target.checked)}
               className="rounded border-slate-700 text-sky-600 focus:ring-sky-500"
@@ -113,6 +115,7 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
 
           <button
             onClick={() => window.print()}
+            data-testid="print-packing-slip-btn"
             className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
             title="Open browser print dialog"
           >
@@ -122,6 +125,7 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
 
           <button
             onClick={onClose}
+            data-testid="close-packing-slip-btn"
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
             title="Close packing slip preview"
           >
@@ -133,6 +137,7 @@ export const PackingSlipModal: React.FC<PackingSlipModalProps> = ({
       {/* The Printable Packing Slip Document (Styled with print media classes) */}
       <div 
         id="printable-packing-slip"
+        data-testid="printable-packing-slip"
         className="packing-slip-sheet bg-white text-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl p-6 sm:p-10 font-sans border border-slate-200"
       >
         {/* Document Header */}

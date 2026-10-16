@@ -1245,8 +1245,8 @@ export default function App() {
         setJobs(prevJobs => {
           // Find matching job for this order's client
           const matchingJob = existingOrder ? prevJobs.find(j =>
-            j.clientEmail.toLowerCase() === existingOrder.customerEmail.toLowerCase() ||
-            j.clientName.toLowerCase() === existingOrder.customerName.toLowerCase()
+            (j.clientEmail && existingOrder.customerEmail && j.clientEmail.toLowerCase() === existingOrder.customerEmail.toLowerCase()) ||
+            (j.clientName && existingOrder.customerName && j.clientName.toLowerCase() === existingOrder.customerName.toLowerCase())
           ) : null;
 
           return prevJobs.map(job => {
@@ -1756,7 +1756,7 @@ export default function App() {
 
       {/* Real-Time Simulated Postal Dispatch Notification Toast */}
       {activeToast && !activeStockAlertToast && (
-        <div className="fixed bottom-6 right-6 z-40 max-w-md w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div data-testid="dispatch-notification-toast" className="fixed bottom-6 right-6 z-40 max-w-md w-full p-4 rounded-2xl bg-slate-900/95 border border-sky-500/60 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="p-2.5 rounded-xl bg-sky-950 border border-sky-500/40 text-sky-400 shrink-0">
               <Bell className="w-5 h-5 animate-bounce" />
@@ -1806,8 +1806,9 @@ export default function App() {
             </div>
 
             <button
+              data-testid="dismiss-dispatch-toast-btn"
               onClick={() => setActiveToast(null)}
-              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0"
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
               title="Dismiss Notification"
             >
               <X className="w-4 h-4" />

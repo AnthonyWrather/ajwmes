@@ -62,9 +62,9 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
   });
 
   return (
-    <div className="w-full space-y-6 text-slate-100">
+    <div data-testid="postal-workspace" className="w-full space-y-6 text-slate-100">
       {/* Role Banner: Explicitly Clarifies Postal Scope */}
-      <div className="bg-gradient-to-r from-purple-950/40 via-slate-900 to-slate-900 border border-purple-500/40 rounded-3xl p-6 shadow-xl">
+      <div data-testid="postal-role-banner" className="bg-gradient-to-r from-purple-950/40 via-slate-900 to-slate-900 border border-purple-500/40 rounded-3xl p-6 shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
@@ -106,7 +106,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
 
       {/* Fulfillment Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-awaiting-packing" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Awaiting Packing</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-amber-400 mt-1 block">
             {pendingPackCount} Consignments
@@ -114,7 +114,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
           <span className="text-[10px] text-slate-500 mt-0.5 block">Needs cable cuts &amp; boxed</span>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-packed" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Packed &amp; Sealed</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-purple-400 mt-1 block">
             {packedCount} Orders
@@ -122,7 +122,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
           <span className="text-[10px] text-slate-500 mt-0.5 block">Ready for courier handover</span>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-dispatched" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Dispatched</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-sky-400 mt-1 block">
             {dispatchedCount} Shipped
@@ -130,7 +130,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
           <span className="text-[10px] text-slate-500 mt-0.5 block">Royal Mail / DPD Tracked</span>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+        <div data-testid="metric-delivered" className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[11px] text-slate-400 block">Delivered on Vessel</span>
           <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-400 mt-1 block">
             {deliveredCount} Completed
@@ -144,6 +144,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
         <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
           <button
             type="button"
+            data-testid="view-manager-tab"
             onClick={() => setActiveView('manager')}
             className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
               activeView === 'manager'
@@ -157,6 +158,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
 
           <button
             type="button"
+            data-testid="view-timelines-tab"
             onClick={() => setActiveView('timelines')}
             className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
               activeView === 'timelines'
@@ -205,6 +207,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
                 <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
+                  data-testid="timeline-search-input"
                   placeholder="Filter orders, vessel, client..."
                   value={timelineSearch}
                   onChange={e => setTimelineSearch(e.target.value)}
@@ -226,6 +229,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
               <button
                 key={f.id}
                 type="button"
+                data-testid={`timeline-filter-${f.id}`}
                 onClick={() => setTimelineFilter(f.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   timelineFilter === f.id

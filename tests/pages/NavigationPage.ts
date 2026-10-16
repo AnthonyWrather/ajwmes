@@ -40,6 +40,22 @@ export class NavigationPage {
     }
   }
 
+  async navigateToPostal(): Promise<void> {
+    const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
+
+    if (isMobile) {
+      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
+      await this.mobileMenuToggle.click({ force: true });
+      const mobilePostal = this.page.getByTestId('mobile-nav-tab-postal');
+      await expect(mobilePostal).toBeVisible({ timeout: 10000 });
+      await mobilePostal.click({ force: true });
+    } else {
+      const desktopPostal = this.page.getByTestId('nav-tab-postal');
+      await expect(desktopPostal).toBeVisible({ timeout: 10000 });
+      await desktopPostal.click({ force: true });
+    }
+  }
+
   async openSignInModal(): Promise<void> {
     await expect(this.signInNavButton).toBeVisible();
     await this.signInNavButton.scrollIntoViewIfNeeded();
