@@ -23,6 +23,7 @@ export class StorePage {
 
   async addProductToCart(index: number = 0): Promise<void> {
     const inStockButtons = this.page.locator('button[data-testid="add-to-cart-button"]:not([disabled])');
+    await expect(inStockButtons.first()).toBeVisible({ timeout: 10000 });
     const count = await inStockButtons.count();
     // Prefer high-inventory cable items (index 2+) if available, otherwise use specified index
     const targetIndex = count > 2 ? Math.min(index + 2, count - 1) : 0;

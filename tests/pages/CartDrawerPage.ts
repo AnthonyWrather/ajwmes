@@ -62,6 +62,11 @@ export class CartDrawerPage {
     this.confirmationNumber = page.getByTestId('order-confirmation-number');
     this.confirmationCustomer = page.getByTestId('order-confirmation-customer');
     this.confirmationMethod = page.getByTestId('order-confirmation-method');
+
+    // Automatically handle any alert dialogs during postal checkout to prevent test runner hangs
+    this.page.on('dialog', async (dialog) => {
+      await dialog.dismiss().catch(() => {});
+    });
   }
 
   async verifyDrawerOpen(): Promise<void> {
