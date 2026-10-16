@@ -221,7 +221,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
       // Post in chat thread
       onSendMessage(selectedJob.id, {
         id: `msg-signoff-${Date.now()}`,
-        sender: 'client',
+        sender: 'ajw',
         senderName: `${signOff.clientName} (${signOff.signerRole.replace('_', ' ')})`,
         text: `✍️ [Pontoon Customer Sign-Off]\nCustomer completed handwritten sign-off aboard vessel. Labor: ${signOff.agreedDiagnosticHours}h. Total Estimate: £${signOff.agreedTotalEstimate.toFixed(2)}. Status: ${isOnline ? 'Synced to Cloud' : 'Queued in Offline Storage'}.`,
         timestamp: 'Just now',
