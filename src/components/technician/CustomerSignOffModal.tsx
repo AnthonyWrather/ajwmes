@@ -70,7 +70,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
 
   if (!isOpen) return null;
 
-  const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const startDrawing = (e: React.PointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -87,7 +87,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
     setErrorMsg(null);
   };
 
-  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.PointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -165,7 +165,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div data-testid="customer-signoff-modal" className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -193,6 +193,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
           </div>
 
           <button
+            data-testid="close-signoff-modal-button"
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
           >
@@ -203,7 +204,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
         {/* Scrollable Body */}
         <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {/* Summary Card for Client Review */}
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+          <div data-testid="signoff-summary-card" className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
             <div className="flex items-center justify-between text-xs border-b border-slate-800/80 pb-2">
               <span className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
                 Work Sheet Summary
@@ -246,7 +247,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
 
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
               <span className="text-xs font-bold text-white">Total Agreed Work Value</span>
-              <span className="text-lg font-black font-mono text-emerald-400">
+              <span data-testid="signoff-total-amount" className="text-lg font-black font-mono text-emerald-400">
                 £{totalCalculated.toFixed(2)}
               </span>
             </div>
@@ -259,6 +260,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
                 Signer Full Name *
               </label>
               <input
+                data-testid="signoff-signer-name-input"
                 type="text"
                 value={signerName}
                 onChange={(e) => setSignerName(e.target.value)}
@@ -272,6 +274,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
                 Representative Authority *
               </label>
               <select
+                data-testid="signoff-signer-role-select"
                 value={signerRole}
                 onChange={(e) => setSignerRole(e.target.value as any)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-500"
@@ -291,6 +294,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
                 <span>Handwritten Signature (Finger or Stylus) *</span>
               </label>
               <button
+                data-testid="clear-signature-canvas-button"
                 type="button"
                 onClick={clearCanvas}
                 className="text-[11px] text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors cursor-pointer"
@@ -302,11 +306,16 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
 
             <div className="relative border-2 border-dashed border-slate-700 rounded-2xl overflow-hidden bg-slate-950 touch-none">
               <canvas
+                data-testid="signature-canvas"
                 ref={canvasRef}
                 onPointerDown={startDrawing}
                 onPointerMove={draw}
                 onPointerUp={stopDrawing}
                 onPointerLeave={stopDrawing}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
                 className="w-full h-44 cursor-crosshair block"
               />
               {!hasDrawn && (
@@ -323,6 +332,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
               Customer Pontoon Feedback / Test Notes (Optional)
             </label>
             <input
+              data-testid="signoff-feedback-input"
               type="text"
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
@@ -332,7 +342,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+            <div data-testid="signoff-error-message" className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -342,6 +352,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
         {/* Footer Actions */}
         <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3 shrink-0">
           <button
+            data-testid="cancel-signoff-button"
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
@@ -350,6 +361,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
           </button>
 
           <button
+            data-testid="submit-signoff-button"
             type="button"
             disabled={isSubmitting}
             onClick={handleSubmitSignOff}

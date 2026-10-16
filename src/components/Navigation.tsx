@@ -173,6 +173,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Technician Exclusive Workstation Tab */}
           {canAccessRoute(currentUserRole, 'technician') && (
             <button
+              data-testid="nav-tab-technician"
               onClick={() => setCurrentTab('technician')}
               className={`hover:text-amber-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 ${
                 currentTab === 'technician' 
@@ -511,6 +512,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
             {canAccessRoute(currentUserRole, 'technician') && (
               <button
+                data-testid="mobile-nav-tab-technician"
                 onClick={() => { setCurrentTab('technician'); setMobileMenuOpen(false); }}
                 className="p-2.5 rounded-lg bg-amber-950/60 border border-amber-500/40 text-left text-amber-300 font-bold col-span-2 flex items-center gap-2"
               >

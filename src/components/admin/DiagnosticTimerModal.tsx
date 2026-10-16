@@ -70,7 +70,7 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div data-testid="diagnostic-timer-modal" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-2xl p-6 text-slate-100 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
@@ -93,18 +93,19 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-center sm:text-left">
             <span className="text-xs text-slate-400 block mb-1">On-Vessel Diagnostic Stopwatch</span>
-            <div className="text-3xl sm:text-4xl font-mono font-extrabold text-sky-400 tabular-nums">
+            <div data-testid="stopwatch-display" className="text-3xl sm:text-4xl font-mono font-extrabold text-sky-400 tabular-nums">
               {formatStopwatch(seconds)}
             </div>
             <span className="text-xs text-slate-400 mt-1 block">
-              = <strong className="text-white">{hoursLogged} hrs</strong> (@ £25/hr = £{laborCost.toFixed(2)})
+              = <strong data-testid="stopwatch-hours-logged" className="text-white">{hoursLogged} hrs</strong> (@ £25/hr = £{laborCost.toFixed(2)})
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
+              data-testid="stopwatch-toggle-button"
               onClick={() => setIsRunning(!isRunning)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
                 isRunning
                   ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/30'
                   : 'bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/30'
@@ -114,11 +115,12 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
               <span>{isRunning ? 'Pause Timer' : 'Start Timer'}</span>
             </button>
             <button
+              data-testid="stopwatch-reset-button"
               onClick={() => {
                 setIsRunning(false);
                 setSeconds(0);
               }}
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl"
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
               title="Reset"
             >
               <RotateCcw className="w-4 h-4" />
@@ -138,6 +140,7 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
           <div className="space-y-2">
             <div className="flex flex-col sm:flex-row gap-2">
               <select
+                data-testid="timer-catalog-select"
                 value={selectedCatalogId}
                 onChange={e => setSelectedCatalogId(e.target.value)}
                 className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
@@ -154,6 +157,7 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
               </select>
               <div className="flex gap-2">
                 <input
+                  data-testid="timer-material-qty-input"
                   type="number"
                   min="1"
                   max="50"
@@ -162,9 +166,10 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
                   className="w-16 bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-xs text-white font-mono text-center focus:outline-none"
                 />
                 <button
+                  data-testid="timer-add-material-button"
                   type="button"
                   onClick={handleAddMaterial}
-                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add</span>
@@ -190,12 +195,12 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
           </div>
 
           {/* Table of materials */}
-          <div className="max-h-36 overflow-y-auto bg-slate-950 rounded-xl border border-slate-800 divide-y divide-slate-800/80">
+          <div data-testid="timer-materials-list" className="max-h-36 overflow-y-auto bg-slate-950 rounded-xl border border-slate-800 divide-y divide-slate-800/80">
             {materials.length === 0 ? (
               <div className="p-3 text-center text-xs text-slate-500">No materials billed yet</div>
             ) : (
               materials.map((m, idx) => (
-                <div key={m.id ? `diag-mat-${m.id}-${idx}` : `diag-mat-${idx}`} className="p-2.5 flex items-center justify-between text-xs">
+                <div key={m.id ? `diag-mat-${m.id}-${idx}` : `diag-mat-${idx}`} data-testid={`timer-material-item-${m.id}`} className="p-2.5 flex items-center justify-between text-xs">
                   <div className="flex-1 min-w-0 pr-2">
                     <span className="font-medium text-white truncate block">{m.name}</span>
                     <span className="text-[11px] text-slate-400">{m.quantity} {m.unit} @ £{m.unitPrice.toFixed(2)}</span>
@@ -205,8 +210,9 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
                       £{(m.quantity * m.unitPrice).toFixed(2)}
                     </span>
                     <button
+                      data-testid={`timer-remove-material-${m.id}`}
                       onClick={() => handleRemoveMaterial(m.id)}
-                      className="text-slate-500 hover:text-rose-400"
+                      className="text-slate-500 hover:text-rose-400 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -222,32 +228,34 @@ export const DiagnosticTimerModal: React.FC<DiagnosticTimerModalProps> = ({
           <div className="flex items-center gap-4">
             <div>
               <span className="text-slate-500 block">Labor</span>
-              <span className="font-mono font-bold text-white">£{laborCost.toFixed(2)}</span>
+              <span data-testid="timer-summary-labor-cost" className="font-mono font-bold text-white">£{laborCost.toFixed(2)}</span>
             </div>
             <span>+</span>
             <div>
               <span className="text-slate-500 block">Parts</span>
-              <span className="font-mono font-bold text-white">£{materialsCost.toFixed(2)}</span>
+              <span data-testid="timer-summary-materials-cost" className="font-mono font-bold text-white">£{materialsCost.toFixed(2)}</span>
             </div>
             <span>=</span>
             <div>
               <span className="text-slate-500 block">Total Due</span>
-              <span className="font-mono font-extrabold text-sky-400 text-base">£{totalCost.toFixed(2)}</span>
+              <span data-testid="timer-summary-total-cost" className="font-mono font-extrabold text-sky-400 text-base">£{totalCost.toFixed(2)}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
+              data-testid="timer-modal-cancel-button"
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-400 hover:text-white"
+              className="px-4 py-2 text-slate-400 hover:text-white cursor-pointer"
             >
               Cancel
             </button>
             <button
+              data-testid="timer-modal-save-button"
               type="button"
               onClick={handleSave}
-              className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl shadow-sm shadow-sky-600/30 flex items-center gap-2"
+              className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl shadow-sm shadow-sky-600/30 flex items-center gap-2 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Update Job Sheet</span>

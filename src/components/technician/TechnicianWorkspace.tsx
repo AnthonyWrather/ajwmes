@@ -264,7 +264,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
   };
 
   return (
-    <div className="w-full space-y-6 text-slate-100">
+    <div data-testid="technician-workspace" className="w-full space-y-6 text-slate-100">
       {/* Lightbox Modal */}
       <ImageLightboxModal
         isOpen={!!lightboxUrl}
@@ -397,18 +397,21 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
             {/* Filter pills */}
             <div className="flex items-center gap-1 text-[11px]">
               <button
+                data-testid="filter-jobs-all"
                 onClick={() => setFilterStatus('all')}
                 className={`px-2 py-0.5 rounded-md font-mono cursor-pointer ${filterStatus === 'all' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'}`}
               >
                 All
               </button>
               <button
+                data-testid="filter-jobs-active"
                 onClick={() => setFilterStatus('in_progress')}
                 className={`px-2 py-0.5 rounded-md font-mono cursor-pointer ${filterStatus === 'in_progress' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'}`}
               >
                 Active
               </button>
               <button
+                data-testid="filter-jobs-scheduled"
                 onClick={() => setFilterStatus('scheduled')}
                 className={`px-2 py-0.5 rounded-md font-mono cursor-pointer ${filterStatus === 'scheduled' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'}`}
               >
@@ -425,6 +428,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
               return (
                 <div
                   key={job.id}
+                  data-testid={`job-card-${job.id}`}
                   onClick={() => setSelectedJobId(job.id)}
                   className={`p-4 rounded-2xl border cursor-pointer transition-all space-y-2.5 ${
                     selectedJobId === job.id
@@ -488,6 +492,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     </div>
 
                     <button
+                      data-testid={`open-timer-job-${job.id}`}
                       onClick={e => {
                         e.stopPropagation();
                         setActiveTimerJob(job);
@@ -509,18 +514,18 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
           {selectedJob ? (
             <>
               {/* Job Specification & Quick Actions Banner */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+              <div data-testid="selected-job-details" className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                   <div>
-                    <span className="font-mono text-xs text-amber-400 font-bold uppercase tracking-wider block">
+                    <span data-testid="selected-job-reference" className="font-mono text-xs text-amber-400 font-bold uppercase tracking-wider block">
                       {selectedJob.reference} · {(selectedJob.serviceCategory || '').replace(/_/g, ' ').toUpperCase()}
                     </span>
-                    <h3 className="text-lg font-bold text-white mt-0.5">
+                    <h3 data-testid="selected-job-vessel" className="text-lg font-bold text-white mt-0.5">
                       {selectedJob.vesselName} ({selectedJob.vesselType})
                     </h3>
                     <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
                       <Anchor className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Berth: {selectedJob.berthLocation}</span>
+                      <span data-testid="selected-job-berth">Berth: {selectedJob.berthLocation}</span>
                       <span>·</span>
                       <User className="w-3.5 h-3.5 text-slate-400" />
                       <span>{selectedJob.clientName} ({selectedJob.clientPhone})</span>
@@ -530,6 +535,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                   {/* Actions Header: Diagnostic Stopwatch + Customer Sign-Off */}
                   <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     <button
+                      data-testid="open-diagnostic-stopwatch-button"
                       onClick={() => setActiveTimerJob(selectedJob)}
                       className="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-600/30 active:scale-95 transition-all cursor-pointer"
                     >
@@ -538,6 +544,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     </button>
 
                     <button
+                      data-testid="open-customer-signoff-button"
                       onClick={() => setIsSignOffModalOpen(true)}
                       className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all cursor-pointer"
                     >
@@ -555,6 +562,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     </span>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <button
+                        data-testid="status-btn-scheduled"
                         onClick={() => handleQuickStatusChange('scheduled')}
                         className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                           selectedJob.status === 'scheduled' ? 'bg-purple-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -563,6 +571,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                         Scheduled
                       </button>
                       <button
+                        data-testid="status-btn-in_progress"
                         onClick={() => handleQuickStatusChange('in_progress')}
                         className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                           selectedJob.status === 'in_progress' ? 'bg-amber-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -571,6 +580,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                         In Progress
                       </button>
                       <button
+                        data-testid="status-btn-completed"
                         onClick={() => handleQuickStatusChange('completed')}
                         className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                           selectedJob.status === 'completed' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -587,18 +597,18 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     </span>
                     <div className="flex items-center justify-between text-xs pt-1">
                       <span className="text-slate-300 font-mono">{selectedJob.diagnosticHours} Hours Labor:</span>
-                      <span className="text-white font-mono font-bold">£{selectedJob.totalLabor.toFixed(2)}</span>
+                      <span data-testid="selected-job-labor-total" className="text-white font-mono font-bold">£{selectedJob.totalLabor.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-300 font-mono">{selectedJob.materialsUsed?.length || 0} Hardware Items:</span>
-                      <span className="text-white font-mono font-bold">£{selectedJob.totalMaterials.toFixed(2)}</span>
+                      <span data-testid="selected-job-materials-total" className="text-white font-mono font-bold">£{selectedJob.totalMaterials.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Customer Pontoon Sign-Off Receipt Card (if signed) */}
                 {currentSignOff && (
-                  <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-3">
+                  <div data-testid="customer-signoff-card" className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -608,7 +618,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                       </div>
                       <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
                         currentSignOff.synced 
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40' 
+                           ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40' 
                           : 'bg-amber-950 text-amber-300 border-amber-500/40'
                       }`}>
                         {currentSignOff.synced ? 'Synced to Cloud' : 'Queued in Pontoon Cache'}
@@ -618,7 +628,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div className="space-y-0.5">
                         <span className="text-[11px] text-slate-400 block">Signer:</span>
-                        <span className="font-bold text-white">
+                        <span data-testid="signoff-signer-name" className="font-bold text-white">
                           {currentSignOff.clientName} ({currentSignOff.signerRole.replace('_', ' ')})
                         </span>
                         <span className="text-[10px] text-slate-400 block font-mono">
@@ -630,6 +640,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                         <span className="text-[11px] text-slate-400 block">Signature:</span>
                         <div className="bg-slate-950 p-1.5 rounded-lg border border-slate-800 inline-block">
                           <img 
+                            data-testid="signoff-signature-img"
                             src={currentSignOff.signatureDataUrl} 
                             alt="Signature" 
                             className="h-10 object-contain invert brightness-200" 
