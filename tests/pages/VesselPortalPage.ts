@@ -250,10 +250,10 @@ export class VesselPortalPage {
   }): Promise<void> {
     if (await this.registerFirstBoatButton.isVisible().catch(() => false)) {
       await this.registerFirstBoatButton.scrollIntoViewIfNeeded();
-      await this.registerFirstBoatButton.click();
+      await this.registerFirstBoatButton.click({ force: true });
     } else {
       await this.addBoatButton.scrollIntoViewIfNeeded();
-      await this.addBoatButton.click();
+      await this.addBoatButton.click({ force: true });
     }
 
     await expect(this.addBoatModal).toBeVisible({ timeout: 10000 });

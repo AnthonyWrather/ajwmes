@@ -280,7 +280,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
             {/* Vessel Switcher Dropdown */}
             {allUserVessels.length > 1 && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                 <select
                   data-testid="vessel-switcher-select"
                   value={vesselFilterId}
@@ -304,7 +304,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                 <button
                   data-testid="portal-add-boat-button"
                   onClick={() => setShowAddBoatModal(true)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 text-sky-400 border border-slate-800 hover:border-sky-500/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 text-sky-400 border border-slate-800 hover:border-sky-500/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                   title="Register another boat to your account"
                 >
                   <Plus className="w-3.5 h-3.5" />

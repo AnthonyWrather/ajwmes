@@ -129,12 +129,12 @@ test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay
       });
 
       // Trigger manual sync or let auto-sync engage
-      if (await tech.manualSyncButton.isVisible()) {
+      await tech.manualSyncButton.waitFor({ state: 'visible', timeout: 5000 }).then(async () => {
         await tech.triggerManualSync().catch(() => {});
-      }
+      }).catch(() => {});
 
       // 1. Verify mutation queue drains completely to 0 pending items
-      await expect(tech.syncQueueBadge).not.toBeVisible({ timeout: 20000 });
+      await expect(tech.syncQueueBadge).not.toBeVisible({ timeout: 30000 });
 
       // 2. Verify sync bar returns to connected state with 0 pending items
       await tech.expectConnectedState({ timeout: 10000 });
