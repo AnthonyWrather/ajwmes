@@ -282,7 +282,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
   {
     id: 'pan-kit-6',
     category: 'panels',
-    name: '6-Gang Replica/Custom Switch Panel DIY Kit',
+    name: '6-Gang Custom Switch Panel DIY Kit',
     specification: 'Replica/custom faceplate + 6x Carling rockers + marine terminals + fuses',
     unit: 'kit',
     unitPrice: 88.00,
@@ -501,7 +501,7 @@ export const DEFAULT_VESSELS: VesselSpec[] = [
     chartplotterModel: 'Raymarine Axiom 9+ Touch MFD with Navionics UK+Ireland',
     vhfAisDetails: 'Standard Horizon Matrix GX2400GPS with NMEA 2000 AIS (MMSI: 235084129)',
     bilgePumpConfig: 'Rule 1100 GPH Automatic Submersible with SuperSwitch Float & Cockpit Audio Alarm',
-    switchPanelModel: 'AJWMES 6-Gang Replica/Custom Matte Black Acrylic Switch Panel with Push Breakers',
+    switchPanelModel: 'AJWMES 6-Gang Custom Matte Black Acrylic Switch Panel with Push Breakers',
     generalNotes: 'Full DC negative distribution bus upgrade completed. Tinned 35mm² battery interconnects with MRBF terminal fuse protection.',
     lastInspectionDate: '2026-10-06',
     historyLog: [

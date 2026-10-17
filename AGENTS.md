@@ -1,6 +1,6 @@
 # AGENTS.md — AJW Marine Electrical Services
 
-Marine electrical diagnostics, lithium/solar sizing, custom Carling switch panels, and postal workshop management PWA.
+Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and postal workshop management PWA.
 
 > **System Architecture Reference:** See [`DESIGN.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/DESIGN.md) for full architectural design and technical specifications.
 
@@ -48,7 +48,7 @@ ajwmes/
 │   │   ├── home/           # Landing hero, services overview, pricing highlights
 │   │   ├── modals/         # Environment settings inspector, free hosting guide
 │   │   ├── orders/         # Postal order tracker & carrier progress
-│   │   ├── panels/         # Carling switch panel CAD designer & photo replica extractor
+│   │   ├── panels/         # Custom switch panel CAD designer & photo replica extractor
 │   │   ├── postal/         # Postal workshop workstation & dispatch timeline
 │   │   ├── pwa/            # PWA installation banner & hook
 │   │   ├── rbac/           # Role-based route guard & permission denied feedback

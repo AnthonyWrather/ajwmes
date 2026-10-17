@@ -237,7 +237,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                 >
                   <option value="diagnostic">12V Electrical Fault Finding &amp; Battery Drain Check (£25/hr)</option>
                   <option value="renovation">Day Boat, Bilge Pump or Console Tidy-Up (£25/hr)</option>
-                  <option value="custom_panel">Replica/Custom Switch Panel (From £45)</option>
+                  <option value="custom_panel">Custom Switch Panel (From £45)</option>
                   <option value="replica_panel">Replica Replacement Switchboard</option>
                   <option value="lithium">Lithium (LiFePO4) Battery Bank Upgrade</option>
                   <option value="solar">Solar Array &amp; MPPT Controller Install</option>

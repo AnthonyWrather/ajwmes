@@ -8,7 +8,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-E2E%20Automated-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline%20First-FF6F00?logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
-Specialized marine electrical diagnostics, lithium/solar power calculation, custom Carling switch panel CAD design, and postal repair workshop management Progressive Web App (PWA).
+Specialized marine electrical diagnostics, lithium/solar power calculation, custom switch panel CAD design, and postal repair workshop management Progressive Web App (PWA).
 
 Headquartered in Gosport, Hampshire, supporting marine vessels across the Solent marine basin (Portsmouth, Southampton, Hamble, Cowes, and Chichester).
 
@@ -45,14 +45,14 @@ The platform unifies five marine electrical operational workflows:
 flowchart TD
     App["AJW Marine Electrical Services (PWA)"]
     App --> P1["1. On-Vessel Diagnostics\n- £25/hr labor stopwatch\n- Materials tally\n- Offline customer sign-off"]
-    App --> P2["2. Switch Panel CAD Studio\n- Laser acrylic/teak configurator\n- Carling rocker switches\n- AI photo replica quoter"]
+    App --> P2["2. Custom Switch Panel Studio\n- Laser acrylic/teak configurator\n- Rocker switch options\n- AI photo replica quoter"]
     App --> P3["3. Postal Hardware Station\n- Marine tinned cabling & gear\n- Packing slip generator\n- Royal Mail & DPD tracking"]
     App --> P4["4. Vessel Electrical Portal\n- 12V/24V, LiFePO4, Solar specs\n- PDF summary certificates\n- Fault & maintenance history"]
     App --> P5["5. Master Workshop Admin\n- Real-time inventory tracking\n- Zero-stock email reorders\n- Expense classification & VAT"]
 ```
 
 1. **On-Vessel Diagnostic Workstation**: Field technician portal for managing jobs, timing labor at a flat £25/hour rate, tracking marine materials used, logging vessel faults, and capturing pontoon digital customer signatures completely offline.
-2. **Custom Switch Panel CAD Configurator & Replica Quoter**: Interactive design studio for custom acrylic and teak Carling rocker switchboards, cut-out dimensioning, circuit rating assignment, and photographic replica extraction using Google Gemini AI for boat refits.
+2. **Custom Switch Panel CAD Configurator & Replica Quoter**: Interactive design studio for custom switch panels (acrylic and teak), cut-out dimensioning, circuit rating assignment, and photographic replica extraction using Google Gemini AI for boat refits.
 3. **Marine Hardware & Postal Fulfillment Station**: Storefront for marine-grade tinned copper conductors, Victron Energy equipment, Blue Sea Systems switchgear, and terminal consumables with an automated workshop packing queue, dispatch management, and Royal Mail / DPD tracking integration.
 4. **Boat Owner Vessel Electrical Portal**: Digital vessel logbook storing 12V/24V electrical specifications, LiFePO4 lithium bank capacities, solar array outputs, wiring schematics, and client PDF summary certificate generation via `jspdf`.
 5. **Master Workshop Management**: Administrative back-office for inventory control, automated zero-stock alert emails, supplier purchase order drafting (MakeFast, Solent Marine, Victron UK), expense classification, and laser cut file exports.

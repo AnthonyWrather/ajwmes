@@ -65,7 +65,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
     {
       id: 'panels',
       category: 'upgrades',
-      title: 'Replica/Custom Switch Panels',
+      title: 'Custom Switch Panels',
       subtitle: 'Precision Marine Fabrication & Engraving',
       desc: 'Bespoke switchboards and exact drop-in replacements for Westerly, Moody, Sadler in 3mm matte black acrylic, white marine acrylic, or solid marine wood. Backlit circuit labels, push breakers, USB chargers, and digital voltmeters.',
       price: 'From £45 (Faceplate) · Full Pre-Wired Units',

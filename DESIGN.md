@@ -32,7 +32,7 @@
 The platform unifies five core operational capabilities:
 1. **On-Vessel Diagnostic Workstation**: Field technician portal for managing jobs, timing diagnostic labor at a flat £25/hour rate, tracking marine materials used, recording vessel faults, and capturing pontoon customer digital signatures offline.
 2. **Marine Hardware & Postal Fulfillment Station**: Storefront for marine-grade tinned copper conductors, Victron Energy equipment, Blue Sea Systems switchgear, and terminal consumables with an automated workshop packing queue, dispatch management, and Royal Mail / DPD tracking integration.
-3. **Custom Switch Panel CAD Configurator & Replica Quoter**: Interactive design studio for custom acrylic and teak Carling rocker switchboards, cut-out dimensioning, circuit rating assignment, and photographic replica extraction for boat refits.
+3. **Custom Switch Panel CAD Configurator & Replica Quoter**: Interactive design studio for custom switch panels (acrylic and teak), cut-out dimensioning, circuit rating assignment, and photographic replica extraction for boat refits.
 4. **Boat Owner Vessel Electrical Portal**: Digital vessel logbook storing 12V/24V electrical specifications, LiFePO4 lithium bank capacities, solar array outputs, wiring schematics, and PDF certificate generation.
 5. **Master Workshop Management**: Administrative back-office for inventory control, automated zero-stock alert emails, supplier purchase order drafting (MakeFast, Solent Marine, Victron UK), expense classification, and laser cut file exports.
 
