@@ -163,6 +163,7 @@ export class ConsignmentTrackerPage {
   }
 
   async toggleParcelItems(): Promise<void> {
+    await expect(this.itemsToggleBtn).toBeVisible();
     await this.itemsToggleBtn.scrollIntoViewIfNeeded();
     await this.itemsToggleBtn.click({ force: true });
   }

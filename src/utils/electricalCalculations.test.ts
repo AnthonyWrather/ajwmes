@@ -171,6 +171,20 @@ describe('electricalCalculations', () => {
       // assembled_wired: base + gangs * 12 + 35 => 50 + 72 + 35 = 157
       assert.equal(calculateSwitchPanelPrice({ ...sixGangConfig, packageOption: 'assembled_wired' }), 157);
     });
+
+    it('calculates the exact default sample panel price (6-gang acrylic, voltmeter, USB, assembled)', () => {
+      // 35 (base) + 6 * 2.5 (15) + 8 (voltmeter) + 10 (USB) = 68 base
+      // assembled_wired surcharge = 6 * 12 + 35 = 107
+      // Total = 68 + 107 = 175
+      const samplePanelConfig: SwitchPanelConfig = {
+        ...baseConfig,
+        gangCount: 6,
+        hasVoltmeter: true,
+        hasUsbCharger: true,
+        packageOption: 'assembled_wired'
+      };
+      assert.equal(calculateSwitchPanelPrice(samplePanelConfig), 175);
+    });
   });
 
   describe('calculateMinimumPanelWidth', () => {

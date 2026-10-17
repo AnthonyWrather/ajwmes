@@ -73,6 +73,11 @@ export class CartDrawerPage {
     await expect(this.cartDrawer).toBeVisible();
   }
 
+  async closeDrawer(): Promise<void> {
+    await expect(this.closeDrawerButton).toBeVisible();
+    await this.closeDrawerButton.click({ force: true });
+  }
+
   async selectCollectionMethod(): Promise<void> {
     await expect(this.collectionOption).toBeVisible();
     await this.collectionOption.scrollIntoViewIfNeeded();
