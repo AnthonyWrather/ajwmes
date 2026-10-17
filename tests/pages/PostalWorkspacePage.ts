@@ -141,8 +141,8 @@ export class PostalWorkspacePage {
   }
 
   async markOrderPacked(): Promise<void> {
-    await expect(this.markPackedButton).toBeVisible({ timeout: 10000 });
     await this.markPackedButton.scrollIntoViewIfNeeded();
+    await expect(this.markPackedButton).toBeVisible({ timeout: 10000 });
     await this.markPackedButton.click({ force: true });
   }
 

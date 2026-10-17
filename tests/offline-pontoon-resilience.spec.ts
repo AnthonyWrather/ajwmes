@@ -68,6 +68,7 @@ test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay
       // Emulate offline network conditions and trigger window offline event
       await context.setOffline(true);
       await page.evaluate(() => {
+        Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
         window.dispatchEvent(new Event('offline'));
       });
 
@@ -123,6 +124,7 @@ test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay
       // Re-enable browser network
       await context.setOffline(false);
       await page.evaluate(() => {
+        Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
         window.dispatchEvent(new Event('online'));
       });
 
