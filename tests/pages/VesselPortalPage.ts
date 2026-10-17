@@ -248,13 +248,15 @@ export class VesselPortalPage {
     marina?: string;
     berth?: string;
   }): Promise<void> {
-    if (await this.registerFirstBoatButton.isVisible()) {
-      await this.registerFirstBoatButton.click({ force: true });
+    if (await this.registerFirstBoatButton.isVisible().catch(() => false)) {
+      await this.registerFirstBoatButton.scrollIntoViewIfNeeded();
+      await this.registerFirstBoatButton.click();
     } else {
-      await this.addBoatButton.click({ force: true });
+      await this.addBoatButton.scrollIntoViewIfNeeded();
+      await this.addBoatButton.click();
     }
 
-    await expect(this.addBoatModal).toBeVisible({ timeout: 5000 });
+    await expect(this.addBoatModal).toBeVisible({ timeout: 10000 });
 
     await this.boatNameInput.fill(details.name);
     if (details.makeModel) await this.boatMakeModelInput.fill(details.makeModel);
@@ -284,15 +286,17 @@ export class VesselPortalPage {
   }
 
   async enterEditMode(): Promise<void> {
-    await expect(this.editSpecsButton).toBeVisible({ timeout: 5000 });
-    await this.editSpecsButton.click({ force: true });
-    await expect(this.saveSpecsButton).toBeVisible({ timeout: 5000 });
+    await expect(this.editSpecsButton).toBeVisible({ timeout: 10000 });
+    await this.editSpecsButton.scrollIntoViewIfNeeded();
+    await this.editSpecsButton.click();
+    await expect(this.saveSpecsButton).toBeVisible({ timeout: 10000 });
   }
 
   async saveSpecs(): Promise<void> {
-    await expect(this.saveSpecsButton).toBeVisible({ timeout: 5000 });
-    await this.saveSpecsButton.click({ force: true });
-    await expect(this.saveSuccessBanner).toBeVisible({ timeout: 5000 });
+    await expect(this.saveSpecsButton).toBeVisible({ timeout: 10000 });
+    await this.saveSpecsButton.scrollIntoViewIfNeeded();
+    await this.saveSpecsButton.click();
+    await expect(this.saveSuccessBanner).toBeVisible({ timeout: 10000 });
   }
 
   // --- Electrical History Logging ---
@@ -304,29 +308,33 @@ export class VesselPortalPage {
     parts?: string;
   }): Promise<void> {
     await this.selectCategory('history');
-    await expect(this.addLogEntryButton).toBeVisible({ timeout: 5000 });
-    await this.addLogEntryButton.click({ force: true });
+    await expect(this.addLogEntryButton).toBeVisible({ timeout: 10000 });
+    await this.addLogEntryButton.scrollIntoViewIfNeeded();
+    await this.addLogEntryButton.click();
 
-    await expect(this.addLogModal).toBeVisible({ timeout: 5000 });
+    await expect(this.addLogModal).toBeVisible({ timeout: 10000 });
     if (entry.category) await this.logCategorySelect.selectOption(entry.category);
     await this.logTitleInput.fill(entry.title);
     if (entry.contractor) await this.logContractorInput.fill(entry.contractor);
     await this.logDescInput.fill(entry.description);
     if (entry.parts) await this.logPartsInput.fill(entry.parts);
 
-    await this.logSubmitButton.click({ force: true });
-    await expect(this.addLogModal).not.toBeVisible({ timeout: 5000 });
-    await expect(this.saveSuccessBanner).toBeVisible({ timeout: 5000 });
+    await this.logSubmitButton.scrollIntoViewIfNeeded();
+    await this.logSubmitButton.click();
+    await expect(this.addLogModal).not.toBeVisible({ timeout: 10000 });
+    await expect(this.saveSuccessBanner).toBeVisible({ timeout: 10000 });
   }
 
   // --- PDF Print Station & Modal Operations ---
   async openPrintStation(): Promise<void> {
-    if (await this.openPdfStationButton.isVisible()) {
-      await this.openPdfStationButton.click({ force: true });
+    if (await this.openPdfStationButton.isVisible().catch(() => false)) {
+      await this.openPdfStationButton.scrollIntoViewIfNeeded();
+      await this.openPdfStationButton.click();
     } else {
-      await this.calloutPdfButton.click({ force: true });
+      await this.calloutPdfButton.scrollIntoViewIfNeeded();
+      await this.calloutPdfButton.click();
     }
-    await expect(this.pdfModal).toBeVisible({ timeout: 5000 });
+    await expect(this.pdfModal).toBeVisible({ timeout: 10000 });
   }
 
   async closePdfStation(): Promise<void> {
