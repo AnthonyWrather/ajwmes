@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Wifi, 
   WifiOff, 
@@ -21,6 +21,9 @@ interface TechnicianSyncBarProps {
 }
 
 export const TechnicianSyncBar: React.FC<TechnicianSyncBarProps> = ({ onSyncCompleted }) => {
+  const onSyncCompletedRef = useRef(onSyncCompleted);
+  onSyncCompletedRef.current = onSyncCompleted;
+
   const [queueStatus, setQueueStatus] = useState<OfflineSyncQueueStatus>({
     totalPending: 0,
     pendingJobs: 0,
@@ -36,6 +39,8 @@ export const TechnicianSyncBar: React.FC<TechnicianSyncBarProps> = ({ onSyncComp
   });
 
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
+  const prevPendingRef = useRef(0);
+  const wasSyncingRef = useRef(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -44,14 +49,18 @@ export const TechnicianSyncBar: React.FC<TechnicianSyncBarProps> = ({ onSyncComp
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    let prevPending = 0;
     const unsubscribe = subscribeToQueueStatus((status) => {
-      if (prevPending > 0 && status.totalPending === 0 && !status.isSyncing && status.lastSyncedAt) {
-        setFeedbackNotice(`Successfully synced ${prevPending} queued items!`);
-        if (onSyncCompleted) onSyncCompleted();
+      if ((wasSyncingRef.current && !status.isSyncing && status.totalPending === 0) ||
+          (prevPendingRef.current > 0 && status.totalPending === 0 && !status.isSyncing)) {
+        const count = prevPendingRef.current;
+        setFeedbackNotice(count > 0 ? `Successfully synced ${count} queued items!` : 'All pontoon items already synchronized!');
+        if (onSyncCompletedRef.current) onSyncCompletedRef.current();
         setTimeout(() => setFeedbackNotice(null), 15000);
       }
-      prevPending = status.totalPending;
+      if (status.totalPending > 0) {
+        prevPendingRef.current = status.totalPending;
+      }
+      wasSyncingRef.current = status.isSyncing;
       setQueueStatus(status);
     });
 
@@ -60,7 +69,7 @@ export const TechnicianSyncBar: React.FC<TechnicianSyncBarProps> = ({ onSyncComp
       window.removeEventListener('offline', handleOffline);
       unsubscribe();
     };
-  }, [onSyncCompleted]);
+  }, []);
 
   const handleManualSync = async () => {
     if (queueStatus.totalPending === 0) {
