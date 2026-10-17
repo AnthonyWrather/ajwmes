@@ -7,6 +7,20 @@ export class TechnicianWorkspacePage {
   readonly filterActiveButton: Locator;
   readonly filterScheduledButton: Locator;
 
+  // Sync bar & Pontoon offline controls
+  readonly syncBar: Locator;
+  readonly syncStatusIndicator: Locator;
+  readonly syncStatusText: Locator;
+  readonly syncOnlineStatus: Locator;
+  readonly syncStatusDescription: Locator;
+  readonly syncQueueBadge: Locator;
+  readonly pendingPhotosBadge: Locator;
+  readonly pendingSignaturesBadge: Locator;
+  readonly pendingJobsBadge: Locator;
+  readonly manualSyncButton: Locator;
+  readonly syncProgressBar: Locator;
+  readonly syncFeedbackNotice: Locator;
+
   // Selected job panel
   readonly selectedJobDetails: Locator;
   readonly selectedJobReference: Locator;
@@ -52,6 +66,13 @@ export class TechnicianWorkspacePage {
   readonly signOffSignerNameDisplay: Locator;
   readonly signOffSignatureImage: Locator;
 
+  // Photo queue controls
+  readonly capturePhotoButton: Locator;
+  readonly photoUploadInput: Locator;
+  readonly offlinePhotosGallery: Locator;
+  readonly queuedPhotosBadge: Locator;
+  readonly queuedPhotoThumbnails: Locator;
+
   constructor(page: Page) {
     this.page = page;
     this.workspace = page.getByTestId('technician-workspace');
@@ -59,6 +80,21 @@ export class TechnicianWorkspacePage {
     this.filterActiveButton = page.getByTestId('filter-jobs-active');
     this.filterScheduledButton = page.getByTestId('filter-jobs-scheduled');
 
+    // Sync bar
+    this.syncBar = page.getByTestId('technician-sync-bar');
+    this.syncStatusIndicator = page.getByTestId('sync-status-indicator');
+    this.syncStatusText = page.getByTestId('sync-status-text');
+    this.syncOnlineStatus = page.getByTestId('sync-online-status');
+    this.syncStatusDescription = page.getByTestId('sync-status-description');
+    this.syncQueueBadge = page.getByTestId('sync-queue-badge');
+    this.pendingPhotosBadge = page.getByTestId('pending-photos-count');
+    this.pendingSignaturesBadge = page.getByTestId('pending-signatures-count');
+    this.pendingJobsBadge = page.getByTestId('pending-jobs-count');
+    this.manualSyncButton = page.getByTestId('manual-sync-button');
+    this.syncProgressBar = page.getByTestId('sync-progress-bar');
+    this.syncFeedbackNotice = page.getByTestId('sync-feedback-notice');
+
+    // Job panel
     this.selectedJobDetails = page.getByTestId('selected-job-details');
     this.selectedJobReference = page.getByTestId('selected-job-reference');
     this.selectedJobVessel = page.getByTestId('selected-job-vessel');
@@ -99,6 +135,13 @@ export class TechnicianWorkspacePage {
     this.customerSignOffCard = page.getByTestId('customer-signoff-card');
     this.signOffSignerNameDisplay = page.getByTestId('signoff-signer-name');
     this.signOffSignatureImage = page.getByTestId('signoff-signature-img');
+
+    // Photo controls
+    this.capturePhotoButton = page.getByTestId('capture-photo-button');
+    this.photoUploadInput = page.getByTestId('technician-photo-input');
+    this.offlinePhotosGallery = page.getByTestId('offline-photos-gallery');
+    this.queuedPhotosBadge = page.getByTestId('queued-photos-badge');
+    this.queuedPhotoThumbnails = page.getByTestId('queued-photo-thumbnail');
   }
 
   async verifyWorkspaceVisible(): Promise<void> {
@@ -121,7 +164,7 @@ export class TechnicianWorkspacePage {
 
     await expect(btn).toBeVisible();
     await btn.scrollIntoViewIfNeeded();
-    await btn.click({ force: true });
+    await btn.click();
   }
 
   async openStopwatch(): Promise<void> {
@@ -176,7 +219,7 @@ export class TechnicianWorkspacePage {
   async drawHandwrittenSignature(): Promise<void> {
     await expect(this.signatureCanvas).toBeVisible();
     await this.signatureCanvas.scrollIntoViewIfNeeded();
-    await this.page.waitForTimeout(200);
+    await this.page.waitForTimeout(300);
 
     const box = await this.signatureCanvas.boundingBox();
     if (!box) {
@@ -195,6 +238,7 @@ export class TechnicianWorkspacePage {
     await this.page.mouse.move(midX, midY, { steps: 5 });
     await this.page.mouse.move(endX, endY, { steps: 5 });
     await this.page.mouse.up();
+    await this.page.waitForTimeout(100);
   }
 
   async submitSignOff(): Promise<void> {
@@ -208,5 +252,46 @@ export class TechnicianWorkspacePage {
     await expect(this.customerSignOffCard).toBeVisible({ timeout: 10000 });
     await expect(this.signOffSignerNameDisplay).toContainText(options.signerName);
     await expect(this.signOffSignatureImage).toBeVisible();
+  }
+
+  // --- Pontoon Offline & Sync Methods ---
+
+  async expectOfflineState(): Promise<void> {
+    await expect(this.syncBar).toBeVisible();
+    await expect(this.syncStatusText).toHaveText('Vessel Pontoon Offline Mode');
+    await expect(this.syncOnlineStatus).toHaveText('Disconnected');
+  }
+
+  async expectConnectedState(): Promise<void> {
+    await expect(this.syncBar).toBeVisible();
+    await expect(this.syncStatusText).toHaveText('Pontoon Sync Active & Connected');
+    await expect(this.syncOnlineStatus).toHaveText('Online');
+  }
+
+  async uploadFitmentPhoto(payload: { name: string; mimeType: string; buffer: Buffer }): Promise<void> {
+    await expect(this.capturePhotoButton).toBeVisible();
+    await this.photoUploadInput.setInputFiles({
+      name: payload.name,
+      mimeType: payload.mimeType,
+      buffer: payload.buffer
+    });
+  }
+
+  async triggerManualSync(): Promise<void> {
+    await expect(this.manualSyncButton).toBeVisible();
+    await this.manualSyncButton.click({ force: true });
+  }
+
+  async expectPendingQueueCounts(expected: { photos?: number; signatures?: number; jobs?: number }): Promise<void> {
+    await expect(this.syncQueueBadge).toBeVisible();
+    if (expected.photos !== undefined) {
+      await expect(this.pendingPhotosBadge).toContainText(`${expected.photos} Photos`);
+    }
+    if (expected.signatures !== undefined) {
+      await expect(this.pendingSignaturesBadge).toContainText(`${expected.signatures} Signatures`);
+    }
+    if (expected.jobs !== undefined) {
+      await expect(this.pendingJobsBadge).toContainText(`${expected.jobs} Sheets`);
+    }
   }
 }

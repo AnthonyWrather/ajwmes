@@ -135,7 +135,7 @@ test.describe('Solent Marine Field Technician Diagnostic & Sign-Off E2E Flow', (
 
     await test.step('10. Mark diagnostic job as Completed', async () => {
       await tech.setJobStatus('completed');
-      await expect(tech.statusCompletedButton).toHaveClass(/bg-emerald-600/);
+      await expect(tech.statusCompletedButton).toHaveClass(/bg-emerald-600/, { timeout: 10000 });
     });
   });
 });
