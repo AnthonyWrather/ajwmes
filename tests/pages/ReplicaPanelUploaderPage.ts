@@ -101,7 +101,12 @@ export class ReplicaPanelUploaderPage {
 
   async closeLightbox(): Promise<void> {
     await expect(this.lightboxClose).toBeVisible({ timeout: 5000 });
+    await this.lightboxClose.scrollIntoViewIfNeeded();
     await this.lightboxClose.click({ force: true });
+    // Dismissal fallback if touch overlay intercepts click:
+    if (await this.lightboxModal.isVisible()) {
+      await this.page.keyboard.press('Escape');
+    }
     await expect(this.lightboxModal).not.toBeVisible({ timeout: 5000 });
   }
 
