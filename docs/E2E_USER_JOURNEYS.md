@@ -35,6 +35,7 @@ graph TD
         J6["6. Consignment Timeline Tracker\n(tests/consignment-tracker.spec.ts)"]
         J7["7. Master Workshop Admin & Expenses (UJ-10)\n(tests/admin-workshop-management.spec.ts)"]
         J8["8. Offline Pontoon Resilience (UJ-11)\n(tests/offline-pontoon-resilience.spec.ts)"]
+        J9["9. Custom Switch Panel CAD Configurator (UJ-07)\n(tests/switch-panel-cad.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -45,6 +46,7 @@ graph TD
     J6 -->|"Milestones, Checkpoints & Status Simulator"| POM6["ConsignmentTrackerPage"]
     J7 -->|"Expenses, POs, Rollups & Snapshots"| POM7["AdminDashboardPage"]
     J8 -->|"Faraday Blackout, Photo Queue & Auto-Replay"| POM8["TechnicianWorkspacePage\nCustomerSignOffModal\nTechnicianSyncBar"]
+    J9 -->|"CAD Layout, SVG Export, Cart & Quote"| POM9["SwitchPanelCADPage\nCartDrawerPage\nBookingQuoteModal"]
 ```
 
 ---
@@ -242,6 +244,40 @@ graph TD
 
 ---
 
+### Journey 9: Custom Switch Panel CAD Configurator (UJ-07)
+- **Test File:** [`tests/switch-panel-cad.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/switch-panel-cad.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `SwitchPanelCADPage`, `CartDrawerPage`, `BookingQuoteModal`
+- **Target Personas:** `guest`, `client`, `admin`
+
+#### Scenarios Verified:
+1. **CAD Layout Preview & Default Sizing**:
+   - Navigate to `/designer` via desktop tab or mobile menu drawer.
+   - Assert default 6-gang initial panel preview, standard dimensions (190mm × 130mm), and baseline price (£175.00) computed by pure sizing logic.
+   - Verify default voltmeter aperture and dual USB charging cutout are rendered in the live SVG drawing.
+2. **Panel Material Selection & Dynamic Surcharges**:
+   - Select Teak Veneer (+£25 surcharge => £200.00), Birch Plywood (+£15 surcharge => £190.00), and Matte Black Acrylic (£175.00 baseline), validating real-time plate re-coloring and price recalculations.
+3. **Gang Count Scaling & Minimum Width Clamping**:
+   - Scale panel from 6-gang to 8-gang (+£16 => £191.00); verify SVG dynamically adds switch positions and circuit label rows.
+   - Test minimum width safety clamping: attempting to reduce width below minimum (180mm) automatically enforces the boundary rule with warning notices.
+4. **Circuit Label Laser Engraving & Breaker Ratings**:
+   - Customize individual circuit switches (e.g. `RADAR SCANNER` at 15A, `AUTOHELM` at 20A).
+   - Verify SVG laser-engraved circuit labels and amperage text elements reflect custom configurations instantly.
+5. **Readiness Packaging Tiers & Cutout Toggles**:
+   - Toggle auxiliary cutouts (Voltmeter -£8, 12V marine socket cutout +£6), validating SVG rendering updates.
+   - Transition through readiness tiers: *Faceplate Only* (£79.00), *DIY Assembly Kit* (£155.00), and *Assembled & Bench-Tested* (£210.00).
+6. **Cloud Save & SVG CAD Export Download**:
+   - Trigger cloud CAD state save, asserting success feedback badge.
+   - Trigger SVG download and verify generated file nomenclature (`ajw_marine_switch_panel_8gang_...svg`).
+7. **Direct Workshop Cart Dispatch**:
+   - Add custom configured switch panel directly into the workshop cart (`£210.00`).
+   - Verify cart drawer opens with custom switch panel line item, specification dimensions, and correct pricing.
+8. **Specification Review Modal & Quote Request Flow**:
+   - Open technical specification review modal, validating gang count, circuit listings (`RADAR SCANNER (15A)`, `AUTOHELM (20A)`), and price summary.
+   - Proceed into Diagnostic Booking & Quote modal with pre-attached CAD configuration banner and pre-selected `custom_panel` service type.
+   - Submit quotation request with vessel contact details, verifying generated booking confirmation reference (`AJW-2026-*`).
+
+---
+
 ## 2. Future User Journeys Requiring Test Coverage
 
 The following table identifies the remaining operational workflows across AJWMES to be automated:
@@ -252,9 +288,9 @@ The following table identifies the remaining operational workflows across AJWMES
 | **UJ-05** | **Postal Workshop Order Fulfillment & Dispatch** | `/postal` | `postal`, `admin` | **High (P0)** | Medium (Queue, Cable cutting, Packing slip) | **Done (Automated)** |
 | **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | **Done (Automated)** |
 | **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | Medium-High (Financial rollups, POs) | **Done (Automated)** |
-| **UJ-07** | **Custom Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Next Recommended** |
+| **UJ-07** | **Custom Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Done (Automated)** |
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | Pending |
-| **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | Pending |
+| **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | **Next Recommended** |
 | **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | **Done (Automated)** |
 
 ---
@@ -271,8 +307,8 @@ gantt
     Workshop Admin, Expenses & Restock (UJ-10)    :done, 2026-10-17, 1d
     section Phase 2 (Customer Experience)
     Consignment Tracker Timeline (UJ-06)          :done, 2026-10-17, 1d
-    Custom Switch Panel CAD Designer (UJ-07)      :crit, active, 2026-10-18, 2d
-    Vessel Portal & PDF Certificate Export (UJ-09):2026-10-20, 2d
+    Custom Switch Panel CAD Designer (UJ-07)      :done, 2026-10-18, 1d
+    Vessel Portal & PDF Certificate Export (UJ-09):crit, active, 2026-10-20, 2d
     section Phase 3 (Admin & Resilience)
     Offline Pontoon Resilience & Mutation Sync (UJ-11):done, 2026-10-17, 1d
     Photo Replica Quoter (UJ-08)                  :2026-10-28, 2d
@@ -282,15 +318,14 @@ gantt
 
 ## 4. Recommended Next Journey to Implement
 
-### Recommendation: **Journey 7 — Custom Switch Panel CAD Configurator**
-**File Target:** `tests/switch-panel-cad.spec.ts`  
-**Page Object Model:** `tests/pages/SwitchPanelCADPage.ts`
+### Recommendation: **Journey 8 — Boat Owner Vessel Portal & Certificate PDF Export (UJ-09)**
+**File Target:** `tests/vessel-portal-pdf.spec.ts`  
+**Page Object Model:** `tests/pages/VesselPortalPage.ts`
 
 ### Architectural & Business Rationale:
-1. **Interactive Marine CAD Configuration**:
-   - The custom switch panel configurator (`/designer`) is one of AJWMES's core commercial revenue streams.
-   - Customers design custom CNC-cut acrylic/aluminum switchboards with customizable rows, columns, rocker switches, circuit breakers, voltmeter apertures, and USB charging sockets.
-2. **Real-Time BOM & Electrical Pricing Rollups**:
-   - Every CAD component addition dynamically impacts labor, raw material cutting surcharges, component costs, and laser engraving fees computed via `src/utils/electricalCalculations.ts`.
-3. **Cart Integration & Quote Submission**:
-   - Tests verify that configured panel layouts generate accurate bills of materials, correctly transition into the cart drawer or custom quotation pipeline, and export visual CAD specifications.
+1. **Solent Boat Owner Vessel Portfolio**:
+   - Boat owners track their registered vessels, electrical system configurations (12V/24V/48V DC, 230V AC Shorepower, battery chemistries: AGM, Gel, LiFePO4), and service history.
+2. **Client-Side jsPDF Marine Electrical Certificate Generation**:
+   - Pure function `src/utils/generateVesselPdf.ts` generates standardized marine electrical diagnostic summaries, work completed logs, and compliance certificates.
+3. **Multi-Vessel Switching & Spec Updates**:
+   - Tests verify selecting active vessels, updating LOA/beam/draft specifications, and verifying PDF blob generation across mobile and desktop environments.

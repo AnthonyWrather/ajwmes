@@ -195,6 +195,9 @@ export default function App() {
   const [isHostingGuideOpen, setIsHostingGuideOpen] = useState(false);
   const [selectedInitialService, setSelectedInitialService] = useState<ServiceType>('diagnostic');
   const [pendingPanelConfig, setPendingPanelConfig] = useState<SwitchPanelConfig | undefined>(undefined);
+  const [panelConfig, setPanelConfig] = useState<SwitchPanelConfig>(() => {
+    return getEnvStorageItem('panel_config', INITIAL_SAMPLE_PANEL);
+  });
   const [connectionState, setConnectionState] = useState<FirestoreConnectionState>(() => getConnectionState());
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(connectionState.isConnected);
 
@@ -531,6 +534,10 @@ export default function App() {
   useEffect(() => {
     setEnvStorageItem('expenses', expenses);
   }, [expenses]);
+
+  useEffect(() => {
+    setEnvStorageItem('panel_config', panelConfig);
+  }, [panelConfig]);
 
   // Auto-dismiss toast after 7 seconds
   useEffect(() => {
@@ -1453,10 +1460,17 @@ export default function App() {
           {/* Tab 4: Custom Switch Panel Designer */}
           {currentTab === 'designer' && (
             <SwitchPanelDesigner
+              initialConfig={panelConfig}
+              onConfigChange={setPanelConfig}
               onOrderPanel={cfg => {
                 setPendingPanelConfig(cfg);
                 setSelectedInitialService('custom_panel');
                 setIsBookingModalOpen(true);
+              }}
+              onAddToCart={(item, qty) => {
+                handleAddToCart(item, qty);
+                setCurrentTab('store');
+                setIsCartOpen(true);
               }}
             />
           )}

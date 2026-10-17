@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ServiceType, JobRecord, SwitchPanelConfig } from '../../types';
 import { 
   Calendar, 
@@ -34,6 +34,12 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
 }) => {
   const [formMode, setFormMode] = useState<'quote' | 'returning'>('quote');
   const [service, setService] = useState<ServiceType>(initialService);
+
+  useEffect(() => {
+    if (initialService) {
+      setService(initialService);
+    }
+  }, [initialService, isOpen]);
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -151,11 +157,12 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div data-testid="booking-quote-modal" className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-800 max-w-xl w-full rounded-3xl p-6 text-slate-100 shadow-2xl relative animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
         <button
+          data-testid="booking-close-btn"
           onClick={onClose}
-          className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg transition-colors"
+          className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -167,7 +174,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
             </div>
             <h3 className="text-xl font-bold text-white">Inquiry Received &amp; Thread Opened</h3>
             <p className="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
-              Your job tracking reference is <strong className="text-sky-400 font-mono text-sm">{submittedRef}</strong>. 
+              Your job tracking reference is <strong data-testid="booking-reference-pill" className="text-sky-400 font-mono text-sm">{submittedRef}</strong>. 
               {attachedPhotos.length > 0 && (
                 <span className="block text-emerald-400 mt-1">
                   ✓ {attachedPhotos.length} photos uploaded to Firebase Cloud Storage.
@@ -177,6 +184,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
             </p>
             <div className="pt-2">
               <button
+                data-testid="booking-dismiss-btn"
                 onClick={onClose}
                 className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 transition-all cursor-pointer"
               >
@@ -217,6 +225,18 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
               </p>
             </div>
 
+            {initialPanelConfig && (
+              <div data-testid="booking-panel-config-banner" className="p-3 bg-sky-950/40 border border-sky-500/40 rounded-xl space-y-1">
+                <div className="flex items-center justify-between text-sky-300 font-semibold text-xs">
+                  <span>Attached CAD Specification: {initialPanelConfig.gangCount}-Gang Panel</span>
+                  <span className="font-mono text-emerald-400">£{initialPanelConfig.estimatedPrice.toFixed(2)}</span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  {initialPanelConfig.widthMm}mm × {initialPanelConfig.heightMm}mm · {initialPanelConfig.material.replace('_', ' ')} · {initialPanelConfig.packageOption.replace('_', ' ')}
+                </p>
+              </div>
+            )}
+
             {Object.keys(formErrors).length > 0 && (
               <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs space-y-1">
                 <span className="font-semibold block text-rose-200">Please correct the following before submitting:</span>
@@ -231,9 +251,10 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">Service Type</label>
                 <select
+                  data-testid="booking-service-select"
                   value={service}
                   onChange={e => setService(e.target.value as ServiceType)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                 >
                   <option value="diagnostic">12V Electrical Fault Finding &amp; Battery Drain Check (£25/hr)</option>
                   <option value="renovation">Day Boat, Bilge Pump or Console Tidy-Up (£25/hr)</option>
@@ -250,6 +271,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Boat Name</label>
                   <input
+                    data-testid="booking-vessel-name"
                     type="text"
                     required
                     placeholder="e.g. Windbird III"
@@ -261,6 +283,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Marina / Berth Location</label>
                   <input
+                    data-testid="booking-berth-location"
                     type="text"
                     required
                     placeholder="e.g. Haslar Marina, Pontoon C"
@@ -276,6 +299,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Your Name</label>
                   <input
+                    data-testid="booking-client-name"
                     type="text"
                     required
                     placeholder="e.g. David Mercer"
@@ -287,6 +311,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Email</label>
                   <input
+                    data-testid="booking-client-email"
                     type="email"
                     required
                     placeholder="dave@example.co.uk"
@@ -298,6 +323,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Mobile / WhatsApp</label>
                   <input
+                    data-testid="booking-client-phone"
                     type="tel"
                     required
                     placeholder="07700 900..."
@@ -365,6 +391,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">Fault Symptoms or Project Scope</label>
                 <textarea
+                  data-testid="booking-notes"
                   rows={3}
                   required
                   placeholder="Describe what is happening: e.g. batteries losing voltage overnight, starter solenoid clicking, intermittent depth sounder, or need solar arch wired."
@@ -381,6 +408,7 @@ export const BookingQuoteModal: React.FC<BookingQuoteModalProps> = ({
                   <span>£25 / hr · No hidden callout surcharges</span>
                 </div>
                 <button
+                  data-testid="booking-submit-btn"
                   type="submit"
                   disabled={isUploadingPhoto}
                   className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-semibold rounded-xl text-xs shadow-md shadow-sky-600/30 transition-all cursor-pointer"

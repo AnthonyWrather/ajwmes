@@ -143,6 +143,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Switch Panels & Replica: check RBAC */}
           {canAccessRoute(currentUserRole, 'designer') && (
             <button
+              data-testid="nav-tab-designer"
               onClick={() => setCurrentTab('designer')}
               className={`hover:text-white transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${currentTab === 'designer' ? 'text-sky-400 font-bold' : ''}`}
             >
@@ -489,6 +490,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
             {canAccessRoute(currentUserRole, 'designer') && (
               <button
+                data-testid="mobile-nav-tab-designer"
                 onClick={() => { setCurrentTab('designer'); setMobileMenuOpen(false); }}
                 className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-sky-400"
               >

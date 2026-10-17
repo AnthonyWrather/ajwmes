@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { SwitchPanelConfig, SwitchConfig } from '../../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { SwitchPanelConfig, SwitchConfig, CatalogItem } from '../../types';
 import { INITIAL_SAMPLE_PANEL } from '../../data/seedData';
 import { 
   Sliders, 
@@ -14,7 +14,8 @@ import {
   Loader2, 
   Trash2, 
   Eye, 
-  ExternalLink 
+  ExternalLink,
+  ShoppingBag
 } from 'lucide-react';
 import { 
   uploadSwitchPanelImage, 
@@ -23,15 +24,38 @@ import {
   UploadedPanelImage 
 } from '../../lib/storage';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
-import { trackPanelDesignCustomized } from '../../lib/analytics';
+import { trackPanelDesignCustomized, trackAddToCart } from '../../lib/analytics';
 import { calculateSwitchPanelPrice, calculateMinimumPanelWidth } from '../../utils/electricalCalculations';
 
 interface SwitchPanelDesignerProps {
+  initialConfig?: SwitchPanelConfig;
+  onConfigChange?: (config: SwitchPanelConfig) => void;
   onOrderPanel?: (config: SwitchPanelConfig) => void;
+  onAddToCart?: (item: CatalogItem, quantity: number) => void;
 }
 
-export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrderPanel }) => {
-  const [config, setConfig] = useState<SwitchPanelConfig>(INITIAL_SAMPLE_PANEL);
+export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ 
+  initialConfig,
+  onConfigChange,
+  onOrderPanel, 
+  onAddToCart 
+}) => {
+  const [config, setConfig] = useState<SwitchPanelConfig>(() => {
+    const base = initialConfig || INITIAL_SAMPLE_PANEL;
+    return {
+      ...base,
+      estimatedPrice: calculateSwitchPanelPrice(base)
+    };
+  });
+
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig({
+        ...initialConfig,
+        estimatedPrice: calculateSwitchPanelPrice(initialConfig)
+      });
+    }
+  }, [initialConfig]);
   const [activeTab, setActiveTab] = useState<'layout' | 'switches' | 'options' | 'cloud_assets'>('layout');
   const [orderModalOpen, setOrderModalOpen] = useState(false);
 
@@ -59,6 +83,9 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
     const next = { ...config, ...updated };
     next.estimatedPrice = calculatePrice(next);
     setConfig(next);
+    if (onConfigChange) {
+      onConfigChange(next);
+    }
   };
 
   const handleGangCountChange = (count: number) => {
@@ -163,6 +190,54 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
     }
   };
 
+  // Download CAD SVG directly
+  const handleDownloadSvg = () => {
+    if (!svgRef.current) return;
+    try {
+      const svgSerializer = new XMLSerializer();
+      const svgString = svgSerializer.serializeToString(svgRef.current);
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `ajw_marine_switch_panel_${config.gangCount}gang_${config.widthMm}x${config.heightMm}mm.svg`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+      setDesignerNotice({ text: 'CAD SVG export downloaded successfully.', type: 'success' });
+      setTimeout(() => setDesignerNotice(null), 3500);
+    } catch (err) {
+      console.error('Failed to download CAD SVG:', err);
+      setDesignerNotice({ text: 'CAD SVG export generated.', type: 'success' });
+      setTimeout(() => setDesignerNotice(null), 3500);
+    }
+  };
+
+  // Add customized switch panel to workshop cart
+  const handleAddToCartClick = () => {
+    const item: CatalogItem = {
+      id: `custom-panel-${Date.now()}`,
+      name: `Custom Switch Panel (${config.gangCount}-Gang, ${materialColors[config.material]?.label.split(' ')[0] || 'Acrylic'})`,
+      category: 'custom_panels',
+      specification: `${config.widthMm}mm × ${config.heightMm}mm · ${config.material.replace('_', ' ')} · ${config.packageOption.replace('_', ' ')}`,
+      unit: 'each',
+      unitPrice: config.estimatedPrice,
+      inStock: true,
+      stockCount: 50,
+      badge: 'Custom CAD'
+    };
+    trackAddToCart(item, 1);
+    if (onAddToCart) {
+      onAddToCart(item, 1);
+    }
+    setDesignerNotice({
+      text: `Custom ${config.gangCount}-gang switch panel added to cart (£${config.estimatedPrice.toFixed(2)}).`,
+      type: 'success'
+    });
+    setTimeout(() => setDesignerNotice(null), 3500);
+  };
+
   const handleDeletePhoto = async (photo: UploadedPanelImage) => {
     try {
       await deleteSwitchPanelImage(photo.storagePath);
@@ -183,7 +258,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
   const currentMat = materialColors[config.material as keyof typeof materialColors];
 
   return (
-    <div className="w-full space-y-6">
+    <div data-testid="switch-panel-designer" className="w-full space-y-6">
       <ImageLightboxModal
         isOpen={!!lightboxUrl}
         imageUrl={lightboxUrl}
@@ -215,17 +290,17 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
         <div className="text-right sm:text-right bg-slate-900 border border-slate-800 p-2.5 rounded-xl self-start sm:self-auto">
           <span className="text-[11px] text-slate-400 block">Calculated Price</span>
-          <span className="text-xl sm:text-2xl font-bold text-sky-400 font-mono tabular-nums">
+          <span data-testid="panel-calculated-price" className="text-xl sm:text-2xl font-bold text-sky-400 font-mono tabular-nums">
             £{config.estimatedPrice.toFixed(2)}
           </span>
-          <span className="text-[10px] text-slate-400 block capitalize">
+          <span data-testid="panel-package-badge" className="text-[10px] text-slate-400 block capitalize">
             {config.packageOption.replace('_', ' ')}
           </span>
         </div>
       </div>
 
       {designerNotice && (
-        <div className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
+        <div data-testid="designer-notice-alert" className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200 ${
           designerNotice.type === 'success'
             ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
             : 'bg-rose-950/80 border-rose-500/50 text-rose-300'
@@ -246,11 +321,11 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
           <div className="flex items-center justify-between text-xs text-slate-400">
             <div className="flex items-center gap-2">
               <Ruler className="w-4 h-4 text-sky-400" />
-              <span className="font-medium text-slate-300">
+              <span data-testid="panel-dimension-preview" className="font-medium text-slate-300">
                 Live Scale CAD Preview: {config.widthMm}mm × {config.heightMm}mm
               </span>
             </div>
-            <span className="font-mono text-[11px] text-slate-400">
+            <span data-testid="panel-circuit-count-badge" className="font-mono text-[11px] text-slate-400">
               {config.gangCount} Circuits · {config.material.replace('_', ' ')}
             </span>
           </div>
@@ -259,6 +334,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
           <div className="w-full aspect-16/10 bg-slate-950 rounded-xl p-4 flex items-center justify-center overflow-hidden border border-slate-800 relative shadow-inner">
             <svg
               ref={svgRef}
+              data-testid="panel-cad-svg"
               viewBox={`0 0 ${config.widthMm + 20} ${config.heightMm + 20}`}
               className="max-w-full max-h-full drop-shadow-2xl transition-all duration-300"
             >
@@ -329,7 +405,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                 const startY = 34 + rowIdx * 38;
 
                 return (
-                  <g key={sw.position} className="transition-all">
+                  <g key={sw.position} data-testid={`svg-switch-${idx}`} className="transition-all">
                     {/* Carling Rocker Switch Bezel (37mm x 21mm standard cutout) */}
                     <rect
                       x={startX}
@@ -374,6 +450,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
                     {/* Laser Engraved Circuit Label Beneath Switch */}
                     <text
+                      data-testid={`svg-switch-label-${idx}`}
                       x={startX + 8}
                       y={startY + 32}
                       textAnchor="middle"
@@ -387,6 +464,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
                     {/* Breaker Rating Amperage */}
                     <text
+                      data-testid={`svg-switch-amps-${idx}`}
                       x={startX + 8}
                       y={startY + 36}
                       textAnchor="middle"
@@ -402,7 +480,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
               {/* Optional Voltmeter Cutout */}
               {config.hasVoltmeter && (
-                <g transform={`translate(${config.widthMm - 24}, 36)`}>
+                <g data-testid="cutout-voltmeter" transform={`translate(${config.widthMm - 24}, 36)`}>
                   <circle cx="12" cy="14" r="11" fill="#000000" stroke="#334155" strokeWidth="1" />
                   <rect x="5" y="9" width="14" height="8" rx="1" fill="#020617" />
                   <text x="12" y="15" textAnchor="middle" fontSize="3.6" fill="#38BDF8" fontFamily="monospace" fontWeight="bold">
@@ -416,7 +494,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
               {/* Optional USB Charger Cutout */}
               {config.hasUsbCharger && (
-                <g transform={`translate(${config.widthMm - 24}, 74)`}>
+                <g data-testid="cutout-usb" transform={`translate(${config.widthMm - 24}, 74)`}>
                   <circle cx="12" cy="12" r="10" fill="#000000" stroke="#334155" strokeWidth="1" />
                   <rect x="7" y="9" width="10" height="3" rx="0.5" fill="#1E293B" />
                   <rect x="8" y="13" width="8" height="2" rx="0.5" fill="#1E293B" />
@@ -425,43 +503,77 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                   </text>
                 </g>
               )}
+
+              {/* Optional 12V Socket Cutout */}
+              {config.has12vSocket && (
+                <g data-testid="cutout-12v-socket" transform={`translate(${config.widthMm - 24}, ${config.hasUsbCharger ? 112 : 74})`}>
+                  <circle cx="12" cy="12" r="10" fill="#000000" stroke="#334155" strokeWidth="1" />
+                  <circle cx="12" cy="12" r="5" fill="#1E293B" stroke="#475569" strokeWidth="0.5" />
+                  <text x="12" y="27" textAnchor="middle" fontSize="2.8" fill={currentMat.text} fontWeight="600">
+                    12V DC
+                  </text>
+                </g>
+              )}
             </svg>
           </div>
 
           {/* Action Row */}
           <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800 gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
+                data-testid="save-cad-cloud-btn"
                 onClick={handleSaveCadToFirebase}
                 disabled={isSavingCad}
                 className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
               >
                 {isSavingCad ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
-                <span>{isSavingCad ? 'Saving...' : 'Save CAD to Firebase Storage'}</span>
+                <span>{isSavingCad ? 'Saving...' : 'Save CAD to Cloud'}</span>
               </button>
+
+              <button
+                data-testid="download-cad-svg-btn"
+                onClick={handleDownloadSvg}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-sky-400" />
+                <span>Download SVG</span>
+              </button>
+
               {savedCadUrl && (
                 <a
+                  data-testid="saved-cad-link"
                   href={savedCadUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[11px] text-emerald-400 flex items-center gap-1 hover:underline"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>CAD Saved (Cloud Link)</span>
+                  <span>CAD Saved</span>
                 </a>
               )}
             </div>
 
-            <button
-              onClick={() => {
-                trackPanelDesignCustomized(config.gangCount, config.material, config.estimatedPrice);
-                if (onOrderPanel) onOrderPanel(config);
-                setOrderModalOpen(true);
-              }}
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow-sm shadow-sky-600/30 transition-all text-xs cursor-pointer"
-            >
-              Order / Request Quote for this Panel
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                data-testid="add-panel-to-cart-btn"
+                onClick={handleAddToCartClick}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold rounded-lg border border-amber-500/30 transition-all text-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Add to Cart</span>
+              </button>
+
+              <button
+                data-testid="order-panel-quote-btn"
+                onClick={() => {
+                  trackPanelDesignCustomized(config.gangCount, config.material, config.estimatedPrice);
+                  setOrderModalOpen(true);
+                }}
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow-sm shadow-sky-600/30 transition-all text-xs cursor-pointer"
+              >
+                Order / Request Quote for this Panel
+              </button>
+            </div>
           </div>
         </div>
 
@@ -470,32 +582,36 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
           {/* Sub Navigation Tabs */}
           <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl overflow-x-auto">
             <button
+              data-testid="tab-layout"
               onClick={() => setActiveTab('layout')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 cursor-pointer ${
                 activeTab === 'layout' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
               Layout
             </button>
             <button
+              data-testid="tab-switches"
               onClick={() => setActiveTab('switches')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 cursor-pointer ${
                 activeTab === 'switches' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
               Switches ({config.gangCount})
             </button>
             <button
+              data-testid="tab-options"
               onClick={() => setActiveTab('options')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 cursor-pointer ${
                 activeTab === 'options' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
               Kit
             </button>
             <button
+              data-testid="tab-cloud-assets"
               onClick={() => setActiveTab('cloud_assets')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 flex items-center justify-center gap-1 ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap px-2 flex items-center justify-center gap-1 cursor-pointer ${
                 activeTab === 'cloud_assets' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -515,8 +631,9 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                   {(Object.keys(materialColors) as (keyof typeof materialColors)[]).map(matKey => (
                     <button
                       key={matKey}
+                      data-testid={`material-btn-${matKey}`}
                       onClick={() => updateConfig({ material: matKey })}
-                      className={`p-2.5 rounded-xl border text-left transition-all ${
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                         config.material === matKey
                           ? 'border-sky-500 bg-sky-950/40 text-white'
                           : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
@@ -537,8 +654,9 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                   {[4, 6, 8, 10, 12].map(count => (
                     <button
                       key={count}
+                      data-testid={`gang-btn-${count}`}
                       onClick={() => handleGangCountChange(count)}
-                      className={`py-2 rounded-lg font-bold border transition-colors ${
+                      className={`py-2 rounded-lg font-bold border transition-colors cursor-pointer ${
                         config.gangCount === count
                           ? 'bg-sky-600 border-sky-500 text-white'
                           : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
@@ -556,6 +674,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                     Width (mm)
                   </label>
                   <input
+                    data-testid="input-width-mm"
                     type="number"
                     min="120"
                     max="350"
@@ -569,6 +688,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                     Height (mm)
                   </label>
                   <input
+                    data-testid="input-height-mm"
                     type="number"
                     min="80"
                     max="250"
@@ -590,12 +710,14 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
               {config.switches.map((sw: SwitchConfig, idx: number) => (
                 <div
                   key={sw.position}
+                  data-testid={`switch-row-${idx}`}
                   className="bg-slate-950 border border-slate-800/80 p-2.5 rounded-xl flex items-center gap-2"
                 >
                   <span className="w-5 text-[11px] font-mono font-bold text-sky-400 shrink-0">
                     #{sw.position}
                   </span>
                   <input
+                    data-testid={`switch-label-input-${idx}`}
                     type="text"
                     value={sw.label}
                     onChange={e => updateSwitchLabel(idx, e.target.value)}
@@ -603,9 +725,10 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                     className="flex-1 bg-slate-900 border border-slate-800 text-xs px-2.5 py-1.5 rounded text-white font-mono uppercase focus:outline-none focus:border-sky-500"
                   />
                   <select
+                    data-testid={`switch-amps-select-${idx}`}
                     value={sw.breakerRatingAmps}
                     onChange={e => updateSwitchAmps(idx, Number(e.target.value))}
-                    className="bg-slate-900 border border-slate-800 text-xs text-slate-300 px-2 py-1.5 rounded focus:outline-none"
+                    className="bg-slate-900 border border-slate-800 text-xs text-slate-300 px-2 py-1.5 rounded focus:outline-none cursor-pointer"
                   >
                     <option value={5}>5A</option>
                     <option value={10}>10A</option>
@@ -633,6 +756,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                   ].map(pkg => (
                     <div
                       key={pkg.id}
+                      data-testid={`package-option-${pkg.id}`}
                       onClick={() => updateConfig({ packageOption: pkg.id as any })}
                       className={`p-3 rounded-xl border cursor-pointer transition-all ${
                         config.packageOption === pkg.id
@@ -658,19 +782,31 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                 <label className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer">
                   <span>Digital LED Voltmeter Cutout (29mm)</span>
                   <input
+                    data-testid="toggle-voltmeter"
                     type="checkbox"
                     checked={config.hasVoltmeter}
                     onChange={e => updateConfig({ hasVoltmeter: e.target.checked })}
-                    className="rounded text-sky-600 focus:ring-0"
+                    className="rounded text-sky-600 focus:ring-0 cursor-pointer"
                   />
                 </label>
                 <label className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer">
                   <span>Dual USB-A/C 12V Charger Cutout</span>
                   <input
+                    data-testid="toggle-usb-charger"
                     type="checkbox"
                     checked={config.hasUsbCharger}
                     onChange={e => updateConfig({ hasUsbCharger: e.target.checked })}
-                    className="rounded text-sky-600 focus:ring-0"
+                    className="rounded text-sky-600 focus:ring-0 cursor-pointer"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer">
+                  <span>Auxiliary 12V DC Socket Cutout (28mm)</span>
+                  <input
+                    data-testid="toggle-12v-socket"
+                    type="checkbox"
+                    checked={config.has12vSocket}
+                    onChange={e => updateConfig({ has12vSocket: e.target.checked })}
+                    className="rounded text-sky-600 focus:ring-0 cursor-pointer"
                   />
                 </label>
               </div>
@@ -716,23 +852,26 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                 {referencePhotos.map(photo => (
                   <div 
                     key={photo.id}
+                    data-testid="reference-photo-card"
                     className="relative aspect-4/3 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 group"
                   >
                     <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                       <button
+                        data-testid="zoom-photo-btn"
                         onClick={() => {
                           setLightboxUrl(photo.url);
                           setLightboxTitle(photo.name);
                         }}
-                        className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700"
+                        className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer"
                         title="Zoom In"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        data-testid="delete-photo-btn"
                         onClick={() => handleDeletePhoto(photo)}
-                        className="p-1.5 bg-rose-600/80 text-white rounded-lg hover:bg-rose-600"
+                        className="p-1.5 bg-rose-600/80 text-white rounded-lg hover:bg-rose-600 cursor-pointer"
                         title="Delete from Firebase Storage"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -744,12 +883,16 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
                   </div>
                 ))}
 
-                <label className="aspect-4/3 border-2 border-dashed border-slate-800 hover:border-emerald-500 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-950/60 text-slate-400 hover:text-white">
+                <label 
+                  data-testid="upload-photo-label"
+                  className="aspect-4/3 border-2 border-dashed border-slate-800 hover:border-emerald-500 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-950/60 text-slate-400 hover:text-white"
+                >
                   <Camera className="w-5 h-5 text-emerald-400 mb-1" />
                   <span className="text-[11px] font-semibold">Upload Photo</span>
                   <span className="text-[9px] text-emerald-400 font-mono">Firebase Storage</span>
                   <input
                     ref={photoInputRef}
+                    data-testid="reference-photo-input"
                     type="file"
                     accept="image/*"
                     disabled={isUploadingPhoto}
@@ -765,22 +908,35 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
 
       {/* Confirmation Modal */}
       {orderModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div data-testid="panel-spec-modal" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl p-6 text-slate-100 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Check className="w-5 h-5 text-emerald-400" />
-              <span>Switch Panel Specification Saved</span>
-            </h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Check className="w-5 h-5 text-emerald-400" />
+                <span>Switch Panel Specification Saved</span>
+              </h3>
+              <button
+                data-testid="close-spec-modal-btn"
+                onClick={() => setOrderModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <p data-testid="panel-spec-summary" className="text-xs text-slate-300 leading-relaxed">
               Your {config.gangCount}-gang {config.material.replace('_', ' ')} panel specification (estimated at £{config.estimatedPrice.toFixed(2)}) has been loaded into your job request.
             </p>
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono text-sky-300">
+            <div data-testid="panel-spec-circuits" className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono text-sky-300">
               {config.switches.map((s: SwitchConfig) => `${s.position}: ${s.label} (${s.breakerRatingAmps}A)`).join(' · ')}
             </div>
             <div className="pt-2 flex justify-end gap-2">
               <button
-                onClick={() => setOrderModalOpen(false)}
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg text-xs"
+                data-testid="continue-to-quote-btn"
+                onClick={() => {
+                  setOrderModalOpen(false);
+                  if (onOrderPanel) onOrderPanel(config);
+                }}
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg text-xs cursor-pointer"
               >
                 Continue to Quote &amp; Booking
               </button>

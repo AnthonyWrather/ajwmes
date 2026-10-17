@@ -324,7 +324,7 @@ export const INITIAL_SAMPLE_PANEL: SwitchPanelConfig = {
   mountingHoleStyle: '4_corner',
   backlightColor: 'cyan',
   packageOption: 'assembled_wired',
-  estimatedPrice: 145.00
+  estimatedPrice: 175.00
 };
 
 export const INITIAL_JOBS: JobRecord[] = [
