@@ -275,7 +275,6 @@ export class TechnicianWorkspacePage {
       mimeType: payload.mimeType,
       buffer: payload.buffer
     });
-    await this.photoUploadInput.dispatchEvent('change').catch(() => {});
   }
 
   async triggerManualSync(): Promise<void> {
