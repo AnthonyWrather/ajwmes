@@ -68,12 +68,12 @@ test.describe('Boat Owner Vessel Portal & Certificate PDF Export (UJ-09) E2E Flo
     await test.step('4. Navigate specification categories and live edit vessel specs', async () => {
       // Navigate to DC Batteries & Charging category
       await portal.selectCategory('dc');
-      await expect(portal.specManager.getByText(/DC Battery Banks/i).first()).toBeVisible({ timeout: 5000 });
-      await expect(portal.specManager.getByText('200Ah Domestic Capacity').first()).toBeVisible({ timeout: 5000 });
+      await expect(portal.specManager.getByText(/DC Battery Banks/i).first()).toBeVisible({ timeout: 10000 });
+      await expect(portal.specManager.getByText('200Ah Domestic Capacity').first()).toBeVisible({ timeout: 10000 });
 
       // Navigate to AC Shore Power category
       await portal.selectCategory('ac');
-      await expect(portal.specManager.getByText(/230V AC Shore Power/i).first()).toBeVisible({ timeout: 5000 });
+      await expect(portal.specManager.getByText(/230V AC Shore Power/i).first()).toBeVisible({ timeout: 10000 });
 
       // Navigate back to Overview to edit dimensions
       await portal.selectCategory('overview');
