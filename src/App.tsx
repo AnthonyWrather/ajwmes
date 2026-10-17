@@ -96,6 +96,7 @@ import {
   sendPontoonSignOffEmail, 
   sendZeroStockEmail 
 } from './lib/emailService';
+import { calculateReplicaPanelQuote } from './utils/electricalCalculations';
 
 
 export default function App() {
@@ -1024,16 +1025,31 @@ export default function App() {
     materialPreference: string;
     imageUrls: string[];
     notes: string;
+    estimatedLabor?: number;
+    estimatedMaterials?: number;
+    estimatedTotal?: number;
   }) => {
+    const quote = calculateReplicaPanelQuote({
+      switchCount: data.switchCount,
+      materialPreference: data.materialPreference
+    });
+    const labor = data.estimatedLabor ?? quote.digitizingLabor;
+    const materials = data.estimatedMaterials ?? quote.totalMaterials;
+    const total = data.estimatedTotal ?? quote.totalEstimated;
+
     const reference = `AJW-REP-${Math.floor(100 + Math.random() * 900)}`;
+    const effectiveUserId = currentUserRole !== 'guest' ? currentUserProfile.id : (currentUserProfile?.id || 'usr-guest-0000-0000-0000-000000000005');
+    const effectiveEmail = currentUserRole !== 'guest' ? currentUserProfile.email : (currentUserProfile?.email || 'guest@solent-visitor.co.uk');
+    const effectiveName = currentUserRole !== 'guest' ? currentUserProfile.name : 'Replica Inquirer';
+
     const fullJob: JobRecord = {
       id: `job-${Date.now()}`,
       reference,
-      userId: currentUserRole !== 'guest' ? currentUserProfile.id : undefined,
+      userId: effectiveUserId,
       vesselId: activeVesselId || undefined,
-      clientName: currentUserRole !== 'guest' ? currentUserProfile.name : 'Replica Inquirer',
-      clientEmail: currentUserRole !== 'guest' ? currentUserProfile.email : 'owner@westerly-owners.co.uk',
-      clientPhone: (currentUserRole !== 'guest' && currentUserProfile.phone) ? currentUserProfile.phone : '07700 900331',
+      clientName: effectiveName,
+      clientEmail: effectiveEmail,
+      clientPhone: (currentUserRole !== 'guest' && currentUserProfile?.phone) ? currentUserProfile.phone : '07700 900331',
       vesselName: `${data.boatMake} ${data.boatModel}`,
       vesselType: `${data.boatMake} Yacht`,
       berthLocation: 'Gosport Marina',
@@ -1044,9 +1060,9 @@ export default function App() {
       materialsUsed: [],
       notes: `Replica switch panel quote request for ${data.boatMake} ${data.boatModel}. Dimensions approx: ${data.dimensions}, ${data.switchCount} switches. Notes: ${data.notes}`,
       replicaImages: data.imageUrls,
-      totalLabor: 25,
-      totalMaterials: 65,
-      totalEstimated: 90,
+      totalLabor: labor,
+      totalMaterials: materials,
+      totalEstimated: total,
       depositPaid: false,
       depositAmount: 0,
       createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
@@ -1054,8 +1070,8 @@ export default function App() {
         {
           id: `msg-${Date.now()}`,
           sender: 'client',
-          senderName: currentUserRole !== 'guest' ? currentUserProfile.name : 'Boat Owner',
-          text: `Uploaded photos and measurements for a ${data.boatMake} ${data.boatModel} replacement switch panel.`,
+          senderName: effectiveName,
+          text: `Uploaded photos and measurements for a ${data.boatMake} ${data.boatModel} replacement switch panel (${data.dimensions}, ${data.switchCount} switches in ${data.materialPreference.replace('_', ' ')}).`,
           timestamp: 'Just now'
         }
       ]
@@ -1069,7 +1085,17 @@ export default function App() {
       reference: fullJob.reference,
       estimatedValue: fullJob.totalEstimated
     });
-    setCurrentUserRole('client');
+    if (currentUserRole === 'guest') {
+      setCurrentUserRole('client');
+      const enriched = enrichUserProfile({
+        ...currentUserProfile,
+        role: 'client',
+        name: currentUserProfile.name || 'Replica Inquirer'
+      });
+      setCurrentUserProfile(enriched);
+      saveUserProfile(enriched);
+    }
+    setPortalSubTab('jobs');
     setCurrentTab('portal');
   };
 
@@ -1478,7 +1504,10 @@ export default function App() {
           {/* Tab 5: Replica Switch Panel Upload */}
           {currentTab === 'replica' && (
             <div className="max-w-4xl mx-auto">
-              <ReplicaPanelUploader onSubmitReplicaQuote={handleReplicaQuote} />
+              <ReplicaPanelUploader 
+                onSubmitReplicaQuote={handleReplicaQuote} 
+                onNavigateToPortal={() => setCurrentTab('portal')}
+              />
             </div>
           )}
 

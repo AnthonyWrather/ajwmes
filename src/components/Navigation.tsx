@@ -154,6 +154,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           {canAccessRoute(currentUserRole, 'replica') && (
             <button
+              data-testid="nav-tab-replica"
               onClick={() => setCurrentTab('replica')}
               className={`hover:text-white transition-colors whitespace-nowrap shrink-0 ${currentTab === 'replica' ? 'text-white font-bold' : ''}`}
             >
@@ -328,6 +329,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     <div className="h-px bg-slate-800 my-1" />
 
                     <button
+                      data-testid="nav-signoff-button"
                       onClick={() => {
                         setUserDropdownOpen(false);
                         onOpenSignOffModal?.();
@@ -500,6 +502,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
             {canAccessRoute(currentUserRole, 'replica') && (
               <button
+                data-testid="mobile-nav-tab-replica"
                 onClick={() => { setCurrentTab('replica'); setMobileMenuOpen(false); }}
                 className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-white"
               >

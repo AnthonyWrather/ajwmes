@@ -5,14 +5,17 @@ export class NavigationPage {
   readonly desktopStoreTab: Locator;
   readonly desktopTrackerTab: Locator;
   readonly desktopDesignerTab: Locator;
+  readonly desktopReplicaTab: Locator;
   readonly mobileMenuToggle: Locator;
   readonly mobileStoreTab: Locator;
   readonly mobileTrackerTab: Locator;
   readonly mobileDesignerTab: Locator;
+  readonly mobileReplicaTab: Locator;
   readonly desktopAdminTab: Locator;
   readonly mobileAdminTab: Locator;
   readonly cartButton: Locator;
   readonly signInNavButton: Locator;
+  readonly userAccountButton: Locator;
   readonly userProfileName: Locator;
   readonly headerVersionBadge: Locator;
 
@@ -21,14 +24,17 @@ export class NavigationPage {
     this.desktopStoreTab = page.getByTestId('nav-tab-store');
     this.desktopTrackerTab = page.getByTestId('nav-tab-tracker');
     this.desktopDesignerTab = page.getByTestId('nav-tab-designer');
+    this.desktopReplicaTab = page.getByTestId('nav-tab-replica');
     this.desktopAdminTab = page.getByTestId('nav-tab-admin');
     this.mobileMenuToggle = page.getByTestId('mobile-menu-toggle');
     this.mobileStoreTab = page.getByTestId('mobile-nav-tab-store');
     this.mobileTrackerTab = page.getByTestId('mobile-nav-tab-tracker');
     this.mobileDesignerTab = page.getByTestId('mobile-nav-tab-designer');
+    this.mobileReplicaTab = page.getByTestId('mobile-nav-tab-replica');
     this.mobileAdminTab = page.getByTestId('mobile-nav-tab-admin');
     this.cartButton = page.getByTestId('nav-cart-button');
     this.signInNavButton = page.getByTestId('nav-signin-button');
+    this.userAccountButton = page.getByTestId('user-account-button');
     this.userProfileName = page.getByTestId('user-profile-name');
     this.headerVersionBadge = page.getByTestId('header-version-badge');
   }
@@ -80,6 +86,20 @@ export class NavigationPage {
     }
   }
 
+  async navigateToReplica(): Promise<void> {
+    const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
+
+    if (isMobile) {
+      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
+      await this.mobileMenuToggle.click({ force: true });
+      await expect(this.mobileReplicaTab).toBeVisible({ timeout: 10000 });
+      await this.mobileReplicaTab.click({ force: true });
+    } else {
+      await expect(this.desktopReplicaTab).toBeVisible({ timeout: 10000 });
+      await this.desktopReplicaTab.click({ force: true });
+    }
+  }
+
   async navigateToPostal(): Promise<void> {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
@@ -125,5 +145,17 @@ export class NavigationPage {
   async expectUserProfile(name: string): Promise<void> {
     await expect(this.userProfileName).toBeVisible({ timeout: 10000 });
     await expect(this.userProfileName).toContainText(name);
+  }
+
+  async signOut(): Promise<void> {
+    await expect(this.userAccountButton).toBeVisible({ timeout: 10000 });
+    await this.userAccountButton.click({ force: true });
+    const signOffBtn = this.page.getByTestId('nav-signoff-button');
+    await expect(signOffBtn).toBeVisible({ timeout: 5000 });
+    await signOffBtn.click({ force: true });
+    const confirmBtn = this.page.getByTestId('confirm-signoff-button');
+    await expect(confirmBtn).toBeVisible({ timeout: 5000 });
+    await confirmBtn.click({ force: true });
+    await expect(this.signInNavButton).toBeVisible({ timeout: 10000 });
   }
 }

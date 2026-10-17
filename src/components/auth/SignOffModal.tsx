@@ -134,6 +134,7 @@ export const SignOffModal: React.FC<SignOffModalProps> = ({
 
           <button
             type="button"
+            data-testid="confirm-signoff-button"
             onClick={handleSignOff}
             disabled={isSigningOff}
             className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer active:scale-95 disabled:opacity-50"

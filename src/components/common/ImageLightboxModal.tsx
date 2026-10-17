@@ -21,6 +21,17 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !imageUrl) return null;
 
   const handleCopyUrl = async () => {
@@ -37,30 +48,31 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 animate-in fade-in duration-200"
+      data-testid="image-lightbox-modal"
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-2 sm:p-6 animate-in fade-in duration-200 overflow-x-hidden"
       onClick={onClose}
     >
       {/* Lightbox Header Bar */}
       <div 
-        className="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-3 text-white max-w-5xl mx-auto w-full z-10"
+        className="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl px-3 sm:px-4 py-2 sm:py-3 text-white max-w-5xl mx-auto w-full z-10 gap-2 shrink-0"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-sky-950/80 border border-sky-500/30 text-sky-400">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="p-2 rounded-xl bg-sky-950/80 border border-sky-500/30 text-sky-400 shrink-0">
             <Cloud className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h4 className="text-xs sm:text-sm font-bold text-white truncate">
                 {imageTitle || 'Switch Panel Reference Image'}
               </h4>
               {isFirebase && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 shrink-0">
                   Firebase Cloud Storage
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400 font-mono">
+            <p className="text-[10px] sm:text-[11px] text-slate-400 font-mono truncate">
               {fileSize ? `${fileSize} · ` : ''}
               {storagePath || (isFirebase ? 'Permanent Cloud Asset' : 'Local Reference')}
             </p>
@@ -68,42 +80,43 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <button
             onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.5))}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
+            className="hidden sm:flex p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
             title="Zoom In"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.5))}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
+            className="hidden sm:flex p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
             title="Zoom Out"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={handleCopyUrl}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="hidden sm:flex px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold items-center gap-1.5 transition-colors"
             title="Copy Permanent Storage URL"
           >
             {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ExternalLink className="w-3.5 h-3.5 text-sky-400" />}
-            <span className="hidden sm:inline">{copiedUrl ? 'Copied' : 'Copy URL'}</span>
+            <span>{copiedUrl ? 'Copied' : 'Copy URL'}</span>
           </button>
           <a
             href={imageUrl}
             target="_blank"
             rel="noreferrer"
             download
-            className="p-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl transition-colors"
+            className="p-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl transition-colors shrink-0"
             title="Open / Download Full Size"
           >
             <Download className="w-4 h-4" />
           </a>
           <button
+            data-testid="image-lightbox-close"
             onClick={onClose}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors ml-1"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors ml-0.5 sm:ml-1 shrink-0"
             title="Close Lightbox"
           >
             <X className="w-5 h-5" />

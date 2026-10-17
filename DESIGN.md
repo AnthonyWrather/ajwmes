@@ -461,6 +461,12 @@ Enforcement is centralized in [`src/lib/rbac.ts`](file:///Users/anthonywrather/D
    - Baseline minimum faceplate width: **160mm**.
    - Gang scaling: Add **18mm** per gang over 4 gangs.
    - Accessory cutouts: Add **35mm** for voltmeter, **30mm** for USB/12V sockets.
+5. **Weathered Switchboard Photo Replica Pricing Engine (`calculateReplicaPanelQuote`)**:
+   - Digitizing labor & optical laser scanning: **£25.00** (1 hour diagnostic rate).
+   - Base laser cutout plate: **£35.00**.
+   - Marine switches hardware: **£8.00** per switch gang.
+   - Material surcharges: Solid Marine Teak (**+£25.00**) | Marine Birch Plywood (**+£15.00**) | Marine Acrylic (**£0.00**).
+   - Turnaround commitment: **3–5 business days** in Gosport workshop.
 
 ### 8.2 Expense Classification & Financial Rollup (`src/utils/expenseCalculations.ts`)
 Expenses are categorized into billable project disbursements vs overhead:
