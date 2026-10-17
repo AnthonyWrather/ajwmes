@@ -13,6 +13,8 @@ export class NavigationPage {
   readonly mobileReplicaTab: Locator;
   readonly desktopAdminTab: Locator;
   readonly mobileAdminTab: Locator;
+  readonly desktopPortalTab: Locator;
+  readonly mobilePortalTab: Locator;
   readonly cartButton: Locator;
   readonly signInNavButton: Locator;
   readonly userAccountButton: Locator;
@@ -26,12 +28,14 @@ export class NavigationPage {
     this.desktopDesignerTab = page.getByTestId('nav-tab-designer');
     this.desktopReplicaTab = page.getByTestId('nav-tab-replica');
     this.desktopAdminTab = page.getByTestId('nav-tab-admin');
+    this.desktopPortalTab = page.getByTestId('nav-tab-portal');
     this.mobileMenuToggle = page.getByTestId('mobile-menu-toggle');
     this.mobileStoreTab = page.getByTestId('mobile-nav-tab-store');
     this.mobileTrackerTab = page.getByTestId('mobile-nav-tab-tracker');
     this.mobileDesignerTab = page.getByTestId('mobile-nav-tab-designer');
     this.mobileReplicaTab = page.getByTestId('mobile-nav-tab-replica');
     this.mobileAdminTab = page.getByTestId('mobile-nav-tab-admin');
+    this.mobilePortalTab = page.getByTestId('mobile-nav-tab-portal');
     this.cartButton = page.getByTestId('nav-cart-button');
     this.signInNavButton = page.getByTestId('nav-signin-button');
     this.userAccountButton = page.getByTestId('user-account-button');
@@ -127,6 +131,20 @@ export class NavigationPage {
     } else {
       await expect(this.desktopAdminTab).toBeVisible({ timeout: 10000 });
       await this.desktopAdminTab.click({ force: true });
+    }
+  }
+
+  async navigateToPortal(): Promise<void> {
+    const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
+
+    if (isMobile) {
+      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
+      await this.mobileMenuToggle.click({ force: true });
+      await expect(this.mobilePortalTab).toBeVisible({ timeout: 10000 });
+      await this.mobilePortalTab.click({ force: true });
+    } else {
+      await expect(this.desktopPortalTab).toBeVisible({ timeout: 10000 });
+      await this.desktopPortalTab.click({ force: true });
     }
   }
 

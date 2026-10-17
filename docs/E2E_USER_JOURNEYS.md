@@ -315,9 +315,51 @@ graph TD
 
 ---
 
+### Journey 11: Boat Owner Vessel Portal & Certificate PDF Export (UJ-09)
+- **Test File:** [`tests/vessel-portal-pdf.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/vessel-portal-pdf.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `VesselPortalPage`, `StorePage`
+- **Target Personas:** `client` (`d.mercer@solent-sail.co.uk`), `admin`
+
+#### Scenarios Verified:
+1. **Client Authentication & Vessel Portal Access**:
+   - Authenticate as registered Boat Owner client (David Mercer) via AuthModal quick-persona chip.
+   - Assert user badge reflects client identity and navigate directly to `/portal` via responsive navigation.
+   - Verify active primary vessel (`Windbird III`, Moody 33) renders with technical specs and owner UUID.
+2. **Multi-Vessel Switching & Spec Isolation**:
+   - Switch between multiple owned vessels in dropdown (`Solent Skiff` catamaran tender vs `Windbird III` cruising yacht).
+   - Assert specifications dynamically update and maintain isolation across vessels.
+3. **Sub-Tab Navigation (Specs, Jobs & Activity, Postal Orders)**:
+   - Navigate to Jobs & Activity sub-tab: verify past rewire jobs (`AJW-2026-088`), diagnostic hours, and total costs.
+   - Navigate to Postal Orders sub-tab: verify workshop postal consignments (`AJW-POST-2845`) and real-time carrier status.
+   - Return seamlessly to Technical Specs & PDF sub-tab.
+4. **Live Specification Category Navigation & Optimistic Editing**:
+   - Inspect DC Batteries & Charging category (200Ah LiFePO4, SmartSolar MPPT, Orion DC-DC).
+   - Inspect 230V AC Shore Power & Cathodic Galvanic Isolation category.
+   - Enter edit mode under Overview category: update beam (`3.55m`) and draft (`1.48m`), save specs, and verify persistence.
+5. **Electrical History Audit Log Creation**:
+   - Record a new chronological maintenance entry (Victron SmartSolar MPPT 100/30 replacement with 40A MIDI fuse).
+   - Verify immediate rendering in timeline with itemized parts chips (`16mm² Oceanflex Cable`).
+6. **Additional Boat Portfolio Registration**:
+   - Register a third vessel (`Solent Osprey`, Sadler 34) with build year, battery chemistry, marina, and berth.
+   - Verify instant activation in portal and switcher dropdown.
+7. **On-Board Print Station (PDF) Configuration & Interactive Preview**:
+   - Open On-Board Technical Print Station modal.
+   - Toggle layout modes (*Single-Page Chart Table Summary* vs *Multi-Page Comprehensive Dossier*).
+   - Toggle color themes (*Solent Admiralty Navy* vs *High-Contrast Monochrome Ink Saver*).
+   - Set custom skipper note and verify real-time interactive preview canvas (`WINDBIRD III`, `12V DC SYSTEM`, emergency isolation notices).
+8. **Client-Side jsPDF Generation & Direct Print Routines**:
+   - Trigger client-side jsPDF download, verifying blob creation without server round-trips.
+   - Trigger direct print routine and dismiss modal cleanly.
+9. **Unregistered Boat Owner Onboarding State & Store Fallback**:
+   - Sign off and register a brand new boat owner account without vessels.
+   - Verify landing on Vessel Portal displaying empty state card ("No Vessel Registered Yet").
+   - Click "Order Parts from Workshop" button and confirm seamless store redirection.
+
+---
+
 ## 2. Future User Journeys Requiring Test Coverage
 
-The following table identifies the remaining operational workflows across AJWMES to be automated:
+The following table identifies the operational workflows across AJWMES and their automation status:
 
 | Journey ID | Journey Title | Target Route | Primary Persona | Business Impact | Test Complexity | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -327,7 +369,7 @@ The following table identifies the remaining operational workflows across AJWMES
 | **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | Medium-High (Financial rollups, POs) | **Done (Automated)** |
 | **UJ-07** | **Custom Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Done (Automated)** |
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | **Done (Automated)** |
-| **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | **Next Recommended** |
+| **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | **Done (Automated)** |
 | **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | **Done (Automated)** |
 
 ---
@@ -346,23 +388,19 @@ gantt
     Consignment Tracker Timeline (UJ-06)          :done, 2026-10-17, 1d
     Custom Switch Panel CAD Designer (UJ-07)      :done, 2026-10-18, 1d
     Photo Replica Quoter (UJ-08)                  :done, 2026-10-18, 1d
-    Vessel Portal & PDF Certificate Export (UJ-09):crit, active, 2026-10-20, 2d
+    Vessel Portal & PDF Certificate Export (UJ-09):done, 2026-10-20, 1d
     section Phase 3 (Admin & Resilience)
     Offline Pontoon Resilience & Mutation Sync (UJ-11):done, 2026-10-17, 1d
 ```
 
 ---
 
-## 4. Recommended Next Journey to Implement
+## 4. Recommended Next User Journey & Operational Enhancements
 
-### Recommendation: **Journey 8 — Boat Owner Vessel Portal & Certificate PDF Export (UJ-09)**
-**File Target:** `tests/vessel-portal-pdf.spec.ts`  
-**Page Object Model:** `tests/pages/VesselPortalPage.ts`
+All 8 primary core user journeys across AJWMES are now 100% automated with end-to-end browser specifications and unit test suites. Recommended candidate extensions include:
 
-### Architectural & Business Rationale:
-1. **Solent Boat Owner Vessel Portfolio**:
-   - Boat owners track their registered vessels, electrical system configurations (12V/24V/48V DC, 230V AC Shorepower, battery chemistries: AGM, Gel, LiFePO4), and service history.
-2. **Client-Side jsPDF Marine Electrical Certificate Generation**:
-   - Pure function `src/utils/generateVesselPdf.ts` generates standardized marine electrical diagnostic summaries, work completed logs, and compliance certificates.
-3. **Multi-Vessel Switching & Spec Updates**:
-   - Tests verify selecting active vessels, updating LOA/beam/draft specifications, and verifying PDF blob generation across mobile and desktop environments.
+### Future Candidate: **Technician-to-Client Pontoon Job Discussion & Live Photo Synchronization (UJ-12)**
+- **Target Routes:** `/technician` ↔ `/portal`
+- **Target Personas:** `technician` (`jack.tech@ajwmes.co.uk`) ↔ `client` (`d.mercer@solent-sail.co.uk`)
+- **Focus:** Real-time bi-directional chat threads, quote approvals, deposit checkout, and diagnostic photo attachments shared between the pontoon technician and boat owner.
+

@@ -259,7 +259,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
   };
 
   return (
-    <div className="w-full space-y-6 text-slate-100">
+    <div data-testid="client-vessel-portal" className="w-full space-y-6 text-slate-100">
       {/* Portal Top Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div className="space-y-1">
@@ -274,7 +274,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">
+            <h2 data-testid="portal-vessel-title" className="text-xl sm:text-2xl font-bold text-white">
               {hasBoats ? (activeVessel?.vesselName || 'My Vessel') : (clientName ? `${clientName}'s Account` : 'Boat Owner Portal')}
             </h2>
 
@@ -282,6 +282,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
             {allUserVessels.length > 1 && (
               <div className="flex items-center gap-2">
                 <select
+                  data-testid="vessel-switcher-select"
                   value={vesselFilterId}
                   onChange={(e) => {
                     const id = e.target.value;
@@ -301,6 +302,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                 </select>
 
                 <button
+                  data-testid="portal-add-boat-button"
                   onClick={() => setShowAddBoatModal(true)}
                   className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 text-sky-400 border border-slate-800 hover:border-sky-500/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                   title="Register another boat to your account"
@@ -313,6 +315,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
             {allUserVessels.length === 1 && (
               <button
+                data-testid="portal-add-boat-button"
                 onClick={() => setShowAddBoatModal(true)}
                 className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 text-sky-400 border border-slate-800 hover:border-sky-500/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                 title="Register another boat to your account"
@@ -324,6 +327,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
             {!hasBoats && (
               <button
+                data-testid="portal-add-boat-button"
                 onClick={() => setShowAddBoatModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
               >
@@ -344,6 +348,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
           {/* Sub-tab Navigation */}
           <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl">
             <button
+              data-testid="portal-subtab-specs"
               onClick={() => handleTabChange('specs')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                 portalTab === 'specs' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
@@ -353,6 +358,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
               <span>Technical Specs &amp; PDF</span>
             </button>
             <button
+              data-testid="portal-subtab-jobs"
               onClick={() => handleTabChange('jobs')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors relative ${
                 portalTab === 'jobs' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
@@ -362,6 +368,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
               <span>Jobs &amp; Activity ({displayedJobs.length})</span>
             </button>
             <button
+              data-testid="portal-subtab-orders"
               onClick={() => handleTabChange('orders')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors relative ${
                 portalTab === 'orders' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
@@ -381,6 +388,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
           {/* Direct Option to Generate Visual On-Board Spec Summary PDF */}
           {hasBoats && (
             <button
+              data-testid="portal-open-pdf-station-button"
               onClick={() => setShowPdfSummaryModal(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-950 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 hover:border-sky-400 rounded-xl text-xs font-semibold shadow-sm transition-all whitespace-nowrap cursor-pointer"
               title="Generate a visual PDF summary of vessel electrical specifications suitable for on-board printing"
@@ -474,6 +482,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
               <div className="flex items-center gap-2 self-stretch md:self-auto shrink-0">
                 <button
+                  data-testid="portal-callout-pdf-button"
                   onClick={() => setShowPdfSummaryModal(true)}
                   className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/30 transition-all whitespace-nowrap cursor-pointer"
                 >
@@ -760,7 +769,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
       {/* Register New Boat Modal */}
       {showAddBoatModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div data-testid="add-boat-modal" className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -786,6 +795,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                   Vessel Name *
                 </label>
                 <input
+                  data-testid="boat-name-input"
                   type="text"
                   required
                   placeholder="e.g. Windbird III, Sea Sprite, Solent Skiff"
@@ -801,6 +811,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     Make &amp; Model
                   </label>
                   <input
+                    data-testid="boat-make-model-input"
                     type="text"
                     placeholder="e.g. Moody 33, Westerly 29"
                     value={boatForm.makeModel}
@@ -813,6 +824,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     Year Built
                   </label>
                   <input
+                    data-testid="boat-year-input"
                     type="number"
                     value={boatForm.year}
                     onChange={e => setBoatForm(prev => ({ ...prev, year: Number(e.target.value) }))}
@@ -903,6 +915,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     DC System Voltage
                   </label>
                   <select
+                    data-testid="boat-voltage-select"
                     value={boatForm.systemVoltage}
                     onChange={e => setBoatForm(prev => ({ ...prev, systemVoltage: e.target.value as any }))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
@@ -916,6 +929,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     Battery Bank Type
                   </label>
                   <select
+                    data-testid="boat-battery-type-select"
                     value={boatForm.houseBatteryType}
                     onChange={e => setBoatForm(prev => ({ ...prev, houseBatteryType: e.target.value as any }))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
@@ -934,6 +948,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     Home Marina
                   </label>
                   <input
+                    data-testid="boat-marina-input"
                     type="text"
                     placeholder="e.g. Haslar Marina, Gosport Marina"
                     value={boatForm.homeMarina}
@@ -946,6 +961,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                     Berth / Pontoon
                   </label>
                   <input
+                    data-testid="boat-berth-input"
                     type="text"
                     placeholder="e.g. Pontoon C14"
                     value={boatForm.berthPontoon}
@@ -957,15 +973,17 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
 
               <div className="pt-2 flex justify-end gap-2.5">
                 <button
+                  data-testid="boat-cancel-button"
                   type="button"
                   onClick={() => setShowAddBoatModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  data-testid="boat-submit-button"
                   type="submit"
-                  className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30"
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-sky-600/30 cursor-pointer"
                 >
                   Save Vessel
                 </button>
