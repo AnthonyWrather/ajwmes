@@ -125,6 +125,9 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
           }
         }
 
+        width = Math.max(16, width);
+        height = Math.max(16, height);
+
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -141,7 +144,7 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
         ctx.drawImage(img, 0, 0, width, height);
 
         // Generate persistent Base64 DataURL
-        const previewUrl = canvas.toDataURL('image/jpeg', 0.82);
+        const previewUrl = canvas.toDataURL('image/jpeg', 0.82) || (e.target?.result as string);
 
         if (typeof canvas.toBlob === 'function') {
           canvas.toBlob(
