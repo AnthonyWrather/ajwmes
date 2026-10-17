@@ -564,7 +564,7 @@ export default function App() {
     const tabTitles: Record<string, string> = {
       home: 'Home | AJW Marine Electrical Services',
       store: 'Workshop Store & Cables | AJWMES',
-      designer: 'Laser Switch Panel Designer | AJWMES',
+      designer: 'Custom Switch Panel Designer | AJWMES',
       replica: 'Replica Boat Switch Panels | AJWMES',
       portal: 'Vessel Portal & Diagnostics | AJWMES',
       tracker: 'Track Postal Orders | AJWMES',
@@ -1450,7 +1450,7 @@ export default function App() {
             />
           )}
 
-          {/* Tab 4: Replica/Custom Switch Panel Designer */}
+          {/* Tab 4: Custom Switch Panel Designer */}
           {currentTab === 'designer' && (
             <SwitchPanelDesigner
               onOrderPanel={cfg => {

@@ -252,7 +252,7 @@ The following table identifies the remaining operational workflows across AJWMES
 | **UJ-05** | **Postal Workshop Order Fulfillment & Dispatch** | `/postal` | `postal`, `admin` | **High (P0)** | Medium (Queue, Cable cutting, Packing slip) | **Done (Automated)** |
 | **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | **Done (Automated)** |
 | **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | Medium-High (Financial rollups, POs) | **Done (Automated)** |
-| **UJ-07** | **Custom Carling Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Next Recommended** |
+| **UJ-07** | **Custom Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Next Recommended** |
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | Pending |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | Pending |
 | **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | **Done (Automated)** |
@@ -282,13 +282,13 @@ gantt
 
 ## 4. Recommended Next Journey to Implement
 
-### Recommendation: **Journey 7 — Custom Carling Switch Panel CAD Configurator**
+### Recommendation: **Journey 7 — Custom Switch Panel CAD Configurator**
 **File Target:** `tests/switch-panel-cad.spec.ts`  
 **Page Object Model:** `tests/pages/SwitchPanelCADPage.ts`
 
 ### Architectural & Business Rationale:
 1. **Interactive Marine CAD Configuration**:
-   - The Carling switch panel configurator (`/designer`) is one of AJWMES's core commercial revenue streams.
+   - The custom switch panel configurator (`/designer`) is one of AJWMES's core commercial revenue streams.
    - Customers design custom CNC-cut acrylic/aluminum switchboards with customizable rows, columns, rocker switches, circuit breakers, voltmeter apertures, and USB charging sockets.
 2. **Real-Time BOM & Electrical Pricing Rollups**:
    - Every CAD component addition dynamically impacts labor, raw material cutting surcharges, component costs, and laser engraving fees computed via `src/utils/electricalCalculations.ts`.

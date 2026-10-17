@@ -206,7 +206,7 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({ onOrde
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            Replica/Custom Switch Panel Designer
+            Custom Switch Panel Designer
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Design your bespoke marine switchboard with live scale preview, laser cut holes, and instant price estimates.

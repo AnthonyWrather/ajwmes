@@ -169,7 +169,7 @@ The codebase now includes automatic **Environment Detection & Storage Scoping**:
 
 ### In-App Environment Tools:
 - Click the **Environment badge** in the header or top banner to open the **Multi-Environment & Storage Manager**.
-- **Seed Clean Test Data**: Instantly populates realistic marine wiring jobs, Carling switch panels, and postal tracking numbers.
+- **Seed Clean Test Data**: Instantly populates realistic marine wiring jobs, custom switch panels, and postal tracking numbers.
 - **Export / Import JSON**: Easily clone test datasets between AI Studio and GitHub.
 - **Preview Channel Readiness**: Automatically adapts when deploying branch preview channels via `firebase hosting:channel:deploy <channel-name>`.
 

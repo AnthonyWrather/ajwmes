@@ -12,7 +12,7 @@ These instructions guide GitHub Copilot Chat, Pull Request reviewers, and inline
 ## Marine Domain Specifics
 - **Diagnostic Labor**: Flat billing rate is £25/hour, tracked in seconds via `calculateDiagnosticLabor()` in `src/utils/electricalCalculations.ts`.
 - **UK Telephone Validation**: Validate standard UK mobile and Solent local area codes (`023` for Portsmouth/Southampton, `01983` for Isle of Wight) via `src/utils/formValidation.ts`.
-- **Switch Panels**: Default Carling Contura rocker switches with minimum plate width of 160mm.
+- **Custom Switch Panels**: Default rocker switches with minimum plate width of 160mm.
 
 ## Automated Testing Requirements
 - Unit tests use Node's native test runner executed with `tsx --test "src/**/*.test.ts"`.

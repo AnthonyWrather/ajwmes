@@ -9,7 +9,7 @@ When developing features or modifying calculations for AJW Marine Electrical Ser
 - Calculation function: `calculateDiagnosticLabor(seconds, hourlyRate = 25)` in `src/utils/electricalCalculations.ts`.
 - Calculations must support fractional hours with 2 decimal place rounding.
 
-### 2. Switch Panel CAD Specifications
+### 2. Custom Switch Panel CAD Specifications
 - Default switches: Carling Contura II/V rocker switches.
 - Standard faceplate materials: Matte black acrylic (base) or marine teak/birch (+£25 surcharge).
 - Minimum panel width is strictly **160mm** (`calculateMinimumPanelWidth`).

@@ -106,7 +106,7 @@ export function buildWelcomeEmail(profile: UserProfile): { subject: string; html
       <h4 style="margin: 0 0 8px; color: #f59e0b;">What you can do now:</h4>
       <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 13px;">
         <li>Log & maintain your boat's permanent 12V/24V electrical specifications</li>
-        <li>Order custom Carling switch panels and laser-engraved replicas</li>
+        <li>Order custom switch panels and laser-engraved replicas</li>
         <li>Track real-time pontoon diagnostic jobs & chat directly with onboard engineers</li>
         <li>Order marine hardware, cables, and Victron components from our store</li>
       </ul>
@@ -126,7 +126,7 @@ export function buildWelcomeEmail(profile: UserProfile): { subject: string; html
     `Your vessel account (${profile.email}) is now active.\n\n` +
     `Platform highlights:\n` +
     `- Maintain permanent vessel electrical specs\n` +
-    `- Custom Carling switch panel designer\n` +
+    `- Custom switch panel designer\n` +
     `- Live pontoon diagnostic tracking at £25/hr flat rate\n\n` +
     `Access your vessel portal: https://ajwmes.co.uk\n` +
     `AJW Marine Electrical Services • 07700 900551`;

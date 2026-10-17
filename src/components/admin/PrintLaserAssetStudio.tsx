@@ -33,7 +33,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
 
     <!-- Details Box -->
     <text x="6" y="42" font-family="Arial, sans-serif" font-size="2.8" font-weight="bold">FLAT RATE: £25 / HOUR + MATERIALS</text>
-    <text x="6" y="47" font-family="Arial, sans-serif" font-size="2.2">Diagnostics · Lithium Battery Banks · Solar · Replica/Custom Switch Panels</text>
+    <text x="6" y="47" font-family="Arial, sans-serif" font-size="2.2">Diagnostics · Lithium Battery Banks · Solar · Custom Switch Panels</text>
   </g>
 </svg>`;
     } else {
@@ -57,7 +57,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
     <text x="20" y="86" font-family="Arial, sans-serif" font-size="4" font-weight="bold">• Lithium (LiFePO4) &amp; Solar Systems</text>
     <text x="20" y="92" font-family="Arial, sans-serif" font-size="3">Victron DC-DC chargers, smart shunts, solar arch &amp; MPPT controllers</text>
 
-    <text x="20" y="104" font-family="Arial, sans-serif" font-size="4" font-weight="bold">• Replica/Custom Switch Panels (Acrylic &amp; Wood)</text>
+    <text x="20" y="104" font-family="Arial, sans-serif" font-size="4" font-weight="bold">• Custom Switch Panels (Acrylic &amp; Wood)</text>
     <text x="20" y="110" font-family="Arial, sans-serif" font-size="3">Custom switchboards &amp; drop-in replacements for Westerly, Moody, Sadler</text>
 
     <text x="74" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="4" font-weight="bold">Anthony Wrather · 07700 900142</text>
@@ -220,7 +220,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
                       AJW MARINE ELECTRICAL SERVICES
                     </h4>
                     <p className="text-[11px] text-slate-300 mt-0.5">
-                      Diagnostics · Lithium &amp; Solar · Replica/Custom Switch Panels
+                      Diagnostics · Lithium &amp; Solar · Custom Switch Panels
                     </p>
                   </div>
 
@@ -312,7 +312,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
                   </span>
                 </div>
                 <div>
-                  <strong className="text-sky-300 block">3. Replica/Custom Switch Panels (Acrylic &amp; Wood)</strong>
+                  <strong className="text-sky-300 block">3. Custom Switch Panels (Acrylic &amp; Wood)</strong>
                   <span className="text-slate-400 text-[10px]">
                     Drop-in replica replacements for Westerly, Moody, Sadler yachts with Carling illuminated switches.
                   </span>

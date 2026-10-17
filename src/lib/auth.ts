@@ -68,7 +68,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: 'Has registered with the site. Can do everything a Guest can do plus order custom switch panels, record their boats details, and track ongoing work.',
     allowedFeatures: [
       'Everything Guest users can do',
-      'Order custom switch panels and replica panels',
+      'Order custom switch panels',
       'Record boat electrical specifications & equipment log',
       'Track ongoing diagnostic jobs & approve quotes',
       'Direct messaging thread with AJWMES engineers aboard vessel',
