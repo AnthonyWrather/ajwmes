@@ -118,3 +118,59 @@ export function calculateMinimumPanelWidth(gangCount: number, hasVoltmeter: bool
   const count = Math.max(1, Number.isFinite(gangCount) ? gangCount : 1);
   return Math.max(160, Math.ceil(count / 2) * 55 + (hasVoltmeter ? 45 : 0));
 }
+
+export interface ReplicaPanelQuoteParams {
+  switchCount: number;
+  materialPreference: string;
+  hasUsbCharger?: boolean;
+  hasVoltmeter?: boolean;
+}
+
+export interface ReplicaPanelQuoteResult {
+  digitizingLabor: number;
+  laserCuttingBase: number;
+  materialSurcharge: number;
+  switchesHardware: number;
+  totalMaterials: number;
+  totalEstimated: number;
+  turnaroundDays: string;
+}
+
+/**
+ * Computes an estimated quote for a weathered switchboard replica replacement.
+ * Standardizes CAD laser scanning/digitizing labor (£25.00), base laser cutout plate (£35.00),
+ * marine switch hardware (£8.00/gang), and material surcharges.
+ */
+export function calculateReplicaPanelQuote(params: ReplicaPanelQuoteParams): ReplicaPanelQuoteResult {
+  const digitizingLabor = 25.0; // 1 hour CAD scanning/digitizing at Solent £25/hr rate
+  const laserCuttingBase = 35.0;
+
+  let materialSurcharge = 0;
+  if (params?.materialPreference === 'wood_teak') {
+    materialSurcharge = 25.0;
+  } else if (params?.materialPreference === 'wood_birch') {
+    materialSurcharge = 15.0;
+  }
+
+  const rawCount = params?.switchCount;
+  const safeSwitches = Number.isFinite(rawCount) ? Math.max(1, rawCount) : 1;
+  const switchesHardware = Number((safeSwitches * 8.0).toFixed(2));
+
+  let optionalExtras = 0;
+  if (params?.hasVoltmeter) optionalExtras += 8.0;
+  if (params?.hasUsbCharger) optionalExtras += 10.0;
+
+  const totalMaterials = Number((laserCuttingBase + materialSurcharge + switchesHardware + optionalExtras).toFixed(2));
+  const totalEstimated = Number((digitizingLabor + totalMaterials).toFixed(2));
+
+  return {
+    digitizingLabor,
+    laserCuttingBase,
+    materialSurcharge,
+    switchesHardware,
+    totalMaterials,
+    totalEstimated,
+    turnaroundDays: '3–5 business days in Gosport workshop'
+  };
+}
+

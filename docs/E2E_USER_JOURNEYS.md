@@ -36,6 +36,7 @@ graph TD
         J7["7. Master Workshop Admin & Expenses (UJ-10)\n(tests/admin-workshop-management.spec.ts)"]
         J8["8. Offline Pontoon Resilience (UJ-11)\n(tests/offline-pontoon-resilience.spec.ts)"]
         J9["9. Custom Switch Panel CAD Configurator (UJ-07)\n(tests/switch-panel-cad.spec.ts)"]
+        J10["10. Weathered Switchboard Photo Replica Quoter (UJ-08)\n(tests/switchboard-photo-replica.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -47,6 +48,7 @@ graph TD
     J7 -->|"Expenses, POs, Rollups & Snapshots"| POM7["AdminDashboardPage"]
     J8 -->|"Faraday Blackout, Photo Queue & Auto-Replay"| POM8["TechnicianWorkspacePage\nCustomerSignOffModal\nTechnicianSyncBar"]
     J9 -->|"CAD Layout, SVG Export, Cart & Quote"| POM9["SwitchPanelCADPage\nCartDrawerPage\nBookingQuoteModal"]
+    J10 -->|"Presets, Live Surcharges & Lightbox"| POM10["ReplicaPanelUploaderPage\nNavigationPage\nAuthModalPage"]
 ```
 
 ---
@@ -278,6 +280,41 @@ graph TD
 
 ---
 
+### Journey 10: Weathered Switchboard Photo Replica Quoter (UJ-08)
+- **Test File:** [`tests/switchboard-photo-replica.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/switchboard-photo-replica.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `ReplicaPanelUploaderPage`, `AuthModalPage`, `AdminDashboardPage`
+- **Target Personas:** `guest`, `client`, `admin`
+
+#### Scenarios Verified:
+1. **Route Navigation & Cloud Storage Presence**:
+   - Access `/replica` via desktop navigation bar and mobile drawer.
+   - Assert `ReplicaPanelUploader` layout, cloud storage enabled badge, and turnaround commitment (3–5 Days Turnaround).
+2. **Solent Classic Yacht Presets Autocompletion**:
+   - Apply Westerly Konsort 29 template: auto-populates make (`Westerly`), model (`Konsort 29`), dimensions (`195mm x 140mm`), 8 switches, and acrylic black.
+   - Apply Sadler 32 template: updates to Sadler 32 (`220mm x 150mm`), 10 switches, and solid marine teak.
+3. **Dynamic Real-Time Estimation & Material Surcharges**:
+   - Verify pure calculation engine `calculateReplicaPanelQuote` evaluates live:
+     - Sadler 32 with 10 switches & Teak: £25 digitizing labor + £35 laser cut base + £25 teak surcharge + £80 switches hardware = **£165.00** total.
+     - Surcharge badge `+£25.00 Teak Surcharge` dynamically appears.
+     - Switching to Matte Black Acrylic removes surcharge, scaling 10 switches to **£140.00**.
+     - Scaling switch count (6 switches => **£108.00**, 8 switches => **£124.00**).
+4. **Photo Management, Lightbox & Cloud Upload**:
+   - Inspect existing reference sample photo in `ImageLightboxModal` (title, cloud asset metadata, zoom controls), then dismiss.
+   - Delete reference sample photo and verify photo card removal.
+   - Upload new weathered switchboard damage photo with simulated PNG file payload.
+   - Assert progress indicator, local/cloud storage persistence, and new photo entry rendering in the grid.
+5. **Inquiry Submission & Seamless Vessel Portal Transition**:
+   - Input specific boat requirements and mounting hole constraints in notes.
+   - Submit inquiry via `Send Replica Panel Inquiry`.
+   - Verify seamless transition to Vessel Portal (`ClientVesselPortal`).
+   - Verify the new quote is listed with service category `Replica Replacement Switchboard`, status `Quote Requested`, reference (`AJW-REP-*`), and attached switchboard photos.
+6. **Master Workshop Admin Inspection**:
+   - Authenticate as Anthony Wrather (Admin) via AuthModal.
+   - Access Master Workshop Operations Dashboard (`/admin`).
+   - Audit operational metrics and verify newly submitted Westerly Konsort replica job is present in the workshop queue.
+
+---
+
 ## 2. Future User Journeys Requiring Test Coverage
 
 The following table identifies the remaining operational workflows across AJWMES to be automated:
@@ -289,7 +326,7 @@ The following table identifies the remaining operational workflows across AJWMES
 | **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client` | **Medium (P1)** | Low-Medium (Carrier links, Search) | **Done (Automated)** |
 | **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | Medium-High (Financial rollups, POs) | **Done (Automated)** |
 | **UJ-07** | **Custom Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Done (Automated)** |
-| **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | Pending |
+| **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | **Done (Automated)** |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | **Next Recommended** |
 | **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | **Done (Automated)** |
 
@@ -308,10 +345,10 @@ gantt
     section Phase 2 (Customer Experience)
     Consignment Tracker Timeline (UJ-06)          :done, 2026-10-17, 1d
     Custom Switch Panel CAD Designer (UJ-07)      :done, 2026-10-18, 1d
+    Photo Replica Quoter (UJ-08)                  :done, 2026-10-18, 1d
     Vessel Portal & PDF Certificate Export (UJ-09):crit, active, 2026-10-20, 2d
     section Phase 3 (Admin & Resilience)
     Offline Pontoon Resilience & Mutation Sync (UJ-11):done, 2026-10-17, 1d
-    Photo Replica Quoter (UJ-08)                  :2026-10-28, 2d
 ```
 
 ---

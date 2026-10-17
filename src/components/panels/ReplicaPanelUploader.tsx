@@ -10,7 +10,14 @@ import {
   Eye, 
   Loader2, 
   ShieldCheck, 
-  FileCheck 
+  Ship,
+  Compass,
+  Calculator,
+  Clock,
+  CheckCircle2,
+  ChevronRight,
+  Layers,
+  Wrench
 } from 'lucide-react';
 import { 
   uploadSwitchPanelImage, 
@@ -19,8 +26,9 @@ import {
   formatFileSize 
 } from '../../lib/storage';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
+import { calculateReplicaPanelQuote } from '../../utils/electricalCalculations';
 
-interface PhotoEntry {
+export interface PhotoEntry {
   id: string;
   url: string;
   name: string;
@@ -29,19 +37,82 @@ interface PhotoEntry {
   isCloud: boolean;
 }
 
-interface ReplicaPanelUploaderProps {
-  onSubmitReplicaQuote: (data: {
-    boatMake: string;
-    boatModel: string;
-    dimensions: string;
-    switchCount: number;
-    materialPreference: string;
-    imageUrls: string[];
-    notes: string;
-  }) => void;
+export interface ReplicaQuoteSubmitData {
+  boatMake: string;
+  boatModel: string;
+  dimensions: string;
+  switchCount: number;
+  materialPreference: string;
+  imageUrls: string[];
+  notes: string;
+  estimatedLabor?: number;
+  estimatedMaterials?: number;
+  estimatedTotal?: number;
 }
 
-export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSubmitReplicaQuote }) => {
+export interface ReplicaPanelUploaderProps {
+  onSubmitReplicaQuote: (data: ReplicaQuoteSubmitData) => void;
+  onNavigateToPortal?: () => void;
+}
+
+export interface ClassicPreset {
+  id: string;
+  label: string;
+  make: string;
+  model: string;
+  dimensions: string;
+  switchCount: number;
+  materialPref: string;
+  notes: string;
+}
+
+export const CLASSIC_YACHT_PRESETS: ClassicPreset[] = [
+  {
+    id: 'westerly-konsort',
+    label: 'Westerly Konsort 29',
+    make: 'Westerly',
+    model: 'Konsort 29',
+    dimensions: '195mm x 140mm',
+    switchCount: 8,
+    materialPref: 'acrylic_black',
+    notes: 'Classic 1980s Westerly Konsort drop-in replacement with modern rocker switches.'
+  },
+  {
+    id: 'sadler-32',
+    label: 'Sadler 32',
+    make: 'Sadler',
+    model: '32 (1983)',
+    dimensions: '220mm x 150mm',
+    switchCount: 10,
+    materialPref: 'wood_teak',
+    notes: 'Solid teak marine switchboard replica to match interior teak companionway joinery.'
+  },
+  {
+    id: 'moody-33',
+    label: 'Moody 33',
+    make: 'Moody',
+    model: '33 Mk II',
+    dimensions: '240mm x 160mm',
+    switchCount: 12,
+    materialPref: 'acrylic_black',
+    notes: 'Drop-in replacement for original Moody electrical panel with modern push-to-reset breakers.'
+  },
+  {
+    id: 'bavaria-37',
+    label: 'Bavaria 37',
+    make: 'Bavaria',
+    model: '37 Cruiser',
+    dimensions: '260mm x 180mm',
+    switchCount: 16,
+    materialPref: 'acrylic_white',
+    notes: 'White gloss marine acrylic replacement panel with engraved circuit nomenclature.'
+  }
+];
+
+export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ 
+  onSubmitReplicaQuote,
+  onNavigateToPortal
+}) => {
   const [boatMake, setBoatMake] = useState('Westerly');
   const [boatModel, setBoatModel] = useState('Konsort 29');
   const [dimensions, setDimensions] = useState('195mm x 140mm');
@@ -76,7 +147,22 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
   const [isSubmitted, setIsSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle file uploads directly to Firebase Cloud Storage
+  // Live Pure Calculation
+  const estimatedQuote = calculateReplicaPanelQuote({
+    switchCount,
+    materialPreference: materialPref
+  });
+
+  const handleApplyPreset = (preset: ClassicPreset) => {
+    setBoatMake(preset.make);
+    setBoatModel(preset.model);
+    setDimensions(preset.dimensions);
+    setSwitchCount(preset.switchCount);
+    setMaterialPref(preset.materialPref);
+    setNotes(preset.notes);
+  };
+
+  // Handle file uploads directly to Firebase Cloud Storage (with local base64 fallback)
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -118,7 +204,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
       setTimeout(() => {
         setIsUploading(false);
         setUploadStatus('');
-      }, 1200);
+      }, 800);
     } catch (err) {
       console.error('Firebase Storage upload error:', err);
       const message = err instanceof Error ? err.message : 'Upload failed. Please check network connectivity.';
@@ -163,13 +249,16 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
       switchCount,
       materialPreference: materialPref,
       imageUrls: photos.map(p => p.url),
-      notes
+      notes,
+      estimatedLabor: estimatedQuote.digitizingLabor,
+      estimatedMaterials: estimatedQuote.totalMaterials,
+      estimatedTotal: estimatedQuote.totalEstimated
     });
     setIsSubmitted(true);
   };
 
   return (
-    <div className="w-full bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
+    <div data-testid="replica-card" className="w-full bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
       {/* Lightbox Modal */}
       <ImageLightboxModal
         isOpen={!!lightboxUrl}
@@ -181,13 +270,20 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
       />
 
       <div className="border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 mb-1">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Replica &amp; Replacement Switchboards</span>
-          <span aria-hidden="true">·</span>
-          <span className="flex items-center gap-1 text-emerald-400">
-            <Cloud className="w-3.5 h-3.5" />
-            <span>Firebase Cloud Storage Enabled</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2 text-xs font-semibold text-sky-400">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Replica &amp; Replacement Switchboards</span>
+            <span aria-hidden="true">·</span>
+            <span data-testid="replica-cloud-badge" className="flex items-center gap-1 text-emerald-400">
+              <Cloud className="w-3.5 h-3.5" />
+              <span>Firebase Cloud Storage Enabled</span>
+            </span>
+          </div>
+
+          <span data-testid="replica-turnaround-badge" className="text-[11px] font-mono text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            <span>3–5 Days Turnaround</span>
           </span>
         </div>
         <h3 className="text-xl font-bold text-white">
@@ -196,32 +292,89 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
         <p className="text-xs text-slate-400 mt-1">
           We specialize in exact drop-in replacements for Westerly, Sadler, Moody, Rival, and classic yachts. Upload photos of your old panel with approximate measurements and we will match the cutout and mounting holes.
         </p>
+
+        {/* Quick Boat Preset Pills */}
+        <div className="pt-3">
+          <span className="text-[10px] font-semibold text-slate-400 block mb-1.5 uppercase tracking-wider">
+            Popular Solent Classic Yacht Templates:
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {CLASSIC_YACHT_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                data-testid={`replica-preset-${preset.id}`}
+                onClick={() => handleApplyPreset(preset)}
+                className={`text-xs px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+                  boatMake === preset.make && boatModel === preset.model
+                    ? 'bg-sky-950 text-sky-300 border-sky-500/60 font-semibold shadow-xs shadow-sky-500/20'
+                    : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+                }`}
+              >
+                <Compass className="w-3 h-3 text-sky-400" />
+                <span>{preset.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {isSubmitted ? (
-        <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-6 text-center space-y-3">
+        <div data-testid="replica-success-card" className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-6 text-center space-y-4">
           <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto text-emerald-400">
             <Check className="w-6 h-6" />
           </div>
-          <h4 className="text-base font-bold text-white">Replica Quote Request Submitted</h4>
-          <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-            Your switchboard measurements and <strong className="text-emerald-400">{photos.length} uploaded panel photos</strong> are saved permanently in Firebase Cloud Storage. Anthony will review your photos against our Gosport laser CAD templates and send an itemized quote in your discussion thread.
-          </p>
-          <div className="pt-2">
+          <div className="space-y-1">
+            <h4 className="text-base font-bold text-white">Replica Quote Request Submitted</h4>
+            <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+              Your switchboard measurements for <strong className="text-white">{boatMake} {boatModel}</strong> and <strong className="text-emerald-400">{photos.length} uploaded panel photos</strong> are saved permanently in Firebase Cloud Storage.
+            </p>
+          </div>
+
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 max-w-sm mx-auto text-xs text-left space-y-1.5 font-mono">
+            <div className="flex justify-between text-slate-400">
+              <span>Dimensions:</span>
+              <span className="text-white font-medium">{dimensions}</span>
+            </div>
+            <div className="flex justify-between text-slate-400">
+              <span>Switch Apertures:</span>
+              <span className="text-white font-medium">{switchCount} gangs</span>
+            </div>
+            <div className="flex justify-between text-slate-400">
+              <span>Estimated Total:</span>
+              <span className="text-sky-400 font-bold">£{estimatedQuote.totalEstimated.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            {onNavigateToPortal && (
+              <button
+                type="button"
+                data-testid="replica-view-portal-btn"
+                onClick={onNavigateToPortal}
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>View Quote in Vessel Portal</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
+              type="button"
+              data-testid="replica-new-inquiry-btn"
               onClick={() => setIsSubmitted(false)}
-              className="text-xs font-semibold text-sky-400 hover:underline"
+              className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
             >
               Submit Another Inquiry
             </button>
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-5 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-slate-300 font-semibold block mb-1">Vessel Make</label>
               <input
+                data-testid="replica-make-input"
                 type="text"
                 required
                 value={boatMake}
@@ -233,6 +386,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
             <div>
               <label className="text-slate-300 font-semibold block mb-1">Model &amp; Year</label>
               <input
+                data-testid="replica-model-input"
                 type="text"
                 required
                 value={boatModel}
@@ -247,6 +401,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
             <div>
               <label className="text-slate-300 font-semibold block mb-1">Dimensions (approx.)</label>
               <input
+                data-testid="replica-dimensions-input"
                 type="text"
                 value={dimensions}
                 onChange={e => setDimensions(e.target.value)}
@@ -257,9 +412,10 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
             <div>
               <label className="text-slate-300 font-semibold block mb-1">Switch Quantity</label>
               <select
+                data-testid="replica-switch-count-select"
                 value={switchCount}
                 onChange={e => setSwitchCount(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500 cursor-pointer"
               >
                 {[4, 6, 8, 10, 12, 16].map(n => (
                   <option key={n} value={n}>{n} Switches</option>
@@ -269,20 +425,65 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
             <div>
               <label className="text-slate-300 font-semibold block mb-1">Replacement Material</label>
               <select
+                data-testid="replica-material-select"
                 value={materialPref}
                 onChange={e => setMaterialPref(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500 cursor-pointer"
               >
                 <option value="acrylic_black">Matte Black Marine Acrylic</option>
                 <option value="acrylic_white">White Gloss Marine Acrylic</option>
-                <option value="wood_teak">Solid Marine Teak</option>
-                <option value="wood_birch">Marine Birch Plywood</option>
+                <option value="wood_teak">Solid Marine Teak (+£25)</option>
+                <option value="wood_birch">Marine Birch Plywood (+£15)</option>
               </select>
             </div>
           </div>
 
+          {/* Live Dynamic Estimation Card */}
+          <div data-testid="replica-estimate-card" className="bg-slate-950/80 border border-sky-500/30 rounded-xl p-4 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+              <span className="flex items-center gap-1.5 font-bold text-white text-xs">
+                <Calculator className="w-4 h-4 text-sky-400" />
+                <span>Instant Gosport Workshop Replica Estimate</span>
+              </span>
+              <div className="flex items-center gap-2">
+                {estimatedQuote.materialSurcharge > 0 && (
+                  <span data-testid="replica-surcharge-badge" className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/40">
+                    +£{estimatedQuote.materialSurcharge.toFixed(2)} {materialPref === 'wood_teak' ? 'Teak' : 'Birch'} Surcharge
+                  </span>
+                )}
+                <span className="text-[11px] text-slate-400">Total:</span>
+                <span data-testid="replica-estimated-total" className="text-base font-extrabold text-sky-400 font-mono">
+                  £{estimatedQuote.totalEstimated.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] font-mono text-slate-300">
+              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">CAD Digitizing:</span>
+                <span data-testid="replica-labor-cost" className="font-bold text-white">£{estimatedQuote.digitizingLabor.toFixed(2)}</span>
+                <span className="text-[9px] text-slate-500 block">1hr @ £25/hr</span>
+              </div>
+              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">Laser Cut Plate:</span>
+                <span className="font-bold text-white">£{estimatedQuote.laserCuttingBase.toFixed(2)}</span>
+                <span className="text-[9px] text-slate-500 block">Base setup</span>
+              </div>
+              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">Hardware ({switchCount} Sw.):</span>
+                <span className="font-bold text-white">£{estimatedQuote.switchesHardware.toFixed(2)}</span>
+                <span className="text-[9px] text-slate-500 block">£8.00 / switch</span>
+              </div>
+              <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">Materials Subtotal:</span>
+                <span data-testid="replica-materials-cost" className="font-bold text-emerald-400">£{estimatedQuote.totalMaterials.toFixed(2)}</span>
+                <span className="text-[9px] text-slate-500 block">Hardware &amp; plate</span>
+              </div>
+            </div>
+          </div>
+
           {/* Firebase Storage Photo Upload Box */}
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-slate-300 font-semibold block">
@@ -308,7 +509,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
                 <button
                   type="button"
                   onClick={() => setUploadError(null)}
-                  className="text-xs text-rose-400 hover:underline"
+                  className="text-xs text-rose-400 hover:underline cursor-pointer"
                 >
                   Dismiss
                 </button>
@@ -317,7 +518,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
 
             {/* Upload Progress Bar */}
             {isUploading && (
-              <div className="bg-slate-950 border border-sky-500/40 rounded-xl p-3.5 space-y-2">
+              <div data-testid="replica-upload-progress" className="bg-slate-950 border border-sky-500/40 rounded-xl p-3.5 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="flex items-center gap-2 text-sky-400 font-medium">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -335,10 +536,11 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
             )}
 
             {/* Photos Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {photos.map((photo) => (
+            <div data-testid="replica-photos-grid" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {photos.map((photo, index) => (
                 <div 
-                  key={photo.id} 
+                  key={photo.id}
+                  data-testid={`replica-photo-card-${index}`}
                   className="relative aspect-4/3 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 group shadow-md"
                 >
                   <img 
@@ -361,20 +563,22 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
                     )}
                   </div>
 
-                  {/* Quick Action Overlay on Hover */}
+                  {/* Quick Action Overlay on Hover / Active */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
                       type="button"
+                      data-testid={`replica-inspect-photo-${index}`}
                       onClick={() => handleOpenLightbox(photo)}
-                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
+                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors cursor-pointer"
                       title="Inspect full resolution"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
+                      data-testid={`replica-remove-photo-${index}`}
                       onClick={() => handleRemovePhoto(photo)}
-                      className="p-1.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-lg transition-colors"
+                      className="p-1.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-lg transition-colors cursor-pointer"
                       title="Delete photo"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -389,6 +593,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
 
               {/* Drag and Drop / Add Photo Card */}
               <label 
+                data-testid="replica-upload-dropzone"
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                 onDragLeave={() => setIsDragOver(false)}
                 onDrop={(e) => {
@@ -416,6 +621,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
                 </span>
                 <input
                   ref={fileInputRef}
+                  data-testid="replica-file-upload-input"
                   type="file"
                   accept="image/*"
                   multiple
@@ -441,6 +647,7 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
           <div>
             <label className="text-slate-300 font-semibold block mb-1">Specific Notes / Circuit Changes</label>
             <textarea
+              data-testid="replica-notes-input"
               rows={3}
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -449,9 +656,13 @@ export const ReplicaPanelUploader: React.FC<ReplicaPanelUploaderProps> = ({ onSu
             />
           </div>
 
-          <div className="pt-2 flex justify-end">
+          <div className="pt-2 flex items-center justify-between">
+            <span className="text-xs text-slate-400">
+              Estimated: <strong className="text-sky-400 font-mono">£{estimatedQuote.totalEstimated.toFixed(2)}</strong> ({switchCount} circuits)
+            </span>
             <button
               type="submit"
+              data-testid="replica-submit-btn"
               disabled={isUploading}
               className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-semibold rounded-lg shadow-sm shadow-sky-600/30 transition-all flex items-center gap-2 cursor-pointer"
             >

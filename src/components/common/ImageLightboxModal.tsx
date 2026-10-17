@@ -37,6 +37,7 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
 
   return (
     <div 
+      data-testid="image-lightbox-modal"
       className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 animate-in fade-in duration-200"
       onClick={onClose}
     >
@@ -102,6 +103,7 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
             <Download className="w-4 h-4" />
           </a>
           <button
+            data-testid="image-lightbox-close"
             onClick={onClose}
             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors ml-1"
             title="Close Lightbox"

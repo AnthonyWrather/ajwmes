@@ -6,7 +6,8 @@ import {
   calculateDiagnosticTotal,
   formatStopwatchTime,
   calculateSwitchPanelPrice,
-  calculateMinimumPanelWidth
+  calculateMinimumPanelWidth,
+  calculateReplicaPanelQuote
 } from './electricalCalculations';
 import { MaterialLineItem, SwitchPanelConfig } from '../types';
 
@@ -204,4 +205,84 @@ describe('electricalCalculations', () => {
       assert.equal(calculateMinimumPanelWidth(8, true), 265);
     });
   });
+
+  describe('calculateReplicaPanelQuote', () => {
+    it('calculates baseline replica quote for 8-gang matte black acrylic', () => {
+      const quote = calculateReplicaPanelQuote({
+        switchCount: 8,
+        materialPreference: 'acrylic_black'
+      });
+
+      assert.equal(quote.digitizingLabor, 25.0);
+      assert.equal(quote.laserCuttingBase, 35.0);
+      assert.equal(quote.materialSurcharge, 0);
+      assert.equal(quote.switchesHardware, 64.0); // 8 * 8
+      assert.equal(quote.totalMaterials, 99.0); // 35 + 64
+      assert.equal(quote.totalEstimated, 124.0); // 25 + 99
+      assert.match(quote.turnaroundDays, /3–5 business days/);
+    });
+
+    it('adds material surcharge for solid marine teak (+£25) and birch (+£15)', () => {
+      const teakQuote = calculateReplicaPanelQuote({
+        switchCount: 8,
+        materialPreference: 'wood_teak'
+      });
+      assert.equal(teakQuote.materialSurcharge, 25.0);
+      assert.equal(teakQuote.totalMaterials, 124.0); // 35 + 25 + 64
+      assert.equal(teakQuote.totalEstimated, 149.0); // 25 + 124
+
+      const birchQuote = calculateReplicaPanelQuote({
+        switchCount: 8,
+        materialPreference: 'wood_birch'
+      });
+      assert.equal(birchQuote.materialSurcharge, 15.0);
+      assert.equal(birchQuote.totalMaterials, 114.0); // 35 + 15 + 64
+      assert.equal(birchQuote.totalEstimated, 139.0); // 25 + 114
+    });
+
+    it('scales hardware costs with switch count (4, 6, 12, 16)', () => {
+      const fourSwitchQuote = calculateReplicaPanelQuote({
+        switchCount: 4,
+        materialPreference: 'acrylic_black'
+      });
+      // 25 labor + 35 base + 32 switches = 92
+      assert.equal(fourSwitchQuote.switchesHardware, 32.0);
+      assert.equal(fourSwitchQuote.totalEstimated, 92.0);
+
+      const sixteenSwitchQuote = calculateReplicaPanelQuote({
+        switchCount: 16,
+        materialPreference: 'acrylic_black'
+      });
+      // 25 labor + 35 base + 128 switches = 188
+      assert.equal(sixteenSwitchQuote.switchesHardware, 128.0);
+      assert.equal(sixteenSwitchQuote.totalEstimated, 188.0);
+    });
+
+    it('includes optional voltmeter (+£8) and dual USB charger (+£10) cutouts', () => {
+      const quoteWithExtras = calculateReplicaPanelQuote({
+        switchCount: 8,
+        materialPreference: 'acrylic_black',
+        hasVoltmeter: true,
+        hasUsbCharger: true
+      });
+      // 35 base + 64 switches + 8 voltmeter + 10 USB = 117 materials
+      assert.equal(quoteWithExtras.totalMaterials, 117.0);
+      assert.equal(quoteWithExtras.totalEstimated, 142.0); // 25 + 117
+    });
+
+    it('sanitizes non-positive or NaN switch counts to safe minimum 1 switch', () => {
+      const zeroQuote = calculateReplicaPanelQuote({
+        switchCount: 0,
+        materialPreference: 'acrylic_black'
+      });
+      assert.equal(zeroQuote.switchesHardware, 8.0); // 1 switch fallback
+
+      const nanQuote = calculateReplicaPanelQuote({
+        switchCount: NaN,
+        materialPreference: 'acrylic_black'
+      });
+      assert.equal(nanQuote.switchesHardware, 8.0);
+    });
+  });
 });
+
