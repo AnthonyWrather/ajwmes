@@ -168,10 +168,15 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
             .catch(() => reject(new Error('Canvas compression to blob failed')));
         }
       };
-      img.onerror = () => reject(new Error('Failed to load image into DOM element'));
+      img.onerror = () => {
+        const rawDataUrl = e.target?.result as string;
+        resolve({ blob: file, previewUrl: rawDataUrl });
+      };
       img.src = e.target?.result as string;
     };
-    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.onerror = () => {
+      resolve({ blob: file, previewUrl: '' });
+    };
     reader.readAsDataURL(file);
   });
 }
