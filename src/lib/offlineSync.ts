@@ -143,17 +143,27 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
         // Generate persistent Base64 DataURL
         const previewUrl = canvas.toDataURL('image/jpeg', 0.82);
 
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Canvas compression to blob failed'));
-              return;
-            }
-            resolve({ blob, previewUrl });
-          },
-          'image/jpeg',
-          0.82
-        );
+        if (typeof canvas.toBlob === 'function') {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                fetch(previewUrl)
+                  .then(r => r.blob())
+                  .then(b => resolve({ blob: b, previewUrl }))
+                  .catch(() => reject(new Error('Canvas compression to blob failed')));
+                return;
+              }
+              resolve({ blob, previewUrl });
+            },
+            'image/jpeg',
+            0.82
+          );
+        } else {
+          fetch(previewUrl)
+            .then(r => r.blob())
+            .then(b => resolve({ blob: b, previewUrl }))
+            .catch(() => reject(new Error('Canvas compression to blob failed')));
+        }
       };
       img.onerror = () => reject(new Error('Failed to load image into DOM element'));
       img.src = e.target?.result as string;

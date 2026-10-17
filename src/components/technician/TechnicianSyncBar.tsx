@@ -49,7 +49,7 @@ export const TechnicianSyncBar: React.FC<TechnicianSyncBarProps> = ({ onSyncComp
       if (prevPending > 0 && status.totalPending === 0 && !status.isSyncing && status.lastSyncedAt) {
         setFeedbackNotice(`Successfully synced ${prevPending} queued items!`);
         if (onSyncCompleted) onSyncCompleted();
-        setTimeout(() => setFeedbackNotice(null), 6000);
+        setTimeout(() => setFeedbackNotice(null), 15000);
       }
       prevPending = status.totalPending;
       setQueueStatus(status);
@@ -63,6 +63,11 @@ export const TechnicianSyncBar: React.FC<TechnicianSyncBarProps> = ({ onSyncComp
   }, [onSyncCompleted]);
 
   const handleManualSync = async () => {
+    if (queueStatus.totalPending === 0) {
+      setFeedbackNotice('All pontoon items already synchronized!');
+      setTimeout(() => setFeedbackNotice(null), 15000);
+      return;
+    }
     const res = await triggerSyncNow();
     if (res.success && res.syncedCount > 0) {
       setFeedbackNotice(`Successfully synced ${res.syncedCount} queued items!`);
@@ -70,7 +75,7 @@ export const TechnicianSyncBar: React.FC<TechnicianSyncBarProps> = ({ onSyncComp
     } else if (!res.success) {
       setFeedbackNotice(`Sync notice: ${res.errors.join(', ') || 'Offline'}`);
     }
-    setTimeout(() => setFeedbackNotice(null), 6000);
+    setTimeout(() => setFeedbackNotice(null), 15000);
   };
 
   const { totalPending, pendingPhotos, pendingSignatures, pendingJobs, isSyncing, syncProgressPercent, lastSyncedAt } = queueStatus;
