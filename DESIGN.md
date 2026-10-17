@@ -524,7 +524,7 @@ graph BT
         
         Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix Conformance Tests\n- Environment Partition Prefix Routing"]
         
-        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline"]
+        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline\n- performance-architecture-optimization.spec.ts"]
     end
 ```
 
