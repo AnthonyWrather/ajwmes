@@ -56,6 +56,18 @@ export class AuthModalPage {
     await expect(this.authModal).not.toBeVisible({ timeout: 10000 });
   }
 
+  async selectTestPersona(email: string, password: string = 'ajwmes2026'): Promise<void> {
+    const chip = this.page.getByRole('button', { name: new RegExp(email, 'i') });
+    if (await chip.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await chip.click();
+      await this.signInSubmitButton.click({ force: true });
+      await expect(this.authModal).not.toBeVisible({ timeout: 10000 });
+      return;
+    }
+    await this.signIn(email, password);
+  }
+
+
   async switchToRegisterTab(): Promise<void> {
     await expect(this.registerTab).toBeVisible();
     await this.registerTab.click();
@@ -78,5 +90,6 @@ export class AuthModalPage {
 
     await this.regSubmitButton.scrollIntoViewIfNeeded();
     await this.regSubmitButton.click({ force: true });
+    await expect(this.authModal).not.toBeVisible({ timeout: 10000 });
   }
 }

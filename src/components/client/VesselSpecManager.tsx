@@ -104,7 +104,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
   };
 
   return (
-    <div className="w-full space-y-6 text-slate-100">
+    <div data-testid="vessel-spec-manager" className="w-full space-y-6 text-slate-100">
       {/* Top Header Card */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -129,8 +129,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
           {!isEditing ? (
             <>
               <button
+                data-testid="vessel-open-print-station-button"
                 onClick={handleOpenPrintStation}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/40 rounded-xl text-xs font-semibold shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/40 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
                 title="Generate visual PDF summary of electrical specifications suitable for on-board printing"
               >
                 <Printer className="w-3.5 h-3.5 text-sky-400" />
@@ -147,9 +148,10 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
               </button>
 
               <button
+                data-testid="vessel-direct-pdf-button"
                 onClick={handleDownloadPdf}
                 disabled={isGeneratingPdf}
-                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
                 title="Direct PDF download"
               >
                 <FileDown className="w-3.5 h-3.5 text-slate-400" />
@@ -182,7 +184,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
       </div>
 
       {saveSuccess && (
-        <div className="p-3 bg-emerald-950/60 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 flex items-center gap-2 animate-in fade-in duration-200">
+        <div data-testid="vessel-save-success" className="p-3 bg-emerald-950/60 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 flex items-center gap-2 animate-in fade-in duration-200">
           <Check className="w-4 h-4 text-emerald-400" />
           <span>Vessel electrical configuration updated and saved to your portal!</span>
         </div>
@@ -191,8 +193,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
       {/* Category Pills Navigation */}
       <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto scrollbar-none">
         <button
+          data-testid="vessel-tab-overview"
           onClick={() => setActiveCategory('overview')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors cursor-pointer ${
             activeCategory === 'overview' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -200,8 +203,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
           <span>Vessel Details</span>
         </button>
         <button
+          data-testid="vessel-tab-dc"
           onClick={() => setActiveCategory('dc_power')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors cursor-pointer ${
             activeCategory === 'dc_power' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -209,8 +213,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
           <span>DC Batteries &amp; Charging</span>
         </button>
         <button
+          data-testid="vessel-tab-ac"
           onClick={() => setActiveCategory('ac_safety')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors cursor-pointer ${
             activeCategory === 'ac_safety' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -218,8 +223,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
           <span>AC Shore &amp; Galvanic Safety</span>
         </button>
         <button
+          data-testid="vessel-tab-nav"
           onClick={() => setActiveCategory('nav_electronics')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors cursor-pointer ${
             activeCategory === 'nav_electronics' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -227,8 +233,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
           <span>Navigation &amp; Panels</span>
         </button>
         <button
+          data-testid="vessel-tab-history"
           onClick={() => setActiveCategory('history')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors cursor-pointer ${
             activeCategory === 'history' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -548,6 +555,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 <label className="text-slate-400 font-semibold block mb-1">House Battery Chemistry</label>
                 {isEditing ? (
                   <select
+                    data-testid="vessel-edit-battery-type"
                     value={formData.houseBatteryType}
                     onChange={e => handleFieldChange('houseBatteryType', e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 font-medium"
@@ -568,6 +576,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 <label className="text-slate-400 font-semibold block mb-1">Domestic Capacity (Amp-Hours)</label>
                 {isEditing ? (
                   <input
+                    data-testid="vessel-edit-battery-capacity"
                     type="number"
                     value={formData.houseCapacityAh}
                     onChange={e => handleFieldChange('houseCapacityAh', Number(e.target.value))}
@@ -692,6 +701,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 {isEditing ? (
                   <div className="flex gap-2">
                     <input
+                      data-testid="vessel-edit-solar-watts"
                       type="number"
                       value={formData.solarWatts}
                       onChange={e => handleFieldChange('solarWatts', Number(e.target.value))}
@@ -930,8 +940,9 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 </button>
 
                 <button
+                  data-testid="add-log-entry-button"
                   onClick={() => setShowAddLogModal(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Log Electrical Upgrade</span>
@@ -991,7 +1002,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
 
       {/* Add New History Log Entry Modal */}
       {showAddLogModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div data-testid="add-log-modal" className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 max-w-lg w-full rounded-3xl p-6 text-slate-100 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -1011,6 +1022,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Date</label>
                   <input
+                    data-testid="log-date-input"
                     type="date"
                     required
                     value={newLogDate}
@@ -1021,9 +1033,10 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Work Category</label>
                   <select
+                    data-testid="log-category-select"
                     value={newLogCategory}
                     onChange={e => setNewLogCategory(e.target.value as any)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                   >
                     <option value="battery_upgrade">Battery Bank Upgrade</option>
                     <option value="solar">Solar &amp; Charging Array</option>
@@ -1039,6 +1052,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">Upgrade / Work Title</label>
                 <input
+                  data-testid="log-title-input"
                   type="text"
                   required
                   placeholder="e.g. Installed Victron SmartShunt on house bank"
@@ -1051,6 +1065,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">Electrician / Contractor</label>
                 <input
+                  data-testid="log-contractor-input"
                   type="text"
                   value={newLogContractor}
                   onChange={e => setNewLogContractor(e.target.value)}
@@ -1062,6 +1077,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">Technical Work Description</label>
                 <textarea
+                  data-testid="log-desc-input"
                   rows={3}
                   required
                   placeholder="Details of the installation, wiring gauges used, fuses fitted, or test results..."
@@ -1074,6 +1090,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">Components Fitted (comma separated)</label>
                 <input
+                  data-testid="log-parts-input"
                   type="text"
                   placeholder="Victron SmartShunt, 35mm² cable, 150A ANL fuse"
                   value={newLogParts}
@@ -1084,15 +1101,17 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
 
               <div className="pt-2 flex justify-end gap-2">
                 <button
+                  data-testid="log-cancel-button"
                   type="button"
                   onClick={() => setShowAddLogModal(false)}
-                  className="px-4 py-2 text-slate-400 hover:text-white"
+                  className="px-4 py-2 text-slate-400 hover:text-white cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  data-testid="log-submit-button"
                   type="submit"
-                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl shadow-sm transition-all"
+                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
                 >
                   Save Entry to Vessel History
                 </button>

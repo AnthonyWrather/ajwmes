@@ -83,7 +83,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div data-testid="vessel-pdf-modal" className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl text-slate-100 flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="p-5 sm:p-6 bg-slate-950 border-b border-slate-800 flex items-start justify-between gap-4">
@@ -110,8 +110,9 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
           </div>
 
           <button
+            data-testid="vessel-pdf-close-button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
             title="Close dialog"
           >
             <X className="w-5 h-5" />
@@ -122,8 +123,9 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
         <div className="px-6 py-2.5 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl">
             <button
+              data-testid="pdf-tab-options"
               onClick={() => setActiveTab('options')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 activeTab === 'options'
                   ? 'bg-sky-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -133,8 +135,9 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
               <span>Print Settings &amp; Format</span>
             </button>
             <button
+              data-testid="pdf-tab-preview"
               onClick={() => setActiveTab('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 activeTab === 'preview'
                   ? 'bg-sky-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -162,6 +165,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
+                    data-testid="pdf-mode-single-page"
                     onClick={() => setMode('single_page_summary')}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                       mode === 'single_page_summary'
@@ -184,6 +188,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                   </div>
 
                   <div
+                    data-testid="pdf-mode-comprehensive"
                     onClick={() => setMode('comprehensive')}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                       mode === 'comprehensive'
@@ -214,6 +219,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
+                    data-testid="pdf-theme-navy"
                     onClick={() => setColorTheme('marine_navy')}
                     className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
                       colorTheme === 'marine_navy'
@@ -231,6 +237,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                   </div>
 
                   <div
+                    data-testid="pdf-theme-mono"
                     onClick={() => setColorTheme('high_contrast_mono')}
                     className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
                       colorTheme === 'high_contrast_mono'
@@ -257,10 +264,11 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                   <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 cursor-pointer hover:border-slate-700">
                     <input
+                      data-testid="pdf-toggle-emergency"
                       type="checkbox"
                       checked={includeEmergencyNotes}
                       onChange={(e) => setIncludeEmergencyNotes(e.target.checked)}
-                      className="mt-0.5 rounded text-sky-600 focus:ring-0"
+                      className="mt-0.5 rounded text-sky-600 focus:ring-0 cursor-pointer"
                     />
                     <div>
                       <span className="font-semibold text-white block">Emergency Isolation Protocol</span>
@@ -270,10 +278,11 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
 
                   <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 cursor-pointer hover:border-slate-700">
                     <input
+                      data-testid="pdf-toggle-fuses"
                       type="checkbox"
                       checked={includeCriticalFuses}
                       onChange={(e) => setIncludeCriticalFuses(e.target.checked)}
-                      className="mt-0.5 rounded text-sky-600 focus:ring-0"
+                      className="mt-0.5 rounded text-sky-600 focus:ring-0 cursor-pointer"
                     />
                     <div>
                       <span className="font-semibold text-white block">Critical Fuse Ratings Table</span>
@@ -284,10 +293,11 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                   {mode === 'comprehensive' && (
                     <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 cursor-pointer hover:border-slate-700 sm:col-span-2">
                       <input
+                        data-testid="pdf-toggle-history"
                         type="checkbox"
                         checked={includeHistory}
                         onChange={(e) => setIncludeHistory(e.target.checked)}
-                        className="mt-0.5 rounded text-sky-600 focus:ring-0"
+                        className="mt-0.5 rounded text-sky-600 focus:ring-0 cursor-pointer"
                       />
                       <div>
                         <span className="font-semibold text-white block">Full Chronological Electrical History Audit Trail</span>
@@ -304,6 +314,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
                   Add Custom Skipper / On-Board Location Note (Optional)
                 </label>
                 <input
+                  data-testid="pdf-custom-notes-input"
                   type="text"
                   placeholder="e.g. Spare fuses kept in portside chart drawer. Master isolator key located next to companionway."
                   value={customNotes}
@@ -327,7 +338,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
               </div>
 
               {/* Visual Document Canvas Simulation */}
-              <div className="bg-white text-slate-900 rounded-2xl shadow-xl p-6 sm:p-8 font-sans border border-slate-300 max-w-2xl mx-auto space-y-4">
+              <div data-testid="pdf-preview-canvas" className="bg-white text-slate-900 rounded-2xl shadow-xl p-6 sm:p-8 font-sans border border-slate-300 max-w-2xl mx-auto space-y-4">
                 {/* Header Bar */}
                 <div className={`p-4 rounded-xl text-white flex justify-between items-start ${
                   colorTheme === 'high_contrast_mono' ? 'bg-slate-900' : 'bg-[#0A192F]'
@@ -444,7 +455,7 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
           )}
 
           {downloadSuccess && (
-            <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl text-xs text-emerald-300 flex items-center gap-2">
+            <div data-testid="pdf-download-success" className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl text-xs text-emerald-300 flex items-center gap-2 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               <span>PDF document successfully generated and downloaded to your device!</span>
             </div>
@@ -460,9 +471,10 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
+              data-testid="pdf-print-button"
               onClick={handlePrint}
               disabled={isPrinting}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition-colors shadow-sm"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition-colors shadow-sm cursor-pointer"
               title="Print directly to local or Wi-Fi boat printer"
             >
               <Printer className="w-4 h-4 text-sky-400" />
@@ -470,9 +482,10 @@ export const VesselPdfSummaryModal: React.FC<VesselPdfSummaryModalProps> = ({
             </button>
 
             <button
+              data-testid="pdf-download-button"
               onClick={handleDownload}
               disabled={isGenerating}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-600/30 transition-all"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
             >
               <Download className="w-4 h-4" />
               <span>{isGenerating ? 'Rendering PDF...' : 'Download PDF Spec'}</span>

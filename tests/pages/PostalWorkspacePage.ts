@@ -147,13 +147,14 @@ export class PostalWorkspacePage {
   }
 
   async dispatchWithTracking(carrier: string, trackingNumber: string): Promise<void> {
-    await this.carrierSelect.scrollIntoViewIfNeeded();
     await expect(this.carrierSelect).toBeVisible({ timeout: 10000 });
+    await this.carrierSelect.scrollIntoViewIfNeeded();
     await this.carrierSelect.selectOption(carrier);
+    await expect(this.trackingNumberInput).toBeVisible({ timeout: 10000 });
     await this.trackingNumberInput.scrollIntoViewIfNeeded();
     await this.trackingNumberInput.fill(trackingNumber);
+    await expect(this.confirmDispatchButton).toBeVisible({ timeout: 10000 });
     await this.confirmDispatchButton.scrollIntoViewIfNeeded();
-    await expect(this.confirmDispatchButton).toBeVisible();
     await this.confirmDispatchButton.click({ force: true });
   }
 
