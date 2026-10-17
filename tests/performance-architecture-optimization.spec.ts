@@ -66,7 +66,7 @@ test.describe('Performance, Code-Splitting Architecture & Asset Integrity E2E Ma
     });
 
     await test.step('5. Navigate to lazy-loaded Technician Workspace as Admin', async () => {
-      await page.getByTestId('nav-tab-technician').or(page.getByRole('button', { name: /technician workstation/i })).first().click();
+      await nav.navigateToTechnician();
       await expect(page.getByText('Solent Field Technician Workstation')).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('Field Technician Mode Active')).toBeVisible({ timeout: 10000 });
     });
