@@ -256,16 +256,16 @@ export class TechnicianWorkspacePage {
 
   // --- Pontoon Offline & Sync Methods ---
 
-  async expectOfflineState(): Promise<void> {
+  async expectOfflineState(options?: { timeout?: number }): Promise<void> {
     await expect(this.syncBar).toBeVisible();
-    await expect(this.syncStatusText).toHaveText('Vessel Pontoon Offline Mode');
-    await expect(this.syncOnlineStatus).toHaveText('Disconnected');
+    await expect(this.syncStatusText).toHaveText('Vessel Pontoon Offline Mode', options);
+    await expect(this.syncOnlineStatus).toHaveText('Disconnected', options);
   }
 
-  async expectConnectedState(): Promise<void> {
+  async expectConnectedState(options?: { timeout?: number }): Promise<void> {
     await expect(this.syncBar).toBeVisible();
-    await expect(this.syncStatusText).toHaveText('Pontoon Sync Active & Connected');
-    await expect(this.syncOnlineStatus).toHaveText('Online');
+    await expect(this.syncStatusText).toHaveText('Pontoon Sync Active & Connected', options);
+    await expect(this.syncOnlineStatus).toHaveText('Online', options);
   }
 
   async uploadFitmentPhoto(payload: { name: string; mimeType: string; buffer: Buffer }): Promise<void> {

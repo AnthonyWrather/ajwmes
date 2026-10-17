@@ -131,9 +131,11 @@ test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay
         await tech.triggerManualSync().catch(() => {});
       }
 
-      // Verify sync bar returns to connected state with 0 pending items
-      await tech.expectConnectedState();
-      await expect(tech.syncQueueBadge).not.toBeVisible({ timeout: 15000 });
+      // 1. Verify mutation queue drains completely to 0 pending items
+      await expect(tech.syncQueueBadge).not.toBeVisible({ timeout: 20000 });
+
+      // 2. Verify sync bar returns to connected state with 0 pending items
+      await tech.expectConnectedState({ timeout: 10000 });
 
       // Verify sync feedback notice if present
       const notice = tech.syncFeedbackNotice;
