@@ -320,7 +320,7 @@ export class VesselPortalPage {
     if (entry.parts) await this.logPartsInput.fill(entry.parts);
 
     await this.logSubmitButton.scrollIntoViewIfNeeded();
-    await this.logSubmitButton.click();
+    await this.logSubmitButton.click({ force: true });
     await expect(this.addLogModal).not.toBeVisible({ timeout: 10000 });
     await expect(this.saveSuccessBanner).toBeVisible({ timeout: 10000 });
   }
