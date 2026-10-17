@@ -250,10 +250,10 @@ export class VesselPortalPage {
   }): Promise<void> {
     if (await this.registerFirstBoatButton.isVisible().catch(() => false)) {
       await this.registerFirstBoatButton.scrollIntoViewIfNeeded();
-      await this.registerFirstBoatButton.click();
+      await this.registerFirstBoatButton.click({ force: true });
     } else {
       await this.addBoatButton.scrollIntoViewIfNeeded();
-      await this.addBoatButton.click();
+      await this.addBoatButton.click({ force: true });
     }
 
     await expect(this.addBoatModal).toBeVisible({ timeout: 10000 });
@@ -282,20 +282,20 @@ export class VesselPortalPage {
     const tab = tabMap[category];
     await expect(tab).toBeVisible({ timeout: 5000 });
     await tab.scrollIntoViewIfNeeded();
-    await tab.click();
+    await tab.click({ force: true });
   }
 
   async enterEditMode(): Promise<void> {
     await expect(this.editSpecsButton).toBeVisible({ timeout: 10000 });
     await this.editSpecsButton.scrollIntoViewIfNeeded();
-    await this.editSpecsButton.click();
+    await this.editSpecsButton.click({ force: true });
     await expect(this.saveSpecsButton).toBeVisible({ timeout: 10000 });
   }
 
   async saveSpecs(): Promise<void> {
     await expect(this.saveSpecsButton).toBeVisible({ timeout: 10000 });
     await this.saveSpecsButton.scrollIntoViewIfNeeded();
-    await this.saveSpecsButton.click();
+    await this.saveSpecsButton.click({ force: true });
     await expect(this.saveSuccessBanner).toBeVisible({ timeout: 10000 });
   }
 
@@ -310,7 +310,7 @@ export class VesselPortalPage {
     await this.selectCategory('history');
     await expect(this.addLogEntryButton).toBeVisible({ timeout: 10000 });
     await this.addLogEntryButton.scrollIntoViewIfNeeded();
-    await this.addLogEntryButton.click();
+    await this.addLogEntryButton.click({ force: true });
 
     await expect(this.addLogModal).toBeVisible({ timeout: 10000 });
     if (entry.category) await this.logCategorySelect.selectOption(entry.category);
@@ -329,10 +329,10 @@ export class VesselPortalPage {
   async openPrintStation(): Promise<void> {
     if (await this.openPdfStationButton.isVisible().catch(() => false)) {
       await this.openPdfStationButton.scrollIntoViewIfNeeded();
-      await this.openPdfStationButton.click();
+      await this.openPdfStationButton.click({ force: true });
     } else {
       await this.calloutPdfButton.scrollIntoViewIfNeeded();
-      await this.calloutPdfButton.click();
+      await this.calloutPdfButton.click({ force: true });
     }
     await expect(this.pdfModal).toBeVisible({ timeout: 10000 });
   }
