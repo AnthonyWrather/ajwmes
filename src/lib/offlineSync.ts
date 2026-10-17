@@ -92,9 +92,30 @@ async function performTx<T>(
         resolve(undefined as unknown as T);
       }
     };
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
+    tx.onerror = () => reject(tx.error || new Error(`IndexedDB transaction error on ${storeName}`));
+    tx.onabort = () => reject(tx.error || new Error(`IndexedDB transaction aborted on ${storeName}`));
   });
+}
+
+/**
+ * Pure offline data URL to Blob converter (does not make network/fetch requests)
+ */
+export function dataUrlToBlob(dataUrl: string, fallbackType = 'image/jpeg'): Blob {
+  if (!dataUrl) return new Blob([], { type: fallbackType });
+  const parts = dataUrl.split(',');
+  const mime = parts[0]?.match(/:(.*?);/)?.[1] || fallbackType;
+  const b64Data = parts[1] || '';
+  try {
+    const bstr = atob(b64Data);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  } catch {
+    return new Blob([], { type: mime });
+  }
 }
 
 /**
@@ -103,9 +124,16 @@ async function performTx<T>(
  * Compresses to JPEG/WebP target < 400KB
  */
 export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blob; previewUrl: string }> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
+      const rawDataUrl = e.target?.result as string;
+      if (!rawDataUrl) {
+        const fallbackBlob = file instanceof Blob ? file : new Blob([], { type: 'image/jpeg' });
+        resolve({ blob: fallbackBlob, previewUrl: '' });
+        return;
+      }
+
       const img = new Image();
       img.onload = () => {
         const MAX_WIDTH = 1400;
@@ -134,49 +162,39 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          reject(new Error('Failed to get 2D canvas context'));
+          const fallbackBlob = file instanceof Blob ? file : dataUrlToBlob(rawDataUrl);
+          resolve({ blob: fallbackBlob, previewUrl: rawDataUrl });
           return;
         }
 
-        // Apply slight sharpening / smoothing setup
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, width, height);
+        try {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
 
-        // Generate persistent Base64 DataURL
-        const previewUrl = canvas.toDataURL('image/jpeg', 0.82) || (e.target?.result as string);
-
-        if (typeof canvas.toBlob === 'function') {
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                fetch(previewUrl)
-                  .then(r => r.blob())
-                  .then(b => resolve({ blob: b, previewUrl }))
-                  .catch(() => reject(new Error('Canvas compression to blob failed')));
-                return;
-              }
-              resolve({ blob, previewUrl });
-            },
-            'image/jpeg',
-            0.82
-          );
-        } else {
-          fetch(previewUrl)
-            .then(r => r.blob())
-            .then(b => resolve({ blob: b, previewUrl }))
-            .catch(() => reject(new Error('Canvas compression to blob failed')));
+          // Generate synchronous JPEG dataURL without invoking network fetch
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82) || rawDataUrl;
+          const blob = dataUrlToBlob(compressedDataUrl);
+          resolve({ blob, previewUrl: compressedDataUrl });
+        } catch {
+          const fallbackBlob = file instanceof Blob ? file : dataUrlToBlob(rawDataUrl);
+          resolve({ blob: fallbackBlob, previewUrl: rawDataUrl });
         }
       };
+
       img.onerror = () => {
-        const rawDataUrl = e.target?.result as string;
-        resolve({ blob: file, previewUrl: rawDataUrl });
+        const fallbackBlob = file instanceof Blob ? file : dataUrlToBlob(rawDataUrl);
+        resolve({ blob: fallbackBlob, previewUrl: rawDataUrl });
       };
-      img.src = e.target?.result as string;
+
+      img.src = rawDataUrl;
     };
+
     reader.onerror = () => {
-      resolve({ blob: file, previewUrl: '' });
+      const fallbackBlob = file instanceof Blob ? file : new Blob([], { type: 'image/jpeg' });
+      resolve({ blob: fallbackBlob, previewUrl: '' });
     };
+
     reader.readAsDataURL(file);
   });
 }
@@ -200,12 +218,17 @@ export async function enqueueOfflinePhoto(
     blob,
     previewUrl,
     fileName: `field_proof_${job.reference.toLowerCase()}_${Date.now()}.jpg`,
-    fileSizeBytes: blob.size,
+    fileSizeBytes: blob ? blob.size : (file.size || 0),
     capturedAt: new Date().toISOString(),
     status: 'queued'
   };
 
-  await performTx(STORE_MEDIA, 'readwrite', (store) => store.put(mediaItem));
+  // Safari/WebKit IndexedDB engine aborts transaction when serializing Blob objects directly.
+  // Store media item without direct Blob; blob is transparently reconstructed from previewUrl on retrieval.
+  const idbRecord: Partial<OfflineQueuedMedia> = { ...mediaItem };
+  delete idbRecord.blob;
+
+  await performTx(STORE_MEDIA, 'readwrite', (store) => store.put(idbRecord as OfflineQueuedMedia));
   notifyQueueChanged();
   return mediaItem;
 }
@@ -217,7 +240,15 @@ export async function getPendingPhotos(): Promise<OfflineQueuedMedia[]> {
       const tx = db.transaction(STORE_MEDIA, 'readonly');
       const store = tx.objectStore(STORE_MEDIA);
       const req = store.getAll();
-      req.onsuccess = () => resolve(req.result || []);
+      req.onsuccess = () => {
+        const list: OfflineQueuedMedia[] = (req.result || []).map((item: OfflineQueuedMedia) => {
+          if (!item.blob && item.previewUrl) {
+            item.blob = dataUrlToBlob(item.previewUrl);
+          }
+          return item;
+        });
+        resolve(list);
+      };
       req.onerror = () => resolve([]);
     });
   } catch {
@@ -498,7 +529,11 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
           throw new Error(`Invalid photo payload: ${validation.errors.join('; ')}`);
         }
 
-        const fileObj = new File([photo.blob], photo.fileName, { type: photo.blob.type || 'image/jpeg' });
+        const photoBlob = photo.blob || (photo.previewUrl ? dataUrlToBlob(photo.previewUrl) : null);
+        if (!photoBlob) {
+          throw new Error('No photo binary data available');
+        }
+        const fileObj = new File([photoBlob], photo.fileName, { type: photoBlob.type || 'image/jpeg' });
         const uploaded = await uploadSwitchPanelImage(fileObj, {
           jobReference: photo.jobReference,
           vesselName: photo.vesselName,

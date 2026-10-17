@@ -197,7 +197,8 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
       }
     } catch (err: any) {
       console.error('Failed to process technician photo:', err);
-      showToast(`Photo processing error: ${err.message || 'Check storage'}`, 'error');
+      const errMsg = err?.message || (typeof err === 'string' ? err : 'Check storage');
+      showToast(`Photo processing error: ${errMsg}`, 'error');
     } finally {
       setIsProcessingPhoto(false);
       if (proofInputRef.current) proofInputRef.current.value = '';
