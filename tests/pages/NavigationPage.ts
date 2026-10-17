@@ -48,12 +48,21 @@ export class NavigationPage {
     await expect(this.page).toHaveTitle(/AJW Marine Electrical Services/i);
   }
 
+  async ensureMobileMenuOpen(): Promise<void> {
+    await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
+    const storeTab = this.page.getByTestId('mobile-nav-tab-store');
+    const isOpen = await storeTab.isVisible().catch(() => false);
+    if (!isOpen) {
+      await this.mobileMenuToggle.click({ force: true });
+      await expect(storeTab).toBeVisible({ timeout: 5000 });
+    }
+  }
+
   async navigateToStore(): Promise<void> {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
     if (isMobile) {
-      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
-      await this.mobileMenuToggle.click({ force: true });
+      await this.ensureMobileMenuOpen();
       await expect(this.mobileStoreTab).toBeVisible({ timeout: 10000 });
       await this.mobileStoreTab.click({ force: true });
     } else {
@@ -66,8 +75,7 @@ export class NavigationPage {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
     if (isMobile) {
-      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
-      await this.mobileMenuToggle.click({ force: true });
+      await this.ensureMobileMenuOpen();
       await expect(this.mobileTrackerTab).toBeVisible({ timeout: 10000 });
       await this.mobileTrackerTab.click({ force: true });
     } else {
@@ -80,8 +88,7 @@ export class NavigationPage {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
     if (isMobile) {
-      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
-      await this.mobileMenuToggle.click({ force: true });
+      await this.ensureMobileMenuOpen();
       await expect(this.mobileDesignerTab).toBeVisible({ timeout: 10000 });
       await this.mobileDesignerTab.click({ force: true });
     } else {
@@ -94,8 +101,7 @@ export class NavigationPage {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
     if (isMobile) {
-      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
-      await this.mobileMenuToggle.click({ force: true });
+      await this.ensureMobileMenuOpen();
       await expect(this.mobileReplicaTab).toBeVisible({ timeout: 10000 });
       await this.mobileReplicaTab.click({ force: true });
     } else {
@@ -108,8 +114,7 @@ export class NavigationPage {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
     if (isMobile) {
-      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
-      await this.mobileMenuToggle.click({ force: true });
+      await this.ensureMobileMenuOpen();
       const mobilePostal = this.page.getByTestId('mobile-nav-tab-postal');
       await expect(mobilePostal).toBeVisible({ timeout: 10000 });
       await mobilePostal.click({ force: true });
@@ -120,12 +125,26 @@ export class NavigationPage {
     }
   }
 
+  async navigateToTechnician(): Promise<void> {
+    const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
+
+    if (isMobile) {
+      await this.ensureMobileMenuOpen();
+      const mobileTech = this.page.getByTestId('mobile-nav-tab-technician');
+      await expect(mobileTech).toBeVisible({ timeout: 10000 });
+      await mobileTech.click({ force: true });
+    } else {
+      const desktopTech = this.page.getByTestId('nav-tab-technician');
+      await expect(desktopTech).toBeVisible({ timeout: 10000 });
+      await desktopTech.click({ force: true });
+    }
+  }
+
   async navigateToAdmin(): Promise<void> {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
     if (isMobile) {
-      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
-      await this.mobileMenuToggle.click({ force: true });
+      await this.ensureMobileMenuOpen();
       await expect(this.mobileAdminTab).toBeVisible({ timeout: 10000 });
       await this.mobileAdminTab.click({ force: true });
     } else {
@@ -138,8 +157,7 @@ export class NavigationPage {
     const isMobile = (this.page.viewportSize()?.width ?? 1280) < 1280;
 
     if (isMobile) {
-      await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
-      await this.mobileMenuToggle.click({ force: true });
+      await this.ensureMobileMenuOpen();
       await expect(this.mobilePortalTab).toBeVisible({ timeout: 10000 });
       await this.mobilePortalTab.click({ force: true });
     } else {

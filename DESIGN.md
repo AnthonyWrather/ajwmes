@@ -520,23 +520,29 @@ As Principal QA Automation Specialist, the quality engineering strategy implemen
 graph BT
     subgraph TestPyramid["Quality Assurance Test Pyramid"]
         direction BT
-        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- auth.test.ts\n- version.test.ts\nExecution: < 2 seconds | 75+ Assertions"]
+        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- auth.test.ts\n- rbac.test.ts\n- offlineQueueCalculations.test.ts\n- inventorySync.test.ts\n- postalTimeline.test.ts\n- emailTemplates.test.ts\n- version.test.ts\nExecution: < 1.5s | 200+ Assertions"]
         
         Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix Conformance Tests\n- Environment Partition Prefix Routing"]
         
-        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline"]
+        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline\n- performance-architecture-optimization.spec.ts"]
     end
 ```
 
 ### 10.1 Level 1: Fast Pure Logic Unit Tests (`tsx --test`)
 Executed directly on Node.js using `npm run test:unit`:
-- **Execution Target**: `src/lib/auth.test.ts`, `src/utils/*.test.ts`.
-- **Performance**: Completes in **< 2.0 seconds** with zero external dependencies or browser spins.
+- **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts`.
+- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (210+ passing tests).
 - **Verification Matrix**:
   - `electricalCalculations.test.ts`: Verifies stopwatch conversions, fractional decimal hours, zero-second edge cases, and panel pricing tiers.
   - `expenseCalculations.test.ts`: Validates financial rollups, NaN handling, and billable vs overhead categorization.
   - `formValidation.test.ts`: Tests Solent landlines, UK mobile normalizations, breaker amp limits, and email formats.
   - `auth.test.ts`: Tests profile enrichment, guest restrictions, technician permissions, and admin elevation.
+  - `rbac.test.ts`: Verifies dual-tier access control matrix, route guarding, and action middleware enforcement across all 5 user roles.
+  - `inventorySync.test.ts`: Tests JSON catalog import/export parsing, duplicate item reconciliation, and envelope deserialization.
+  - `offlineQueueCalculations.test.ts`: Tests IndexedDB mutation prioritization, queue progression clamp, and connection state resolvers.
+  - `postalTimeline.test.ts`: Verifies Royal Mail/DPD tracking milestones, progress calculation, and delivery status tiers.
+  - `generateVesselPdf.test.ts`: Tests jsPDF certificate rendering, ink-saver mono themes, and single vs multi-page specs.
+  - `imageUrl.test.ts` & `imageResize.test.ts`: Tests image asset path normalizations and client-side photo compression.
   - `version.test.ts`: Verifies SemVer string format and environment release badge tags.
 
 ### 10.2 Level 2: End-to-End Test Suite (`@playwright/test`)
@@ -573,7 +579,7 @@ flowchart TD
     subgraph CI["Continuous Integration (playwright.yml)"]
         direction TB
         Lint["npm run lint\n(TypeScript Strict Compilation)"]
-        Unit["npm run test:unit\n(75+ Unit Tests via tsx)"]
+        Unit["npm run test:unit\n(210+ Unit Tests via tsx)"]
         CachePW["Restore Playwright Browser Cache"]
         E2E["npm run test:e2e\n(Multi-browser Playwright Suite)"]
         Artifacts["Upload Test Failure Reports (if failed)"]
@@ -635,7 +641,7 @@ Before code is accepted or deployed:
 
 Before merging any feature into `main`:
 - [x] **Static Typing**: `npm run lint` passes with 0 type errors.
-- [x] **Unit Test Suite**: `npm run test:unit` passes (75/75 passing tests).
+- [x] **Unit Test Suite**: `npm run test:unit` passes (211/211 passing tests).
 - [x] **Offline Resilience**: Field mutations gracefully store to IndexedDB when disconnected (`navigator.onLine = false`).
 - [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 5 roles (`guest`, `client`, `admin`, `technician`, `postal`).
 - [x] **PWA Manifest & Assets**: Icons, theme colors (`#0A192F`), and service worker registered without console warnings.

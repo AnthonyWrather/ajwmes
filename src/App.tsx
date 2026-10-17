@@ -7,13 +7,15 @@ import { FirestoreSyncBanner } from './components/common/FirestoreSyncBanner';
 import { LandingHero } from './components/home/LandingHero';
 import { ServicesSection } from './components/home/ServicesSection';
 import { StoreFront } from './components/store/StoreFront';
-import { SwitchPanelDesigner } from './components/panels/SwitchPanelDesigner';
-import { ReplicaPanelUploader } from './components/panels/ReplicaPanelUploader';
-import { ClientVesselPortal } from './components/client/ClientVesselPortal';
 import { PostalOrderTracker } from './components/orders/PostalOrderTracker';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { TechnicianWorkspace } from './components/technician/TechnicianWorkspace';
-import { PostalWorkspace } from './components/postal/PostalWorkspace';
+
+// Code-split heavy role-gated feature workspaces for optimized mobile field performance
+const SwitchPanelDesigner = React.lazy(() => import('./components/panels/SwitchPanelDesigner').then(m => ({ default: m.SwitchPanelDesigner })));
+const ReplicaPanelUploader = React.lazy(() => import('./components/panels/ReplicaPanelUploader').then(m => ({ default: m.ReplicaPanelUploader })));
+const ClientVesselPortal = React.lazy(() => import('./components/client/ClientVesselPortal').then(m => ({ default: m.ClientVesselPortal })));
+const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const TechnicianWorkspace = React.lazy(() => import('./components/technician/TechnicianWorkspace').then(m => ({ default: m.TechnicianWorkspace })));
+const PostalWorkspace = React.lazy(() => import('./components/postal/PostalWorkspace').then(m => ({ default: m.PostalWorkspace })));
 import { AuthModal } from './components/auth/AuthModal';
 import { SignInModal } from './components/auth/SignInModal';
 import { SignOffModal } from './components/auth/SignOffModal';
@@ -1413,8 +1415,16 @@ export default function App() {
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
           onOpenPermissionsMatrix={() => setIsPermissionsMatrixOpen(true)}
         >
-          {/* Tab 1: Home Landing Page */}
-          {currentTab === 'home' && (
+          <React.Suspense
+            fallback={
+              <div className="flex flex-col items-center justify-center py-24 text-slate-400 space-y-4" data-testid="workspace-suspense-loading">
+                <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-medium text-slate-300">Loading marine workspace...</p>
+              </div>
+            }
+          >
+            {/* Tab 1: Home Landing Page */}
+            {currentTab === 'home' && (
             <div className="space-y-16">
               <LandingHero
                 onOpenDesigner={() => setCurrentTab('designer')}
@@ -1595,13 +1605,14 @@ export default function App() {
             />
           )}
 
-          {/* Tab 9: Workshop Postal Dispatch Station (Postal or Admin) */}
-          {currentTab === 'postal' && (
-            <PostalWorkspace
-              orders={postalOrders}
-              onUpdateOrderStatus={handleUpdateOrderStatus}
-            />
-          )}
+            {/* Tab 9: Workshop Postal Dispatch Station (Postal or Admin) */}
+            {currentTab === 'postal' && (
+              <PostalWorkspace
+                orders={postalOrders}
+                onUpdateOrderStatus={handleUpdateOrderStatus}
+              />
+            )}
+          </React.Suspense>
         </RBACRouteGuard>
       </main>
 

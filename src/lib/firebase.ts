@@ -925,7 +925,6 @@ export async function deleteUserFromFirestore(userId: string): Promise<void> {
   const colPath = getScopedCollection('users');
   const docPath = `${colPath}/${userId}`;
   try {
-    const { deleteDoc } = await import('firebase/firestore');
     await deleteDoc(doc(db, colPath, userId));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, docPath);

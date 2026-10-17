@@ -137,6 +137,33 @@ export default defineConfig(() => {
         '@': path.resolve(import.meta.dirname ?? '.', '.'),
       },
     },
+    build: {
+      chunkSizeWarningLimit: 800,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/firebase/')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('node_modules/lucide-react/')) {
+              return 'vendor-lucide';
+            }
+            if (id.includes('node_modules/motion/')) {
+              return 'vendor-motion';
+            }
+            if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2canvas')) {
+              return 'vendor-jspdf';
+            }
+            if (id.includes('node_modules/@google/genai')) {
+              return 'vendor-genai';
+            }
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+              return 'vendor-react';
+            }
+          },
+        },
+      },
+    },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
