@@ -738,7 +738,6 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     data-testid="technician-photo-input"
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     disabled={isProcessingPhoto}
                     onChange={handleUploadFitmentPhoto}
                     className="hidden"
