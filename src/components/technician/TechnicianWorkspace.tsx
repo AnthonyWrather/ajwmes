@@ -197,7 +197,8 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
       }
     } catch (err: any) {
       console.error('Failed to process technician photo:', err);
-      showToast(`Photo processing error: ${err.message || 'Check storage'}`, 'error');
+      const errMsg = err?.message || (typeof err === 'string' ? err : 'Check storage');
+      showToast(`Photo processing error: ${errMsg}`, 'error');
     } finally {
       setIsProcessingPhoto(false);
       if (proofInputRef.current) proofInputRef.current.value = '';
@@ -677,13 +678,13 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
 
               {/* Offline Work Photos Gallery */}
               {selectedJobPhotos.length > 0 && (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+                <div data-testid="offline-photos-gallery" className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Camera className="w-3.5 h-3.5 text-amber-400" />
                       <span>Photos Stored Locally in Pontoon Queue ({selectedJobPhotos.length})</span>
                     </span>
-                    <span className="text-[10px] font-mono text-amber-300 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                    <span data-testid="queued-photos-badge" className="text-[10px] font-mono text-amber-300 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
                       Awaiting Cloud Upload
                     </span>
                   </div>
@@ -692,6 +693,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                     {selectedJobPhotos.map(photo => (
                       <div 
                         key={photo.id}
+                        data-testid={`queued-photo-${photo.id}`}
                         onClick={() => {
                           setLightboxUrl(photo.previewUrl);
                           setLightboxTitle(`Offline Fitment Photo · ${photo.vesselName}`);
@@ -699,6 +701,7 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                         className="group relative aspect-video rounded-xl overflow-hidden border border-slate-800 bg-slate-950 cursor-pointer hover:border-amber-500 transition-colors"
                       >
                         <img 
+                          data-testid="queued-photo-thumbnail"
                           src={photo.previewUrl} 
                           alt="Queued Fitment" 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
@@ -728,14 +731,14 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
                   </span>
                 </div>
 
-                <label className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 rounded-xl font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shadow-sm">
+                <label data-testid="capture-photo-button" className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 rounded-xl font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shadow-sm">
                   {isProcessingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
                   <span>{isProcessingPhoto ? 'Compressing...' : 'Capture / Upload Photo'}</span>
                   <input
                     ref={proofInputRef}
+                    data-testid="technician-photo-input"
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     disabled={isProcessingPhoto}
                     onChange={handleUploadFitmentPhoto}
                     className="hidden"

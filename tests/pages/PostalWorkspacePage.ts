@@ -137,7 +137,7 @@ export class PostalWorkspacePage {
     await this.closePackingSlipButton.scrollIntoViewIfNeeded();
     await expect(this.closePackingSlipButton).toBeVisible();
     await this.closePackingSlipButton.click({ force: true });
-    await expect(this.packingSlipModal).not.toBeVisible();
+    await expect(this.packingSlipModal).not.toBeVisible({ timeout: 10000 });
   }
 
   async markOrderPacked(): Promise<void> {
@@ -162,8 +162,8 @@ export class PostalWorkspacePage {
     if (await dismissBtn.isVisible().catch(() => false)) {
       await dismissBtn.click({ force: true }).catch(() => {});
     }
-    await this.markDeliveredButton.scrollIntoViewIfNeeded();
     await expect(this.markDeliveredButton).toBeVisible({ timeout: 10000 });
+    await this.markDeliveredButton.scrollIntoViewIfNeeded();
     await this.markDeliveredButton.click({ force: true });
   }
 

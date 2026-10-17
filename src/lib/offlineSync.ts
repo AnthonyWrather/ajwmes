@@ -13,6 +13,12 @@ import {
   syncJobWorkPhotoToFirestore, 
   syncJobSheetToFirestore 
 } from './firebase';
+import {
+  calculateSyncProgressPercent,
+  formatSyncTimestamp,
+  validateSignOffPayload,
+  validateQueuedPhotoPayload
+} from '../utils/offlineQueueCalculations';
 
 export type { OfflineSyncQueueStatus };
 
@@ -86,9 +92,30 @@ async function performTx<T>(
         resolve(undefined as unknown as T);
       }
     };
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
+    tx.onerror = () => reject(tx.error || new Error(`IndexedDB transaction error on ${storeName}`));
+    tx.onabort = () => reject(tx.error || new Error(`IndexedDB transaction aborted on ${storeName}`));
   });
+}
+
+/**
+ * Pure offline data URL to Blob converter (does not make network/fetch requests)
+ */
+export function dataUrlToBlob(dataUrl: string, fallbackType = 'image/jpeg'): Blob {
+  if (!dataUrl) return new Blob([], { type: fallbackType });
+  const parts = dataUrl.split(',');
+  const mime = parts[0]?.match(/:(.*?);/)?.[1] || fallbackType;
+  const b64Data = parts[1] || '';
+  try {
+    const bstr = atob(b64Data);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  } catch {
+    return new Blob([], { type: mime });
+  }
 }
 
 /**
@@ -97,9 +124,16 @@ async function performTx<T>(
  * Compresses to JPEG/WebP target < 400KB
  */
 export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blob; previewUrl: string }> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
+      const rawDataUrl = e.target?.result as string;
+      if (!rawDataUrl) {
+        const fallbackBlob = file instanceof Blob ? file : new Blob([], { type: 'image/jpeg' });
+        resolve({ blob: fallbackBlob, previewUrl: '' });
+        return;
+      }
+
       const img = new Image();
       img.onload = () => {
         const MAX_WIDTH = 1400;
@@ -119,40 +153,48 @@ export async function compressFieldImage(file: File | Blob): Promise<{ blob: Blo
           }
         }
 
+        width = Math.max(16, width);
+        height = Math.max(16, height);
+
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          reject(new Error('Failed to get 2D canvas context'));
+          const fallbackBlob = file instanceof Blob ? file : dataUrlToBlob(rawDataUrl);
+          resolve({ blob: fallbackBlob, previewUrl: rawDataUrl });
           return;
         }
 
-        // Apply slight sharpening / smoothing setup
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, width, height);
+        try {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
 
-        // Generate persistent Base64 DataURL
-        const previewUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Canvas compression to blob failed'));
-              return;
-            }
-            resolve({ blob, previewUrl });
-          },
-          'image/jpeg',
-          0.82
-        );
+          // Generate synchronous JPEG dataURL without invoking network fetch
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82) || rawDataUrl;
+          const blob = dataUrlToBlob(compressedDataUrl);
+          resolve({ blob, previewUrl: compressedDataUrl });
+        } catch {
+          const fallbackBlob = file instanceof Blob ? file : dataUrlToBlob(rawDataUrl);
+          resolve({ blob: fallbackBlob, previewUrl: rawDataUrl });
+        }
       };
-      img.onerror = () => reject(new Error('Failed to load image into DOM element'));
-      img.src = e.target?.result as string;
+
+      img.onerror = () => {
+        const fallbackBlob = file instanceof Blob ? file : dataUrlToBlob(rawDataUrl);
+        resolve({ blob: fallbackBlob, previewUrl: rawDataUrl });
+      };
+
+      img.src = rawDataUrl;
     };
-    reader.onerror = () => reject(new Error('Failed to read image file'));
+
+    reader.onerror = () => {
+      const fallbackBlob = file instanceof Blob ? file : new Blob([], { type: 'image/jpeg' });
+      resolve({ blob: fallbackBlob, previewUrl: '' });
+    };
+
     reader.readAsDataURL(file);
   });
 }
@@ -176,12 +218,17 @@ export async function enqueueOfflinePhoto(
     blob,
     previewUrl,
     fileName: `field_proof_${job.reference.toLowerCase()}_${Date.now()}.jpg`,
-    fileSizeBytes: blob.size,
+    fileSizeBytes: blob ? blob.size : (file.size || 0),
     capturedAt: new Date().toISOString(),
     status: 'queued'
   };
 
-  await performTx(STORE_MEDIA, 'readwrite', (store) => store.put(mediaItem));
+  // Safari/WebKit IndexedDB engine aborts transaction when serializing Blob objects directly.
+  // Store media item without direct Blob; blob is transparently reconstructed from previewUrl on retrieval.
+  const idbRecord: Partial<OfflineQueuedMedia> = { ...mediaItem };
+  delete idbRecord.blob;
+
+  await performTx(STORE_MEDIA, 'readwrite', (store) => store.put(idbRecord as OfflineQueuedMedia));
   notifyQueueChanged();
   return mediaItem;
 }
@@ -193,7 +240,15 @@ export async function getPendingPhotos(): Promise<OfflineQueuedMedia[]> {
       const tx = db.transaction(STORE_MEDIA, 'readonly');
       const store = tx.objectStore(STORE_MEDIA);
       const req = store.getAll();
-      req.onsuccess = () => resolve(req.result || []);
+      req.onsuccess = () => {
+        const list: OfflineQueuedMedia[] = (req.result || []).map((item: OfflineQueuedMedia) => {
+          if (!item.blob && item.previewUrl) {
+            item.blob = dataUrlToBlob(item.previewUrl);
+          }
+          return item;
+        });
+        resolve(list);
+      };
       req.onerror = () => resolve([]);
     });
   } catch {
@@ -378,7 +433,7 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
         ...currentStatus,
         isSyncing: false,
         syncProgressPercent: 100,
-        lastSyncedAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        lastSyncedAt: formatSyncTimestamp(new Date())
       };
       listeners.forEach((l) => l(currentStatus));
       return { success: true, syncedCount: 0, errors: [] };
@@ -386,47 +441,14 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
 
     let processedItems = 0;
 
-    // 1. Process Photos to Storage & Firestore
-    for (const photo of photos) {
-      try {
-        const fileObj = new File([photo.blob], photo.fileName, { type: photo.blob.type || 'image/jpeg' });
-        const uploaded = await uploadSwitchPanelImage(fileObj, {
-          jobReference: photo.jobReference,
-          vesselName: photo.vesselName,
-          category: 'cad_export'
-        });
-
-        // Directly persist work photo into Firestore
-        await syncJobWorkPhotoToFirestore(
-          photo.jobId,
-          uploaded.url,
-          `🔧 [Synced Pontoon Work Photo]\nTechnician photo captured aboard ${photo.vesselName} (${photo.jobReference}) at ${new Date(photo.capturedAt).toLocaleTimeString('en-GB')}.`
-        );
-
-        // Notify chat/job thread in-memory
-        if (activeCallbacks.onPostMessage) {
-          activeCallbacks.onPostMessage(
-            photo.jobId,
-            `🔧 [Synced Pontoon Work Photo]\nTechnician photo captured offline at ${new Date(photo.capturedAt).toLocaleTimeString('en-GB')}, successfully uploaded to Cloud Storage.`,
-            [uploaded.url]
-          );
-        }
-
-        // Remove from IndexedDB queue
-        await deleteQueuedItem(STORE_MEDIA, photo.id);
-        syncedCount++;
-      } catch (err: any) {
-        console.warn(`Failed to sync photo ${photo.id}:`, err);
-        errors.push(`Photo ${photo.fileName}: ${err.message || 'Upload error'}`);
-      }
-      processedItems++;
-      currentStatus.syncProgressPercent = Math.round((processedItems / totalItems) * 80) + 10;
-      listeners.forEach((l) => l(currentStatus));
-    }
-
-    // 2. Process Signatures
+    // 1. Process Signatures First (Critical legal/customer consent payload)
     for (const sig of signatures) {
       try {
+        const validation = validateSignOffPayload(sig);
+        if (!validation.valid) {
+          throw new Error(`Invalid sign-off: ${validation.errors.join('; ')}`);
+        }
+
         const updatedSig: CustomerSignOffRecord = {
           ...sig,
           signedAtSynced: new Date().toISOString(),
@@ -459,11 +481,11 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
         errors.push(`Sign-off for ${sig.jobReference}: ${err.message}`);
       }
       processedItems++;
-      currentStatus.syncProgressPercent = Math.round((processedItems / totalItems) * 80) + 10;
+      currentStatus.syncProgressPercent = calculateSyncProgressPercent(processedItems, totalItems);
       listeners.forEach((l) => l(currentStatus));
     }
 
-    // 3. Process Job Sheet Updates
+    // 2. Process Job Sheet Updates (Hours and Materials)
     for (const jobUp of jobUpdates) {
       try {
         await syncJobSheetToFirestore(jobUp.jobId, jobUp.hours, jobUp.materials);
@@ -478,9 +500,11 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
         errors.push(`Job update for ${jobUp.jobId}: ${err.message}`);
       }
       processedItems++;
+      currentStatus.syncProgressPercent = calculateSyncProgressPercent(processedItems, totalItems);
+      listeners.forEach((l) => l(currentStatus));
     }
 
-    // 4. Process Queued Offline Emails
+    // 3. Process Queued Offline Emails
     for (const emailRecord of emails) {
       try {
         if (activeCallbacks.onDispatchQueuedEmail) {
@@ -493,13 +517,62 @@ export async function triggerSyncNow(): Promise<{ success: boolean; syncedCount:
         errors.push(`Email ${emailRecord.payload.subject}: ${err.message || 'Send error'}`);
       }
       processedItems++;
+      currentStatus.syncProgressPercent = calculateSyncProgressPercent(processedItems, totalItems);
+      listeners.forEach((l) => l(currentStatus));
+    }
+
+    // 4. Process Work Photos to Storage & Firestore
+    for (const photo of photos) {
+      try {
+        const validation = validateQueuedPhotoPayload(photo);
+        if (!validation.valid) {
+          throw new Error(`Invalid photo payload: ${validation.errors.join('; ')}`);
+        }
+
+        const photoBlob = photo.blob || (photo.previewUrl ? dataUrlToBlob(photo.previewUrl) : null);
+        if (!photoBlob) {
+          throw new Error('No photo binary data available');
+        }
+        const fileObj = new File([photoBlob], photo.fileName, { type: photoBlob.type || 'image/jpeg' });
+        const uploaded = await uploadSwitchPanelImage(fileObj, {
+          jobReference: photo.jobReference,
+          vesselName: photo.vesselName,
+          category: 'cad_export'
+        });
+
+        // Directly persist work photo into Firestore
+        await syncJobWorkPhotoToFirestore(
+          photo.jobId,
+          uploaded.url,
+          `🔧 [Synced Pontoon Work Photo]\nTechnician photo captured aboard ${photo.vesselName} (${photo.jobReference}) at ${new Date(photo.capturedAt).toLocaleTimeString('en-GB')}.`
+        );
+
+        // Notify chat/job thread in-memory
+        if (activeCallbacks.onPostMessage) {
+          activeCallbacks.onPostMessage(
+            photo.jobId,
+            `🔧 [Synced Pontoon Work Photo]\nTechnician photo captured offline at ${new Date(photo.capturedAt).toLocaleTimeString('en-GB')}, successfully uploaded to Cloud Storage.`,
+            [uploaded.url]
+          );
+        }
+
+        // Remove from IndexedDB queue
+        await deleteQueuedItem(STORE_MEDIA, photo.id);
+        syncedCount++;
+      } catch (err: any) {
+        console.warn(`Failed to sync photo ${photo.id}:`, err);
+        errors.push(`Photo ${photo.fileName}: ${err.message || 'Upload error'}`);
+      }
+      processedItems++;
+      currentStatus.syncProgressPercent = calculateSyncProgressPercent(processedItems, totalItems);
+      listeners.forEach((l) => l(currentStatus));
     }
 
     currentStatus = {
       ...currentStatus,
       isSyncing: false,
       syncProgressPercent: 100,
-      lastSyncedAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      lastSyncedAt: formatSyncTimestamp(new Date()),
       lastError: errors.length > 0 ? errors[0] : undefined
     };
     await refreshQueueStatus();

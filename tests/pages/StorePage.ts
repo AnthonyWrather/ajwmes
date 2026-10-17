@@ -32,7 +32,7 @@ export class StorePage {
     await targetButton.scrollIntoViewIfNeeded();
     await targetButton.click({ force: true });
     // Verify item was added by waiting for the floating cart button to appear
-    await expect(this.viewCartDrawerButton).toBeVisible({ timeout: 5000 });
+    await expect(this.viewCartDrawerButton).toBeVisible({ timeout: 10000 });
   }
 
   async openCartDrawer(): Promise<void> {

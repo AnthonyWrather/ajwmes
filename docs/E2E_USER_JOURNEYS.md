@@ -22,7 +22,7 @@ To guarantee zero regression in critical business paths, high-stakes electrical 
 
 ## 1. Existing Covered User Journeys
 
-The Playwright E2E test suite covers four core operational journeys utilizing dedicated Page Object Models (`tests/pages/`):
+The Playwright E2E test suite covers five core operational journeys utilizing dedicated Page Object Models (`tests/pages/`):
 
 ```mermaid
 graph TD
@@ -34,6 +34,7 @@ graph TD
         J5["5. Postal Fulfillment & Dispatch\n(tests/postal-fulfillment-dispatch.spec.ts)"]
         J6["6. Consignment Timeline Tracker\n(tests/consignment-tracker.spec.ts)"]
         J7["7. Master Workshop Admin & Expenses (UJ-10)\n(tests/admin-workshop-management.spec.ts)"]
+        J8["8. Offline Pontoon Resilience (UJ-11)\n(tests/offline-pontoon-resilience.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -43,6 +44,7 @@ graph TD
     J5 -->|"Queue, Cable Cut & Dispatch Modal"| POM5["PostalWorkstationPage\nDispatchModalPage"]
     J6 -->|"Milestones, Checkpoints & Status Simulator"| POM6["ConsignmentTrackerPage"]
     J7 -->|"Expenses, POs, Rollups & Snapshots"| POM7["AdminDashboardPage"]
+    J8 -->|"Faraday Blackout, Photo Queue & Auto-Replay"| POM8["TechnicianWorkspacePage\nCustomerSignOffModal\nTechnicianSyncBar"]
 ```
 
 ---
@@ -212,6 +214,34 @@ graph TD
 
 ---
 
+### Journey 8: Solent Marine Pontoon Field Resilience, Offline Photo Capture & Mutation Replay (UJ-11)
+- **Test File:** [`tests/offline-pontoon-resilience.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/offline-pontoon-resilience.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `TechnicianWorkspacePage`
+- **Target Personas:** `technician` (`jack.tech@ajwmes.co.uk`), `admin`
+
+#### Scenarios Verified:
+1. **Technician Authentication & Pontoon Diagnostics Setup**:
+   - Authenticate as marine technician (`jack.tech@ajwmes.co.uk`), verify automatic redirection to `/technician`, assert active vessel job selection and initial "All Synced" connection status.
+2. **Offshore Connectivity Drop & Graceful Degradation**:
+   - Simulate complete network severance (`context.setOffline(true)`) reflecting pontoon Faraday cage conditions / metal hull signal blackout.
+   - Verify status bar transitions dynamically to amber/red offline badge ("Offline - Local Storage Active", `data-testid="sync-status-badge"`).
+3. **High-Payload Marine Defect Photo Capture & IndexedDB Queue**:
+   - Technician captures high-resolution marine electrical fault photos (bilge wiring corrosion, burnt busbar).
+   - Verify client-side canvas compression, preview gallery rendering, and queuing into local storage (`ajw_marine_field_db`), asserting pending queued photos badge increments.
+4. **Offline Customer Pontoon Sign-Off with HTML5 Canvas Signature**:
+   - Boat owner inspects offline diagnostic sheet and provides handwritten digital consent on HTML5 `<canvas>`.
+   - Verify submission succeeds with zero network connectivity; payload is stored safely into mutation queue (`ajwmes_aistudio_dev_signoffs`).
+   - Assert Pontoon Customer Sign-Off Receipt Card is rendered with owner name, timestamp, and signature graphic.
+5. **Pontoon Reconnection & Automatic Mutation Replay**:
+   - Restore marina network connectivity (`context.setOffline(false)`).
+   - Assert sync bar updates state to "Syncing Local Changes..." with live progress percentage indicators.
+   - Verify transactional mutation queue drains in prioritized order (signatures and job consent before heavy binary work photos).
+6. **Queue Draining & Synchronization Completion**:
+   - Assert mutation queue drains completely to 0 pending mutations.
+   - Verify sync bar returns to emerald green "All Synced" state (`data-testid="sync-status-badge"`).
+
+---
+
 ## 2. Future User Journeys Requiring Test Coverage
 
 The following table identifies the remaining operational workflows across AJWMES to be automated:
@@ -225,7 +255,7 @@ The following table identifies the remaining operational workflows across AJWMES
 | **UJ-07** | **Custom Carling Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | High (Grid CAD, BOM pricing, Surcharges) | **Next Recommended** |
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | Pending |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | Pending |
-| **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | Pending |
+| **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | **Done (Automated)** |
 
 ---
 
@@ -244,7 +274,7 @@ gantt
     Custom Switch Panel CAD Designer (UJ-07)      :crit, active, 2026-10-18, 2d
     Vessel Portal & PDF Certificate Export (UJ-09):2026-10-20, 2d
     section Phase 3 (Admin & Resilience)
-    Offline Pontoon Resilience & Mutation Sync (UJ-11):2026-10-25, 3d
+    Offline Pontoon Resilience & Mutation Sync (UJ-11):done, 2026-10-17, 1d
     Photo Replica Quoter (UJ-08)                  :2026-10-28, 2d
 ```
 

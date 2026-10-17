@@ -441,7 +441,7 @@ export interface OfflineQueuedMedia {
   jobReference: string;
   vesselName: string;
   category: 'work_fitment' | 'diagnostic_meter' | 'multimeter_test' | 'damage_report';
-  blob: Blob;
+  blob?: Blob;
   previewUrl: string;
   fileName: string;
   fileSizeBytes: number;

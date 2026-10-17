@@ -40,7 +40,10 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
 
   // Initialize Canvas
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setHasDrawn(false);
+      return;
+    }
 
     // Small delay to ensure modal DOM geometry is settled
     const timer = setTimeout(() => {
@@ -50,9 +53,10 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
       if (!ctx) return;
 
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      if (rect.width === 0) return;
+      canvas.width = rect.width * (window.devicePixelRatio || 1);
+      canvas.height = rect.height * (window.devicePixelRatio || 1);
+      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
 
       ctx.strokeStyle = '#f8fafc'; // slate-50
       ctx.lineWidth = 2.5;
@@ -62,8 +66,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
       // Background subtle fill
       ctx.fillStyle = '#020617';
       ctx.fillRect(0, 0, rect.width, rect.height);
-      setHasDrawn(false);
-    }, 100);
+    }, 50);
 
     return () => clearTimeout(timer);
   }, [isOpen]);
@@ -164,7 +167,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
   const totalCalculated = (job.diagnosticHours * job.hourlyRate) + (job.materialsUsed?.reduce((sum, m) => sum + (m.quantity * m.unitPrice), 0) || 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
       <div data-testid="customer-signoff-modal" className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">

@@ -69,9 +69,9 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
     await test.step('4. Select an active consignment and inspect workshop pick & pack list', async () => {
       // Filter by 'To Pack' to deterministically target an order needing bench packaging
       await postal.filterOrdersReceived.click({ force: true });
+      await page.waitForTimeout(200);
       const packCard = postal.allOrderCards.filter({ hasText: 'Needs Packing' }).first();
       await expect(packCard).toBeVisible({ timeout: 10000 });
-      await packCard.scrollIntoViewIfNeeded();
       await packCard.click({ force: true });
 
       await expect(postal.selectedOrderDetails).toBeVisible();
@@ -99,6 +99,7 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
 
       // Close modal
       await postal.closePackingSlip();
+      await page.waitForTimeout(300);
     });
 
     await test.step('6. Advance fulfillment workflow through Bench Packing and Carrier Dispatch', async () => {

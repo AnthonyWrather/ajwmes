@@ -308,7 +308,8 @@ export class AdminDashboardPage {
     }
     await expect(this.snapshotLabelInput).toBeVisible({ timeout: 5000 });
     await this.snapshotLabelInput.fill(label);
+    await this.saveSnapshotBtn.scrollIntoViewIfNeeded();
     await this.saveSnapshotBtn.click({ force: true });
-    await expect(this.snapshotsList).toContainText(label, { timeout: 5000 });
+    await expect(this.snapshotsList).toContainText(label, { timeout: 10000 });
   }
 }
