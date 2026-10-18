@@ -124,12 +124,12 @@ export const Navigation: React.FC<NavigationProps> = ({
         {/* Zone 2: Consistent Bordered Pill Navigation - Role Adaptive (≥ 1280px) */}
         <nav
           data-testid="desktop-nav-menu"
-          className={`hidden xl:flex flex-wrap items-center justify-center gap-1.5 2xl:gap-2 text-xs font-semibold flex-1 min-w-0 py-1 ${
+          className={`hidden xl:grid items-center justify-center gap-1.5 2xl:gap-2 text-xs font-semibold shrink-0 min-w-0 py-1 ${
             currentUserRole === 'admin'
-              ? 'max-w-[540px] 2xl:max-w-[580px]'
+              ? 'grid-cols-[repeat(4,max-content)]'
               : currentUserRole === 'client'
-              ? 'max-w-[420px] 2xl:max-w-[460px]'
-              : ''
+              ? 'grid-cols-[repeat(3,max-content)]'
+              : 'grid-flow-col auto-cols-max'
           }`}
         >
           <button
