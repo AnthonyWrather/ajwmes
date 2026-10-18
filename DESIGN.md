@@ -141,7 +141,7 @@ Security is enforced at two distinct boundaries:
 graph TD
     App["App.tsx\nRoot State Coordinator & Route Controller"]
     
-    Nav["Navigation.tsx\nResponsive Header, Role Switcher, PWA Pill"]
+    Nav["Navigation.tsx\nResponsive 2-Row Wrap Header & Compact Drawer, Role Switcher, PWA Pill"]
     SyncBanner["FirestoreSyncBanner.tsx\nOffline / Connection Status Indicator"]
     
     subgraph RouteViews["Routed Feature Workspaces"]

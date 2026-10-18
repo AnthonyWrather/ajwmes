@@ -46,7 +46,7 @@ test.describe('Navigation Main Menu Consistency & Responsive Resilience E2E Suit
     await expect(nav.desktopTrackerTab).toHaveClass(/border-sky-500/);
   });
 
-  test('should ensure admin menu with all 8 tabs stays contained within viewport without escaping screen', async ({ page }) => {
+  test('should wrap admin and client desktop menus into two rows without horizontal scrollbar and clean AdminDashboard pane', async ({ page }) => {
     // Standard 13" laptop viewport
     await page.setViewportSize({ width: 1280, height: 800 });
     const nav = new NavigationPage(page);
@@ -95,26 +95,65 @@ test.describe('Navigation Main Menu Consistency & Responsive Resilience E2E Suit
       await expect(icon).toBeVisible();
     }
 
+    // Verify desktop nav menu has no horizontal scrollbar and wraps into two rows
+    const adminNavMetrics = await nav.desktopNavMenu.evaluate((el) => {
+      const buttons = Array.from(el.querySelectorAll('button'));
+      const rowTops = new Set(buttons.map((b) => Math.round(b.getBoundingClientRect().top)));
+      return {
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+        rowCount: rowTops.size,
+      };
+    });
+    expect(adminNavMetrics.scrollWidth).toBeLessThanOrEqual(adminNavMetrics.clientWidth);
+    expect(adminNavMetrics.rowCount).toBe(2);
+
+    // Verify Anthony's Operations Dashboard pane is clean and does not include redundant "AJWMES Field & Workshop Control Center"
+    await expect(page.getByTestId('admin-dashboard-title')).toBeVisible();
+    await expect(page.getByText('AJWMES Field & Workshop Control Center')).toHaveCount(0);
+
     // Verify header does not overflow horizontally or escape the viewport
     const viewportWidth = 1280;
     const documentScrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(documentScrollWidth).toBeLessThanOrEqual(viewportWidth);
 
-    // Verify header bar maintains crisp single-tier height
-    const headerHeight = await page.evaluate(() => {
-      const header = document.querySelector('header');
-      return header ? header.getBoundingClientRect().height : 0;
+    // Sign out and sign in as Client to verify Client 5-button menu also wraps into two rows without scrollbar
+    await nav.signOut();
+    await nav.openSignInModal();
+    await auth.verifyModalVisible();
+    await auth.signIn('d.mercer@solent-sail.co.uk', 'ajwmes2026');
+
+    const clientTabs = [
+      nav.desktopStoreTab,
+      nav.desktopTrackerTab,
+      nav.desktopDesignerTab,
+      nav.desktopReplicaTab,
+      nav.desktopPortalTab,
+    ];
+    for (const tab of clientTabs) {
+      await expect(tab).toBeVisible();
+    }
+
+    const clientNavMetrics = await nav.desktopNavMenu.evaluate((el) => {
+      const buttons = Array.from(el.querySelectorAll('button'));
+      const rowTops = new Set(buttons.map((b) => Math.round(b.getBoundingClientRect().top)));
+      return {
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+        rowCount: rowTops.size,
+      };
     });
-    expect(headerHeight).toBeLessThanOrEqual(72);
+    expect(clientNavMetrics.scrollWidth).toBeLessThanOrEqual(clientNavMetrics.clientWidth);
+    expect(clientNavMetrics.rowCount).toBe(2);
   });
 
-  test('should render compact, uniform 2-column mobile drawer without oversized buttons or escaping screen', async ({ page }) => {
-    // Standard mobile portrait viewport
-    await page.setViewportSize({ width: 375, height: 667 });
+  test('should render compact hamburger menu buttons matching main menu size so 4+ items fit per row when space permits', async ({ page }) => {
+    // Tablet / wide mobile viewport (< 1280px) where 4+ compact buttons easily fit on a single row
+    await page.setViewportSize({ width: 768, height: 900 });
     const nav = new NavigationPage(page);
     const auth = new AuthModalPage(page);
 
-    // Mock admin authentication to verify complete 8-button mobile grid
+    // Mock admin authentication to verify complete 8-button mobile menu
     await page.route('**/api/auth/**', async (route) => {
       await route.fulfill({
         status: 200,
@@ -153,17 +192,28 @@ test.describe('Navigation Main Menu Consistency & Responsive Resilience E2E Suit
 
     for (const button of mobileButtons) {
       await expect(button).toBeVisible();
-      // Must NOT be oversized col-span-2
-      await expect(button).not.toHaveClass(/col-span-2/);
-      // Must be styled with compact uniform rounded-xl border
-      await expect(button).toHaveClass(/rounded-xl/);
+      // Must match main menu button size & pill classes (rounded-lg, px-2.5, py-1, w-3.5 h-3.5 icon)
+      await expect(button).toHaveClass(/rounded-lg/);
       await expect(button).toHaveClass(/border/);
-      // Must include a colored Lucide icon
+      await expect(button).toHaveClass(/px-2\.5/);
+      await expect(button).toHaveClass(/py-1/);
       const icon = button.locator('svg');
       await expect(icon).toBeVisible();
+      await expect(icon).toHaveClass(/w-3\.5/);
     }
 
-    // Verify mobile drawer does not escape mobile viewport
+    // Verify 4 or more items fit on the first row in the Hamburger menu
+    const firstRowCount = await nav.mobileNavGrid.evaluate((el) => {
+      const buttons = Array.from(el.querySelectorAll('button'));
+      if (buttons.length === 0) return 0;
+      const firstTop = Math.round(buttons[0].getBoundingClientRect().top);
+      return buttons.filter((b) => Math.abs(Math.round(b.getBoundingClientRect().top) - firstTop) <= 4).length;
+    });
+    expect(firstRowCount).toBeGreaterThanOrEqual(4);
+
+    // Also verify on narrow portrait mobile (375x667) that the drawer fits within the screen
+    await page.setViewportSize({ width: 375, height: 667 });
+    await nav.ensureMobileMenuOpen();
     const drawerFitsScreen = await page.evaluate(() => {
       const drawer = document.querySelector('header > div.xl\\:hidden');
       if (!drawer) return false;

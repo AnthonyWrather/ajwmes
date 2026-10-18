@@ -86,7 +86,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex items-center justify-between gap-4">
         {/* Zone 1: Brand Wordmark, Anchor-Bolt & Release Version Label */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div 
@@ -122,7 +122,16 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
 
         {/* Zone 2: Consistent Bordered Pill Navigation - Role Adaptive (≥ 1280px) */}
-        <nav className="hidden xl:flex items-center gap-1.5 2xl:gap-2 text-xs font-semibold shrink min-w-0 overflow-x-auto no-scrollbar py-1">
+        <nav
+          data-testid="desktop-nav-menu"
+          className={`hidden xl:grid items-center justify-center gap-1.5 2xl:gap-2 text-xs font-semibold shrink-0 min-w-0 py-1 ${
+            currentUserRole === 'admin'
+              ? 'grid-cols-[repeat(4,max-content)]'
+              : currentUserRole === 'client'
+              ? 'grid-cols-[repeat(3,max-content)]'
+              : 'grid-flow-col auto-cols-max'
+          }`}
+        >
           <button
             data-testid="nav-tab-store"
             onClick={() => setCurrentTab('store')}
@@ -233,7 +242,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-admin"
               onClick={() => setCurrentTab('admin')}
-              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'admin' 
                   ? 'bg-rose-950/80 text-rose-300 border-rose-500/50 font-bold shadow-xs shadow-rose-950' 
                   : 'text-rose-400/90 border-rose-500/30 hover:bg-rose-950/40 hover:text-rose-300'
@@ -499,34 +508,37 @@ export const Navigation: React.FC<NavigationProps> = ({
             </button>
           </div>
 
-          {/* Balanced 2-Column Mobile Navigation Grid */}
-          <div className="grid grid-cols-2 gap-2 text-xs font-semibold pt-1 border-t border-slate-900">
+          {/* Compact Multi-Item Mobile Navigation Pills (Matches Main Menu Button Size) */}
+          <div
+            data-testid="mobile-nav-grid"
+            className="flex flex-wrap items-center gap-1.5 text-xs font-semibold pt-2 border-t border-slate-900"
+          >
             {/* Parts Store */}
             <button
               data-testid="mobile-nav-tab-store"
               onClick={() => { setCurrentTab('store'); setMobileMenuOpen(false); }}
-              className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'store'
-                  ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs'
-                  : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 bg-slate-900/60'
+                  ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
+                  : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300 bg-slate-900/60'
               }`}
             >
-              <ShoppingBag className="w-4 h-4 text-sky-400 shrink-0" />
-              <span className="truncate">Parts Store {cartCount > 0 ? `(${cartCount})` : ''}</span>
+              <ShoppingBag className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <span>Parts Store {cartCount > 0 ? `(${cartCount})` : ''}</span>
             </button>
 
             {/* Track Order */}
             <button
               data-testid="mobile-nav-tab-tracker"
               onClick={() => { setCurrentTab('tracker'); setMobileMenuOpen(false); }}
-              className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'tracker'
-                  ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs'
-                  : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 bg-slate-900/60'
+                  ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
+                  : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300 bg-slate-900/60'
               }`}
             >
-              <Truck className="w-4 h-4 text-sky-400 shrink-0" />
-              <span className="truncate">Track Order</span>
+              <Truck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <span>Track Order</span>
             </button>
 
             {/* Switch Panels */}
@@ -534,14 +546,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 data-testid="mobile-nav-tab-designer"
                 onClick={() => { setCurrentTab('designer'); setMobileMenuOpen(false); }}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                   currentTab === 'designer'
-                    ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50 font-bold shadow-xs'
-                    : 'text-cyan-400/90 border-cyan-500/30 hover:bg-cyan-950/40 bg-slate-900/60'
+                    ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50 font-bold shadow-xs shadow-cyan-950'
+                    : 'text-cyan-400/90 border-cyan-500/30 hover:bg-cyan-950/40 hover:text-cyan-300 bg-slate-900/60'
                 }`}
               >
-                <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span className="truncate">Switch Panels</span>
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span>Switch Panels</span>
               </button>
             )}
 
@@ -550,14 +562,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 data-testid="mobile-nav-tab-replica"
                 onClick={() => { setCurrentTab('replica'); setMobileMenuOpen(false); }}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                   currentTab === 'replica'
-                    ? 'bg-teal-950/80 text-teal-300 border-teal-500/50 font-bold shadow-xs'
-                    : 'text-teal-400/90 border-teal-500/30 hover:bg-teal-950/40 bg-slate-900/60'
+                    ? 'bg-teal-950/80 text-teal-300 border-teal-500/50 font-bold shadow-xs shadow-teal-950'
+                    : 'text-teal-400/90 border-teal-500/30 hover:bg-teal-950/40 hover:text-teal-300 bg-slate-900/60'
                 }`}
               >
-                <Camera className="w-4 h-4 text-teal-400 shrink-0" />
-                <span className="truncate">Replica Panels</span>
+                <Camera className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                <span>Replica Panels</span>
               </button>
             )}
 
@@ -566,14 +578,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 data-testid="mobile-nav-tab-portal"
                 onClick={() => { setCurrentTab('portal'); setMobileMenuOpen(false); }}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                   currentTab === 'portal'
-                    ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs'
-                    : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 bg-slate-900/60'
+                    ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
+                    : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300 bg-slate-900/60'
                 }`}
               >
-                <Ship className="w-4 h-4 text-sky-400 shrink-0" />
-                <span className="truncate">Vessel Portal</span>
+                <Ship className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                <span>Vessel Portal</span>
               </button>
             )}
 
@@ -582,14 +594,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 data-testid="mobile-nav-tab-technician"
                 onClick={() => { setCurrentTab('technician'); setMobileMenuOpen(false); }}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                   currentTab === 'technician'
-                    ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 font-bold shadow-xs'
-                    : 'text-amber-400/90 border-amber-500/30 hover:bg-amber-950/40 bg-slate-900/60'
+                    ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 font-bold shadow-xs shadow-amber-950'
+                    : 'text-amber-400/90 border-amber-500/30 hover:bg-amber-950/40 hover:text-amber-300 bg-slate-900/60'
                 }`}
               >
-                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="truncate">Tech Jobs</span>
+                <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Tech Jobs</span>
               </button>
             )}
 
@@ -598,14 +610,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 data-testid="mobile-nav-tab-postal"
                 onClick={() => { setCurrentTab('postal'); setMobileMenuOpen(false); }}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                   currentTab === 'postal'
-                    ? 'bg-purple-950/80 text-purple-300 border-purple-500/50 font-bold shadow-xs'
-                    : 'text-purple-400/90 border-purple-500/30 hover:bg-purple-950/40 bg-slate-900/60'
+                    ? 'bg-purple-950/80 text-purple-300 border-purple-500/50 font-bold shadow-xs shadow-purple-950'
+                    : 'text-purple-400/90 border-purple-500/30 hover:bg-purple-950/40 hover:text-purple-300 bg-slate-900/60'
                 }`}
               >
-                <Package className="w-4 h-4 text-purple-400 shrink-0" />
-                <span className="truncate">Postal Dispatch</span>
+                <Package className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                <span>Postal Dispatch</span>
               </button>
             )}
 
@@ -614,14 +626,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 data-testid="mobile-nav-tab-admin"
                 onClick={() => { setCurrentTab('admin'); setMobileMenuOpen(false); }}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                   currentTab === 'admin'
-                    ? 'bg-rose-950/80 text-rose-300 border-rose-500/50 font-bold shadow-xs'
-                    : 'text-rose-400/90 border-rose-500/30 hover:bg-rose-950/40 bg-slate-900/60'
+                    ? 'bg-rose-950/80 text-rose-300 border-rose-500/50 font-bold shadow-xs shadow-rose-950'
+                    : 'text-rose-400/90 border-rose-500/30 hover:bg-rose-950/40 hover:text-rose-300 bg-slate-900/60'
                 }`}
               >
-                <Wrench className="w-4 h-4 text-rose-400 shrink-0" />
-                <span className="truncate">Master Workshop</span>
+                <Wrench className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                <span>Master Workshop</span>
               </button>
             )}
           </div>
