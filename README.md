@@ -15,6 +15,7 @@ Headquartered in Gosport, Hampshire, supporting marine vessels across the Solent
 - **Primary Domain**: [https://ajwmes.co.uk](https://ajwmes.co.uk)
 - **Architecture Specification**: See [`DESIGN.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/DESIGN.md) for the 12-section technical architecture specification.
 - **AI Agent Guidelines**: See [`AGENTS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/AGENTS.md) and [`GEMINI.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/GEMINI.md) for automated agent pair-programming rules.
+- **Services Setup Guide**: See [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md) for step-by-step creation of every account, key and endpoint (Firebase, Firestore, Storage, Stripe, Resend, Gemini, GitHub Actions, DNS) needed to run development, preview and production.
 
 ---
 
@@ -26,6 +27,8 @@ Headquartered in Gosport, Hampshire, supporting marine vessels across the Solent
 5. [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
 6. [Master Configuration & Secrets Management](#master-configuration--secrets-management)
    - [Environment Variables Reference](#environment-variables-reference)
+   - [Deploying Development, Preview & Production](#deploying-development-preview--production)
+   - [Full Services Setup Guide (Stripe, Resend, Firebase…)](docs/SERVICES_SETUP.md)
    - [Google AI Studio (Gemini AI Key)](#1-google-ai-studio-gemini-ai-key)
    - [Firebase Web App Configuration](#2-firebase-console-standard-web-app-config)
    - [Special Firebase & Google Cloud Keys](#3-special-firebase--google-cloud-keys)
@@ -78,7 +81,7 @@ The system uses an **Offline-First Single-Page Application (SPA) / Progressive W
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/anthonywrather/AJW-Marine-Electrical-Services.git ajwmes
+git clone https://github.com/AnthonyWrather/ajwmes.git ajwmes
 cd ajwmes
 npm install
 ```
@@ -88,7 +91,7 @@ Copy the template `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Populate your `VITE_FIREBASE_API_KEY` and project identifiers (see [Master Configuration](#master-configuration--secrets-management)).
+Populate your `VITE_FIREBASE_API_KEY` and project identifiers (see [Master Configuration](#master-configuration--secrets-management)). Stripe and Resend are optional — with no keys the app runs in safe **simulated** payment and email modes. For creating the underlying accounts and keys, follow [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md).
 
 ### 3. Start the Development Server
 ```bash
@@ -179,7 +182,26 @@ The system features 5 distinct user roles governed by [`src/lib/rbac.ts`](file:/
 | `VITE_FIREBASE_MEASUREMENT_ID` | Optional | **Public** (Client bundle) | Firebase Console / GA4 | Google Analytics 4 stream measurement ID (`G-XXXXXXXXXX`). |
 | `VITE_FIREBASE_OAUTH_CLIENT_ID` | Optional | **Public** (Client bundle) | Google Cloud Console | OAuth 2.0 Web Client ID for Google Identity sign-in popup flows. |
 | `APP_URL` | Optional | Contextual | Hosting Provider | Base application URL (e.g. `http://localhost:3000` or `https://ajwmes.co.uk`). |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Optional | **Public** (Client bundle) | Stripe Dashboard | `pk_test_…` (dev/preview) or `pk_live_…` (prod). Empty → simulated payments. Never use `sk_…`. |
+| `VITE_STRIPE_PAYMENT_LINK_DEPOSIT` | Optional | **Public** (Client bundle) | Stripe Payment Links | Hosted checkout URL for diagnostic deposits. |
+| `VITE_STRIPE_PAYMENT_LINK_STORE` | Optional | **Public** (Client bundle) | Stripe Payment Links | Hosted checkout URL for storefront orders. |
+| `VITE_RESEND_API_KEY` | Optional | ⚠️ **Public** (Client bundle) | Resend | `re_…` email key. Empty → simulated outbox. Currently exposed client-side — see [Issue #20](https://github.com/AnthonyWrather/ajwmes/issues/20). |
+| `VITE_RESEND_FROM_EMAIL` | Optional | **Public** (Client bundle) | Resend (verified domain) | Sender, default `AJW Marine <notifications@ajwmes.co.uk>`. |
+| `VITE_RESEND_REPLY_TO` | Optional | **Public** (Client bundle) | — | Reply-to address, default `info@ajwmes.co.uk`. |
 | `FIREBASE_SERVICE_ACCOUNT` | **CI/CD Only** | **Secret** (GitHub Secrets) | Firebase Console (GCP IAM) | Service account private key JSON string used by GitHub Actions to deploy to Firebase Hosting. |
+
+> [!TIP]
+> Step-by-step instructions for creating each of these (including Stripe Payment Links, Resend domain verification and the GitHub deploy service account) are in [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md).
+
+### Deploying Development, Preview & Production
+
+| Environment | How it runs / deploys | Config source | Stripe | Resend |
+| :--- | :--- | :--- | :--- | :--- |
+| **Development** | `npm run dev` (localhost:3000) | Local `.env` | Test key or simulated | Simulated |
+| **Preview** | `firebase hosting:channel:deploy <name>` → `*--*.web.app` | Build-time env | Test key | Simulated |
+| **Production** | Merge to `main` → [`firebase-hosting-merge.yml`](.github/workflows/firebase-hosting-merge.yml) → `ajwmes.co.uk` | GitHub Secrets | Live key | Simulated until [#20](https://github.com/AnthonyWrather/ajwmes/issues/20) |
+
+All environments currently share one Firebase project with prefixed Firestore collections; per-environment projects are tracked in [Issue #21](https://github.com/AnthonyWrather/ajwmes/issues/21).
 
 ---
 

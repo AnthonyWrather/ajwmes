@@ -23,3 +23,6 @@ You are acting as an expert pair programmer on the **AJW Marine Electrical Servi
 6. **Testing Verification Protocol**:
    - Before finishing any task, run `npm run lint` and `npm run test:unit`. Both must pass with zero errors.
    - For UI changes, ensure interactive elements have meaningful `data-testid` attributes to preserve Playwright E2E compatibility.
+7. **Supporting Services & Secrets**:
+   - Account, key and endpoint provisioning for Firebase, Firestore, Storage, Stripe, Resend, Gemini and GitHub Actions is documented in `docs/SERVICES_SETUP.md`. Keep it in sync when adding or changing any environment variable, secret, or external integration (and update `.env.example`).
+   - Never place secret keys (Stripe `sk_…`, service accounts, server-only API keys) in `VITE_*` variables or committed files.

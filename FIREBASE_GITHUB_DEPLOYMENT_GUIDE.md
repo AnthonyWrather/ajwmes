@@ -1,5 +1,8 @@
 # AJW Marine Electrical Services — Firebase & GitHub Deployment Guide
 
+> [!TIP]
+> Setting up from scratch? Start with [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md), which covers creating every account, key and endpoint (Firebase, Firestore, Storage, Stripe, Resend, Gemini, GitHub Actions secrets, DNS) for development, preview and production. This guide focuses on Firebase Hosting deployment and auth troubleshooting.
+
 You have successfully linked your project in Firebase (**AJW Marine Electrical Services**) and uploaded the codebase to GitHub.
 
 Here are the exact next steps to get your app live on the internet with a free SSL certificate, custom domain, and automated GitHub continuous deployment.
@@ -114,15 +117,12 @@ This error occurs when Google Identity Services rejects the API key passed durin
   2. Select your project (e.g. **`gen-lang-client-0618772940`**).
   3. Click the gear icon (`⚙️`) next to Project Overview -> **Project settings**.
   4. Under the **General** tab, find **Web API Key**.
-  5. For `gen-lang-client-0618772940`, the verified authentic Firebase Web API Key is:
-     ```
-     AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
-     ```
+  5. Copy the value (it starts with `AIza`). Do not paste real keys into documentation.
 - **Update GitHub Secrets (for automated deployment):**
   1. In your GitHub repository, go to **Settings** -> **Secrets and variables** -> **Actions**.
-  2. Set `VITE_FIREBASE_API_KEY` to:
-     ```
-     AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg
+  2. Set `VITE_FIREBASE_API_KEY` to your Firebase Web API Key, e.g.:
+     ```bash
+     gh secret set VITE_FIREBASE_API_KEY --body "AIza..."
      ```
   3. Push to `main` (or run workflow) to redeploy with the correct key.
 
@@ -150,7 +150,7 @@ Your project is configured to use **`gen-lang-client-0618772940`**:
 - **OAuth Client ID:** `310512231306-ks44mner19rr9n0tctosqiiearofapkc.apps.googleusercontent.com`
 - **Hosting URL:** `https://gen-lang-client-0618772940.web.app`
 - **Service Account Secret in GitHub:** `FIREBASE_SERVICE_ACCOUNT` (for `gen-lang-client-0618772940`)
-- **API Key Secret in GitHub:** `VITE_FIREBASE_API_KEY` = `AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg`
+- **API Key Secret in GitHub:** `VITE_FIREBASE_API_KEY` (value: the project's Firebase Web API Key from Project settings)
 
 All workflow configurations and client SDKs are fully aligned with `gen-lang-client-0618772940`. Push cleanly to GitHub without mismatch or permission errors.
 
