@@ -16,7 +16,8 @@ import {
   Key,
   LogOut,
   ChevronDown,
-  Ship
+  Ship,
+  Camera
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../lib/auth';
 import { canAccessRoute } from '../lib/rbac';
@@ -113,30 +114,38 @@ export const Navigation: React.FC<NavigationProps> = ({
             }
           >
             <span className={`w-1.5 h-1.5 rounded-full ${envBadge.dotColor} animate-pulse`} />
-            <span className="font-bold tracking-tight text-white group-hover:underline">{FULL_VERSION_TAG}</span>
+            <span className="font-bold tracking-tight text-white group-hover:underline hidden 2xl:inline">{FULL_VERSION_TAG}</span>
+            <span className="font-bold tracking-tight text-white group-hover:underline 2xl:hidden">v{APP_VERSION}</span>
             <span className="opacity-30">|</span>
             <span className="uppercase text-[9px] font-semibold tracking-wider">{envBadge.shortLabel}</span>
           </button>
         </div>
 
-        {/* Zone 2: Clean Text Navigation Links - Role Adaptive (≥ 1280px) */}
-        <nav className="hidden xl:flex items-center gap-4 text-xs font-semibold text-slate-400">
-
+        {/* Zone 2: Consistent Bordered Pill Navigation - Role Adaptive (≥ 1280px) */}
+        <nav className="hidden xl:flex items-center gap-1.5 2xl:gap-2 text-xs font-semibold shrink min-w-0 overflow-x-auto no-scrollbar py-1">
           <button
             data-testid="nav-tab-store"
             onClick={() => setCurrentTab('store')}
-            className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${currentTab === 'store' ? 'text-sky-400 font-bold' : ''}`}
+            className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              currentTab === 'store'
+                ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
+                : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300'
+            }`}
           >
-            <ShoppingBag className="w-3.5 h-3.5 text-sky-400" />
+            <ShoppingBag className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>Parts Store</span>
           </button>
 
           <button
             data-testid="nav-tab-tracker"
             onClick={() => setCurrentTab('tracker')}
-            className={`hover:text-sky-300 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${currentTab === 'tracker' ? 'text-sky-400 font-bold' : ''}`}
+            className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              currentTab === 'tracker'
+                ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
+                : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300'
+            }`}
           >
-            <Truck className="w-3.5 h-3.5 text-sky-400" />
+            <Truck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>Track Order</span>
           </button>
 
@@ -145,9 +154,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-designer"
               onClick={() => setCurrentTab('designer')}
-              className={`hover:text-white transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${currentTab === 'designer' ? 'text-sky-400 font-bold' : ''}`}
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+                currentTab === 'designer'
+                  ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50 font-bold shadow-xs shadow-cyan-950'
+                  : 'text-cyan-400/90 border-cyan-500/30 hover:bg-cyan-950/40 hover:text-cyan-300'
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <span>Switch Panels</span>
             </button>
           )}
@@ -156,9 +169,14 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-replica"
               onClick={() => setCurrentTab('replica')}
-              className={`hover:text-white transition-colors whitespace-nowrap shrink-0 ${currentTab === 'replica' ? 'text-white font-bold' : ''}`}
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+                currentTab === 'replica'
+                  ? 'bg-teal-950/80 text-teal-300 border-teal-500/50 font-bold shadow-xs shadow-teal-950'
+                  : 'text-teal-400/90 border-teal-500/30 hover:bg-teal-950/40 hover:text-teal-300'
+              }`}
             >
-              Replica Panels
+              <Camera className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+              <span>Replica Panels</span>
             </button>
           )}
 
@@ -167,9 +185,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-portal"
               onClick={() => setCurrentTab('portal')}
-              className={`hover:text-white transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${currentTab === 'portal' ? 'text-sky-400 font-bold' : ''}`}
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+                currentTab === 'portal'
+                  ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
+                  : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300'
+              }`}
             >
-              <User className="w-3.5 h-3.5" />
+              <Ship className="w-3.5 h-3.5 text-sky-400 shrink-0" />
               <span>Vessel Portal</span>
             </button>
           )}
@@ -179,13 +201,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-technician"
               onClick={() => setCurrentTab('technician')}
-              className={`hover:text-amber-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'technician' 
-                  ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 font-bold shadow-sm shadow-amber-950' 
-                  : 'text-amber-400/90 border-amber-500/30 hover:bg-amber-950/40'
+                  ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 font-bold shadow-xs shadow-amber-950' 
+                  : 'text-amber-400/90 border-amber-500/30 hover:bg-amber-950/40 hover:text-amber-300'
               }`}
             >
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span>Tech Jobs</span>
             </button>
           )}
@@ -195,13 +217,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-postal"
               onClick={() => setCurrentTab('postal')}
-              className={`hover:text-purple-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'postal' 
-                  ? 'bg-purple-950/80 text-purple-300 border-purple-500/50 font-bold shadow-sm shadow-purple-950' 
-                  : 'text-purple-400/90 border-purple-500/30 hover:bg-purple-950/40'
+                  ? 'bg-purple-950/80 text-purple-300 border-purple-500/50 font-bold shadow-xs shadow-purple-950' 
+                  : 'text-purple-400/90 border-purple-500/30 hover:bg-purple-950/40 hover:text-purple-300'
               }`}
             >
-              <Package className="w-3.5 h-3.5 text-purple-400" />
+              <Package className="w-3.5 h-3.5 text-purple-400 shrink-0" />
               <span>Postal Dispatch</span>
             </button>
           )}
@@ -211,9 +233,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-admin"
               onClick={() => setCurrentTab('admin')}
-              className={`hover:text-sky-300 transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${currentTab === 'admin' ? 'text-sky-400 font-bold' : ''}`}
+              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+                currentTab === 'admin' 
+                  ? 'bg-rose-950/80 text-rose-300 border-rose-500/50 font-bold shadow-xs shadow-rose-950' 
+                  : 'text-rose-400/90 border-rose-500/30 hover:bg-rose-950/40 hover:text-rose-300'
+              }`}
             >
-              <Wrench className="w-3.5 h-3.5 text-sky-400" />
+              <Wrench className="w-3.5 h-3.5 text-rose-400 shrink-0" />
               <span>Master Workshop</span>
             </button>
           )}
@@ -370,13 +396,13 @@ export const Navigation: React.FC<NavigationProps> = ({
 
       {/* Mobile & Tablet Drawer Menu (< 1280px) */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-slate-950 border-b border-slate-800 p-4 space-y-4 animate-in slide-in-from-top-2 max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="xl:hidden bg-slate-950 border-b border-slate-800 p-3 sm:p-4 space-y-3 animate-in slide-in-from-top-2 max-h-[calc(100dvh-4.5rem)] overflow-y-auto">
           {/* Mobile User Profile / Auth State Card */}
-          <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl space-y-2.5">
+          <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
             {currentUserRole === 'guest' ? (
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-sky-950/70 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                  <div className="w-8 h-8 rounded-lg bg-sky-950/70 border border-sky-500/30 flex items-center justify-center text-sky-400">
                     <User className="w-4 h-4" />
                   </div>
                   <div>
@@ -391,7 +417,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                       setMobileMenuOpen(false);
                       onOpenSignInModal?.();
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-sm shadow-sky-600/30"
+                    className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-sm shadow-sky-600/30 cursor-pointer"
                   >
                     Sign In
                   </button>
@@ -401,11 +427,11 @@ export const Navigation: React.FC<NavigationProps> = ({
               <div>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-slate-200 font-bold shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-slate-200 font-bold shrink-0">
                       {currentUserProfile?.avatarUrl ? (
                         <img src={currentUserProfile.avatarUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-5 h-5 text-sky-400" />
+                        <User className="w-4 h-4 text-sky-400" />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -419,13 +445,13 @@ export const Navigation: React.FC<NavigationProps> = ({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5 mt-3 pt-2.5 border-t border-slate-800/80 text-xs">
+                <div className="grid grid-cols-2 gap-1.5 mt-2.5 pt-2 border-t border-slate-800/80 text-xs">
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
                       onOpenAccountModal?.();
                     }}
-                    className="py-1.5 px-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-xl font-semibold flex items-center justify-center gap-1 border border-slate-750"
+                    className="py-1 px-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg font-semibold flex items-center justify-center gap-1 border border-slate-750 cursor-pointer"
                   >
                     <User className="w-3.5 h-3.5 text-sky-400" />
                     <span>Account</span>
@@ -436,7 +462,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                       setMobileMenuOpen(false);
                       onOpenSignOffModal?.();
                     }}
-                    className="py-1.5 px-1.5 bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 rounded-xl font-semibold flex items-center justify-center gap-1 border border-rose-500/30"
+                    className="py-1 px-1.5 bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 rounded-lg font-semibold flex items-center justify-center gap-1 border border-rose-500/30 cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5 text-rose-400" />
                     <span>Sign Off</span>
@@ -447,7 +473,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
 
           {/* Mobile Release Version & Target Environment Tracker */}
-          <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs">
+          <div className="flex items-center justify-between px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${envBadge.dotColor} animate-pulse`} />
               <div className="flex flex-col">
@@ -473,83 +499,129 @@ export const Navigation: React.FC<NavigationProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs font-semibold pt-2 border-t border-slate-900">
+          {/* Balanced 2-Column Mobile Navigation Grid */}
+          <div className="grid grid-cols-2 gap-2 text-xs font-semibold pt-1 border-t border-slate-900">
+            {/* Parts Store */}
             <button
               data-testid="mobile-nav-tab-store"
               onClick={() => { setCurrentTab('store'); setMobileMenuOpen(false); }}
-              className="p-2.5 rounded-lg bg-slate-900 border border-sky-500/40 text-left text-sky-400 font-bold flex items-center gap-1.5"
+              className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                currentTab === 'store'
+                  ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs'
+                  : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 bg-slate-900/60'
+              }`}
             >
-              <ShoppingBag className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span>Parts Store {cartCount > 0 ? `(${cartCount})` : ''}</span>
+              <ShoppingBag className="w-4 h-4 text-sky-400 shrink-0" />
+              <span className="truncate">Parts Store {cartCount > 0 ? `(${cartCount})` : ''}</span>
             </button>
+
+            {/* Track Order */}
             <button
               data-testid="mobile-nav-tab-tracker"
               onClick={() => { setCurrentTab('tracker'); setMobileMenuOpen(false); }}
-              className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-sky-400 flex items-center gap-1.5"
+              className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                currentTab === 'tracker'
+                  ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs'
+                  : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 bg-slate-900/60'
+              }`}
             >
-              <Truck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span>Track Order</span>
+              <Truck className="w-4 h-4 text-sky-400 shrink-0" />
+              <span className="truncate">Track Order</span>
             </button>
 
+            {/* Switch Panels */}
             {canAccessRoute(currentUserRole, 'designer') && (
               <button
                 data-testid="mobile-nav-tab-designer"
                 onClick={() => { setCurrentTab('designer'); setMobileMenuOpen(false); }}
-                className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-sky-400"
+                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                  currentTab === 'designer'
+                    ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50 font-bold shadow-xs'
+                    : 'text-cyan-400/90 border-cyan-500/30 hover:bg-cyan-950/40 bg-slate-900/60'
+                }`}
               >
-                Switch Panels
+                <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span className="truncate">Switch Panels</span>
               </button>
             )}
 
+            {/* Replica Panels */}
             {canAccessRoute(currentUserRole, 'replica') && (
               <button
                 data-testid="mobile-nav-tab-replica"
                 onClick={() => { setCurrentTab('replica'); setMobileMenuOpen(false); }}
-                className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-white"
+                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                  currentTab === 'replica'
+                    ? 'bg-teal-950/80 text-teal-300 border-teal-500/50 font-bold shadow-xs'
+                    : 'text-teal-400/90 border-teal-500/30 hover:bg-teal-950/40 bg-slate-900/60'
+                }`}
               >
-                Replica Panels
+                <Camera className="w-4 h-4 text-teal-400 shrink-0" />
+                <span className="truncate">Replica Panels</span>
               </button>
             )}
 
+            {/* Client Vessel Portal */}
             {canAccessRoute(currentUserRole, 'portal') && (
               <button
                 data-testid="mobile-nav-tab-portal"
                 onClick={() => { setCurrentTab('portal'); setMobileMenuOpen(false); }}
-                className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-white"
+                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                  currentTab === 'portal'
+                    ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs'
+                    : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 bg-slate-900/60'
+                }`}
               >
-                Vessel Portal
+                <Ship className="w-4 h-4 text-sky-400 shrink-0" />
+                <span className="truncate">Vessel Portal</span>
               </button>
             )}
 
+            {/* Technician Workstation */}
             {canAccessRoute(currentUserRole, 'technician') && (
               <button
                 data-testid="mobile-nav-tab-technician"
                 onClick={() => { setCurrentTab('technician'); setMobileMenuOpen(false); }}
-                className="p-2.5 rounded-lg bg-amber-950/60 border border-amber-500/40 text-left text-amber-300 font-bold col-span-2 flex items-center gap-2"
+                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                  currentTab === 'technician'
+                    ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 font-bold shadow-xs'
+                    : 'text-amber-400/90 border-amber-500/30 hover:bg-amber-950/40 bg-slate-900/60'
+                }`}
               >
-                <Zap className="w-4 h-4 text-amber-400" />
-                <span>⚡ Technician Jobs Station</span>
+                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="truncate">Tech Jobs</span>
               </button>
             )}
 
+            {/* Postal Dispatch */}
             {canAccessRoute(currentUserRole, 'postal') && (
               <button
                 data-testid="mobile-nav-tab-postal"
                 onClick={() => { setCurrentTab('postal'); setMobileMenuOpen(false); }}
-                className="p-2.5 rounded-lg bg-purple-950/60 border border-purple-500/40 text-left text-purple-300 font-bold col-span-2 flex items-center gap-2"
+                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                  currentTab === 'postal'
+                    ? 'bg-purple-950/80 text-purple-300 border-purple-500/50 font-bold shadow-xs'
+                    : 'text-purple-400/90 border-purple-500/30 hover:bg-purple-950/40 bg-slate-900/60'
+                }`}
               >
-                <Package className="w-4 h-4 text-purple-400" />
-                <span>📦 Postal Fulfillment Dispatch Station</span>
+                <Package className="w-4 h-4 text-purple-400 shrink-0" />
+                <span className="truncate">Postal Dispatch</span>
               </button>
             )}
 
+            {/* Master Workshop Admin */}
             {canAccessRoute(currentUserRole, 'admin') && (
               <button
                 data-testid="mobile-nav-tab-admin"
                 onClick={() => { setCurrentTab('admin'); setMobileMenuOpen(false); }}
-                className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-left text-sky-300 col-span-2"
+                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-colors cursor-pointer ${
+                  currentTab === 'admin'
+                    ? 'bg-rose-950/80 text-rose-300 border-rose-500/50 font-bold shadow-xs'
+                    : 'text-rose-400/90 border-rose-500/30 hover:bg-rose-950/40 bg-slate-900/60'
+                }`}
               >
-                Anthony's Master Workshop
+                <Wrench className="w-4 h-4 text-rose-400 shrink-0" />
+                <span className="truncate">Master Workshop</span>
               </button>
             )}
           </div>
