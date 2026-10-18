@@ -32,7 +32,25 @@
         ]
       },
       {
-        "source": "sw.js",
+        "source": "**/*.@(html|json|webmanifest)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "@(sw.js|registerSW.js|workbox-*.js|version.json|index.html)",
         "headers": [
           {
             "key": "Cache-Control",

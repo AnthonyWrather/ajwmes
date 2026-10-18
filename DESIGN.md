@@ -512,14 +512,23 @@ VitePWA({
     icons: [...]
   },
   workbox: {
+    cleanupOutdatedCaches: true,
+    clientsClaim: true,
+    skipWaiting: true,
     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-    globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2}']
+    globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2}'],
+    globIgnores: ['**/version.json'],
+    navigateFallbackDenylist: [/^\/version\.json$/]
   }
 })
 ```
 
 - **Standalone Mode**: Eliminates browser chrome on iOS/iPadOS and Android when pinned to home screen.
 - **Cache Strategy**: Workbox precaches critical JS/CSS bundles, SVG symbols, and typography assets up to 5MB, allowing complete application boot without network connectivity.
+- **In-Browser Rollout Indicator & First-Refresh Deployment (`src/lib/appUpdater.ts`, `src/utils/versionCheck.ts`, `src/components/common/AppUpdateBanner.tsx`)**:
+  - At build time (and in dev/preview middleware), `ajwmesVersionManifestPlugin` emits `/version.json` with strict `Cache-Control: no-cache, no-store, must-revalidate` headers (matching `firebase.json` rules for `index.html`, `sw.js`, `registerSW.js`, and `version.json`).
+  - `appUpdater.ts` polls `/version.json` (`cache: 'no-store'`) on startup, tab focus/visibility, and periodic intervals while monitoring Service Worker `waiting` states.
+  - When a new deployment is detected, `AppUpdateBanner` and the sticky header `Update Ready` pill appear immediately, and clicking **Update & Refresh Now** (or refreshing the browser once) purges stale caches, activates the waiting Service Worker (`SKIP_WAITING`), and deploys the new release on the **first refresh**.
 
 ---
 
@@ -531,18 +540,18 @@ As Principal QA Automation Specialist, the quality engineering strategy implemen
 graph BT
     subgraph TestPyramid["Quality Assurance Test Pyramid"]
         direction BT
-        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- stripeCalculations.test.ts\n- stripeConfig.test.ts\n- auth.test.ts\n- rbac.test.ts\n- offlineQueueCalculations.test.ts\n- inventorySync.test.ts\n- postalTimeline.test.ts\n- emailTemplates.test.ts\n- version.test.ts\nExecution: < 1.5s | 235+ Passing Tests"]
+        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- stripeCalculations.test.ts\n- stripeConfig.test.ts\n- auth.test.ts\n- rbac.test.ts\n- offlineQueueCalculations.test.ts\n- inventorySync.test.ts\n- postalTimeline.test.ts\n- emailTemplates.test.ts\n- version.test.ts\n- versionCheck.test.ts\nExecution: < 1.5s | 240+ Passing Tests"]
         
         Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix Conformance Tests\n- Environment Partition Prefix Routing"]
         
-        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- navigation-responsive-menu.spec.ts (Responsive Pill Bar & Viewport Containment)\n- stripe.spec.ts (Payment Gateway & Card Checkout)\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline\n- performance-architecture-optimization.spec.ts"]
+        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- app-version-update.spec.ts (In-Browser Rollout Indicator & 1st Refresh Deploy)\n- navigation-responsive-menu.spec.ts (Responsive Pill Bar & Viewport Containment)\n- stripe.spec.ts (Payment Gateway & Card Checkout)\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline\n- performance-architecture-optimization.spec.ts"]
     end
 ```
 
 ### 10.1 Level 1: Fast Pure Logic Unit Tests (`tsx --test`)
 Executed directly on Node.js using `npm run test:unit`:
 - **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts`.
-- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (235+ passing tests).
+- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (240+ passing tests).
 - **Verification Matrix**:
   - `stripeCalculations.test.ts`: Verifies IEEE-754 pound/pence conversions, UK card fee estimation (1.5% + 20p), key validator (`pk_test_` / `pk_live_`), and hosted payment link construction.
   - `stripeConfig.test.ts`: Verifies scoped storage priority overrides, build-time env resolution, and safe fallback to simulated development mode.
@@ -556,7 +565,7 @@ Executed directly on Node.js using `npm run test:unit`:
   - `postalTimeline.test.ts`: Verifies Royal Mail/DPD tracking milestones, progress calculation, and delivery status tiers.
   - `generateVesselPdf.test.ts`: Tests jsPDF certificate rendering, ink-saver mono themes, and single vs multi-page specs.
   - `imageUrl.test.ts` & `imageResize.test.ts`: Tests image asset path normalizations and client-side photo compression.
-  - `version.test.ts`: Verifies SemVer string format and environment release badge tags.
+  - `version.test.ts` & `versionCheck.test.ts`: Verifies SemVer string format, environment release badge tags, `/version.json` manifest parsing, and single-refresh update comparison logic.
 
 ### 10.2 Level 2: End-to-End Test Suite (`@playwright/test`)
 Configured in [`playwright.config.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/playwright.config.ts) and executed via `npm run test:e2e`.

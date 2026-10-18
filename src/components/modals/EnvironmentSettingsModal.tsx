@@ -73,6 +73,13 @@ import {
 import { isValidStripePublishableKey } from '../../utils/stripeCalculations';
 import { sendTestEmail } from '../../lib/emailService';
 import { FirestoreConnectionState } from '../../types';
+import {
+  AppUpdateState,
+  checkForAppUpdate,
+  getAppUpdateState,
+  simulateNewVersionRollout,
+  subscribeAppUpdateState,
+} from '../../lib/appUpdater';
 
 interface EnvironmentSettingsModalProps {
   isOpen: boolean;
@@ -110,6 +117,11 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   const [customStripeKeyInput, setCustomStripeKeyInput] = useState('');
   const [showStripeKeySecret, setShowStripeKeySecret] = useState(false);
   const [stripeNotice, setStripeNotice] = useState<string | null>(null);
+  const [appUpdateState, setAppUpdateState] = useState<AppUpdateState>(() => getAppUpdateState());
+
+  React.useEffect(() => {
+    return subscribeAppUpdateState(setAppUpdateState);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -257,17 +269,17 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700/80 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 w-full max-w-full overflow-hidden flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-slate-700/80 w-full max-w-3xl min-w-0 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400">
+        <div className="px-4 sm:px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-start sm:items-center justify-between gap-3 min-w-0">
+          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+            <div className="p-2 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400 shrink-0">
               <Layers className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-base font-bold text-white">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm sm:text-base font-bold text-white">
                   Multi-Environment &amp; Release Manager
                 </h2>
                 <span 
@@ -280,22 +292,23 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   {RELEASE_CHANNEL}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Track releases across AI Studio Dev, Shared Preview, PR Staging, and Production Live (Commit: <span className="font-mono text-sky-300 font-semibold">{GIT_COMMIT_SHA}</span> · Build: {RELEASE_BUILD_DATE})
               </p>
             </div>
           </div>
           <button
+            type="button"
             data-testid="close-env-settings-modal"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 relative z-10 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-800 bg-slate-950/50 px-6 pt-2 gap-4">
+        <div className="flex flex-wrap border-b border-slate-800 bg-slate-950/50 px-4 sm:px-6 pt-2 gap-3 sm:gap-4 min-w-0">
           <button
             onClick={() => setActiveTab('overview')}
             className={`pb-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
@@ -337,14 +350,14 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
         )}
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 text-xs text-slate-300">
+        <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden space-y-6 text-xs text-slate-300 min-w-0">
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Current Status Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                 {/* Environment Status Card */}
-                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-mono uppercase text-slate-400">Environment</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
                       envInfo.envCode === 'aistudio-dev'
@@ -358,20 +371,20 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                       {envInfo.envCode}
                     </span>
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">{envInfo.envName}</div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-white truncate">{envInfo.envName}</div>
                     <div className="text-[11px] text-slate-400 truncate mt-0.5" title={envInfo.hostname}>
                       Hostname: <span className="font-mono text-slate-300">{envInfo.hostname}</span>
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                  <p className="text-[11px] text-slate-400 leading-relaxed break-words">
                     {envInfo.dataDescription}
                   </p>
                 </div>
 
                 {/* Storage & Cloud Connection Status Card */}
-                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-mono uppercase text-slate-400">Storage Mode</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
                       connectionState.isConnected
@@ -381,14 +394,14 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                       {connectionState.isConnected ? 'Cloud Firestore Sync' : 'Isolated Test Sandbox'}
                     </span>
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-white truncate">
                       {connectionState.isConnected ? 'Live Bidirectional Sync' : 'Independent Local Storage'}
                     </div>
-                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                    <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
                       Storage Prefix: <span className="text-sky-300">{envInfo.storageNamespace}</span>
                     </div>
-                    <div className="text-[11px] text-slate-400 font-mono">
+                    <div className="text-[11px] text-slate-400 font-mono truncate">
                       Firestore Scope: <span className="text-amber-300">{envInfo.firestoreCollectionPrefix || 'root (production)'}</span>
                     </div>
                   </div>
@@ -411,12 +424,12 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
               {/* GitHub Release & Commit Linkage Card */}
               <div 
                 data-testid="github-commit-card"
-                className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3"
+                className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3 min-w-0"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <GitCommit className="w-4 h-4 text-sky-400" />
-                    <span className="font-bold text-white">GitHub Release &amp; Commit Verification</span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <GitCommit className="w-4 h-4 text-sky-400 shrink-0" />
+                    <span className="font-bold text-white truncate">GitHub Release &amp; Commit Verification</span>
                   </div>
                   <a
                     href={getGitHubRepoUrl()}
@@ -430,9 +443,9 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </a>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 min-w-0">
                   {/* Commit SHA & Copy */}
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5 min-w-0">
                     <span className="text-[10px] font-mono uppercase text-slate-400 block">Commit Hash</span>
                     <div className="flex items-center justify-between gap-2">
                       <span 
@@ -453,16 +466,16 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </div>
 
                   {/* Git Branch */}
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5 min-w-0">
                     <span className="text-[10px] font-mono uppercase text-slate-400 block">Active Branch</span>
-                    <div className="flex items-center gap-1.5 text-xs font-mono font-semibold text-slate-200">
-                      <GitBranch className="w-3.5 h-3.5 text-purple-400" />
-                      <span>{GIT_BRANCH}</span>
+                    <div className="flex items-center gap-1.5 text-xs font-mono font-semibold text-slate-200 min-w-0">
+                      <GitBranch className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                      <span className="truncate" title={GIT_BRANCH}>{GIT_BRANCH}</span>
                     </div>
                   </div>
 
                   {/* App Full Tag */}
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5">
+                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5 min-w-0">
                     <span className="text-[10px] font-mono uppercase text-slate-400 block">Release Tag</span>
                     <span className="text-xs font-mono font-bold text-amber-300 block truncate">
                       {FULL_VERSION_TAG}
@@ -478,12 +491,30 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </p>
                 </div>
 
-                {/* Action Links */}
+                {/* Action Links & Release Update Verification */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/60">
                   <span className="text-[11px] text-slate-400">
                     Live target commit for <span className="font-semibold text-slate-200">{envInfo.envName}</span>
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      data-testid="check-app-update-button"
+                      disabled={appUpdateState.isChecking}
+                      onClick={() => void checkForAppUpdate({ manual: true })}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white font-semibold text-xs border border-cyan-500/30 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${appUpdateState.isChecking ? 'animate-spin' : ''}`} />
+                      <span>{appUpdateState.isChecking ? 'Checking...' : 'Check for Updates'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="simulate-version-update-button"
+                      onClick={() => simulateNewVersionRollout()}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 font-semibold text-xs border border-amber-500/40 transition-colors cursor-pointer"
+                    >
+                      <span>Simulate New Version</span>
+                    </button>
                     <a
                       data-testid="view-github-commit-link"
                       href={getGitHubCommitUrl()}
@@ -505,6 +536,19 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                     </a>
                   </div>
                 </div>
+
+                {appUpdateState.statusMessage && (
+                  <div
+                    data-testid="app-update-status-notice"
+                    className={`p-2 rounded-lg text-[11px] font-mono border ${
+                      appUpdateState.isUpdateAvailable
+                        ? 'bg-cyan-950/60 border-cyan-500/40 text-cyan-200'
+                        : 'bg-slate-900/80 border-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {appUpdateState.statusMessage}
+                  </div>
+                )}
               </div>
 
               {/* Environment Switcher / Simulation */}
@@ -600,32 +644,32 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
               </div>
 
               {/* Firebase Project & Web API Key Management Card */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Key className="w-4 h-4 text-sky-400" />
-                    <span className="font-bold text-white">Firebase Project &amp; Web API Key Diagnostics</span>
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3.5 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Key className="w-4 h-4 text-sky-400 shrink-0" />
+                    <span className="font-bold text-white truncate">Firebase Project &amp; Web API Key Diagnostics</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-500/30 font-mono text-[10px]">
+                  <span className="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-500/30 font-mono text-[10px] truncate max-w-full">
                     Project: {firebaseConfig.projectId}
                   </span>
                 </div>
 
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 break-words">
                   Resolves <code className="text-amber-300 font-mono">auth/api-key-not-valid</code> errors when deployed to Firebase.
                   Ensure you are using the <strong>Firebase Web API Key</strong> from the Firebase Console, not a Google Gemini AI Studio key.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px]">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px] min-w-0">
+                  <div className="min-w-0">
                     <span className="text-slate-400 block">Active Web App ID:</span>
                     <span className="font-mono text-slate-200 select-all truncate block">{firebaseConfig.appId}</span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-slate-400 block">Auth Domain:</span>
                     <span className="font-mono text-slate-200 select-all truncate block">{firebaseConfig.authDomain}</span>
                   </div>
-                  <div className="sm:col-span-2 flex items-center justify-between pt-1 border-t border-slate-800">
+                  <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800 min-w-0">
                     <span className="text-slate-400">Active Web API Key:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sky-300 text-[11px]">
@@ -695,11 +739,11 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
               </div>
 
               {/* Resend Email Configuration & API Key Manager */}
-              <div data-testid="resend-card" className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-sky-400" />
-                    <span className="font-bold text-white text-sm">Resend Email Integration</span>
+              <div data-testid="resend-card" className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Mail className="w-4 h-4 text-sky-400 shrink-0" />
+                    <span className="font-bold text-white text-sm truncate">Resend Email Integration</span>
                   </div>
                   {resendConfigState.isConfigured ? (
                     <span data-testid="resend-mode-badge" className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-mono text-[10px]">
@@ -712,20 +756,20 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   )}
                 </div>
 
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 break-words">
                   Resend manages incoming & outgoing transactional emails for vessel registration, online store order confirmations, carrier dispatch tracking, pontoon sign-offs, and automated zero-stock alerts.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px]">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px] min-w-0">
+                  <div className="min-w-0">
                     <span className="text-slate-400 block">Verified Sender:</span>
                     <span className="font-mono text-slate-200 truncate block">{resendConfigState.fromEmail}</span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-slate-400 block">Reply-To Address:</span>
                     <span className="font-mono text-slate-200 truncate block">{resendConfigState.replyTo}</span>
                   </div>
-                  <div className="sm:col-span-2 flex items-center justify-between pt-1 border-t border-slate-800">
+                  <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800 min-w-0">
                     <span className="text-slate-400">Active Resend API Key:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sky-300 text-[11px]">
@@ -805,11 +849,11 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
               </div>
 
               {/* Stripe Payment Gateway & Key Manager */}
-              <div data-testid="stripe-card" className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-sky-400" />
-                    <span className="font-bold text-white text-sm">Stripe Payment Gateway</span>
+              <div data-testid="stripe-card" className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CreditCard className="w-4 h-4 text-sky-400 shrink-0" />
+                    <span className="font-bold text-white text-sm truncate">Stripe Payment Gateway</span>
                   </div>
                   {stripeConfigState.mode === 'live' ? (
                     <span data-testid="stripe-mode-badge" className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-mono text-[10px]">
@@ -826,12 +870,12 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   )}
                 </div>
 
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 break-words">
                   Stripe powers customer card checkouts, marine switch panel deposits, and diagnostic labor billing. In simulated mode, transactions are authorized locally with full mock audit trails.
                 </p>
 
-                <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px] space-y-2">
-                  <div className="flex items-center justify-between">
+                <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px] space-y-2 min-w-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-slate-400">Active Publishable Key:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sky-300 text-[11px]">

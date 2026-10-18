@@ -67,6 +67,54 @@ try {
 }
 
 const gitMeta = getGitMetadata();
+const versionManifestJson = JSON.stringify(
+  {
+    version: appVersion,
+    commitSha: gitMeta.commitSha,
+    commitFullSha: gitMeta.fullSha,
+    commitMessage: gitMeta.commitMessage,
+    branch: gitMeta.branch,
+    buildDate: gitMeta.buildDate,
+    fullTag: `v${appVersion}-${gitMeta.commitSha}`,
+  },
+  null,
+  2
+);
+
+function ajwmesVersionManifestPlugin() {
+  return {
+    name: 'ajwmes-version-manifest',
+    configureServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: { setHeader: (k: string, v: string) => void; end: (b: string) => void }, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url && req.url.split('?')[0] === '/version.json') {
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.end(versionManifestJson);
+          return;
+        }
+        next();
+      });
+    },
+    configurePreviewServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: { setHeader: (k: string, v: string) => void; end: (b: string) => void }, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url && req.url.split('?')[0] === '/version.json') {
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.end(versionManifestJson);
+          return;
+        }
+        next();
+      });
+    },
+    generateBundle(this: { emitFile: (file: { type: 'asset'; fileName: string; source: string }) => void }) {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: versionManifestJson,
+      });
+    },
+  };
+}
 
 export default defineConfig(() => {
   return {
@@ -89,6 +137,7 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
+      ajwmesVersionManifestPlugin(),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'icon.svg', 'icon-192.png', 'icon-512.png'],
@@ -124,8 +173,13 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2}'],
+          globIgnores: ['**/version.json'],
+          navigateFallbackDenylist: [/^\/version\.json$/],
         },
         devOptions: {
           enabled: false,
