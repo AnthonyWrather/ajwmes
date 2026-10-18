@@ -256,6 +256,9 @@ The app automatically detects hosting domains and scopes LocalStorage keys so pr
 - `*--*.web.app` (PR previews) &rarr; `ajwmes_github_pre_*`
 - `ajwmes.co.uk` &rarr; `ajwmes_github_live_*`
 
+### 4. In-Browser Version Update Indicator & Single-Refresh Deployment
+When a new release is deployed, `/version.json` and the Service Worker lifecycle controller ([`src/lib/appUpdater.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/appUpdater.ts)) automatically surface a top-level **New Version Available** indicator banner ([`src/components/common/AppUpdateBanner.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/common/AppUpdateBanner.tsx)) and a header **Update Ready** badge. Clicking **Update & Refresh Now** (or refreshing the browser once) flushes stale Workbox caches and deploys the new release on the **first refresh**.
+
 ---
 
 ## AI-Assisted Development & Control Files

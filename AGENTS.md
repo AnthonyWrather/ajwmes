@@ -61,6 +61,7 @@ ajwmes/
 │   │   └── supplierData.ts
 │   ├── lib/                # Core infrastructure services:
 │   │   ├── analytics.ts    # GA4 & operational event tracking
+│   │   ├── appUpdater.ts   # Service Worker & /version.json single-refresh update controller
 │   │   ├── auth.ts         # Firebase auth & developer 1-click profiles
 │   │   ├── environment.ts  # Runtime environment detection (dev/preview/prod)
 │   │   ├── envStorage.ts   # Environment-scoped LocalStorage manager (ajwmes_<env>_*)
@@ -80,12 +81,13 @@ ajwmes/
 │   │   ├── imageResize.ts             # Client-side photo compression for offline storage
 │   │   ├── imageUrl.ts                # Image URL resolution & placeholder fallbacks
 │   │   ├── postalTimeline.ts          # Royal Mail / DPD dispatch tracking calculations
-│   │   └── stripeCalculations.ts      # Stripe pence conversion, fee estimation, key validation
+│   │   ├── stripeCalculations.ts      # Stripe pence conversion, fee estimation, key validation
+│   │   └── versionCheck.ts            # Pure version manifest parsing & rollout comparison logic
 │   ├── version.ts          # Semantic versioning (v1.2.0) and release metadata
 │   ├── App.tsx             # Root application orchestrator
 │   ├── index.css           # Tailwind CSS v4 directives & theme definitions
 │   └── main.tsx            # React 19 application mount point
-└── tests/                  # Playwright E2E browser specifications (authentication.spec.ts, stripe.spec.ts)
+└── tests/                  # Playwright E2E browser specifications (authentication.spec.ts, stripe.spec.ts, app-version-update.spec.ts)
 ```
 
 ---

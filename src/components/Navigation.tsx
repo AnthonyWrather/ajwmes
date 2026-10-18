@@ -43,6 +43,10 @@ interface NavigationProps {
   onOpenAccountModal?: () => void;
   onOpenEnvironmentSettings?: () => void;
   onOpenTeamRoles?: () => void;
+  appUpdateAvailable?: boolean;
+  appUpdateTargetTag?: string;
+  onApplyAppUpdate?: () => void;
+  activeVersionTag?: string;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -63,7 +67,11 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenSignOffModal,
   onOpenAccountModal,
   onOpenEnvironmentSettings,
-  onOpenTeamRoles
+  onOpenTeamRoles,
+  appUpdateAvailable = false,
+  appUpdateTargetTag,
+  onApplyAppUpdate,
+  activeVersionTag
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -72,6 +80,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   const envInfo = detectEnvironment();
   const envBadge = getEnvironmentBadge(envInfo.envCode);
   const canOpenEnvSettings = canAccessEnvironmentSettings(envInfo.envCode, currentUserRole);
+  const displayedFullTag = activeVersionTag || FULL_VERSION_TAG;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -85,10 +94,10 @@ export const Navigation: React.FC<NavigationProps> = ({
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full max-w-full bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 min-h-16 py-2 flex items-center justify-between gap-1.5 sm:gap-4 min-w-0">
         {/* Zone 1: Brand Wordmark, Anchor-Bolt & Release Version Label */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 min-w-0">
           <div 
             onClick={() => setCurrentTab('home')}
             className="cursor-pointer shrink-0"
@@ -102,23 +111,40 @@ export const Navigation: React.FC<NavigationProps> = ({
             data-testid="header-version-badge"
             disabled={!canOpenEnvSettings}
             onClick={canOpenEnvSettings ? onOpenEnvironmentSettings : undefined}
-            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-mono font-medium transition-all shadow-xs ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 rounded-full border text-[10px] sm:text-[11px] font-mono font-medium transition-all shadow-xs shrink-0 ${
               canOpenEnvSettings
                 ? `cursor-pointer active:scale-95 group ${envBadge.badgeClass}`
                 : 'cursor-not-allowed opacity-75 bg-emerald-950/50 text-emerald-300/80 border-emerald-500/30'
             }`}
             title={
               canOpenEnvSettings
-                ? `Release ${FULL_VERSION_TAG} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Click to open Multi-Environment & Release Manager`
-                : `Release ${FULL_VERSION_TAG} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Multi-Environment & Release Manager requires Administrator privileges`
+                ? `Release ${displayedFullTag} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Click to open Multi-Environment & Release Manager`
+                : `Release ${displayedFullTag} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Multi-Environment & Release Manager requires Administrator privileges`
             }
           >
             <span className={`w-1.5 h-1.5 rounded-full ${envBadge.dotColor} animate-pulse`} />
-            <span className="font-bold tracking-tight text-white group-hover:underline hidden 2xl:inline">{FULL_VERSION_TAG}</span>
+            <span className="font-bold tracking-tight text-white group-hover:underline hidden 2xl:inline">{displayedFullTag}</span>
             <span className="font-bold tracking-tight text-white group-hover:underline 2xl:hidden">v{APP_VERSION}</span>
             <span className="opacity-30">|</span>
             <span className="uppercase text-[9px] font-semibold tracking-wider">{envBadge.shortLabel}</span>
           </button>
+
+          {/* Persistent In-Browser Update Indicator Pill */}
+          {appUpdateAvailable && (
+            <button
+              type="button"
+              data-testid="header-update-available-badge"
+              onClick={onApplyAppUpdate}
+              className="flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-[10px] sm:text-[11px] font-mono font-bold transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
+              title={`New version ${appUpdateTargetTag || ''} ready — click to update and refresh immediately`}
+            >
+              <RefreshCw className="w-3 h-3 text-cyan-300 animate-spin shrink-0" />
+              <span className="hidden lg:inline">Update Ready</span>
+              {appUpdateTargetTag && (
+                <span className="hidden 2xl:inline text-emerald-300 font-extrabold">({appUpdateTargetTag})</span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Zone 2: Consistent Bordered Pill Navigation - Role Adaptive (≥ 1280px) */}
@@ -255,7 +281,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         </nav>
 
         {/* Zone 3: User Authentication & Role Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-0">
             {/* Cart Icon & Badge Trigger */}
             <button
               data-testid="nav-cart-button"
@@ -266,7 +292,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                   setCurrentTab('store');
                 }
               }}
-              className="relative p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors cursor-pointer"
+              className="relative p-1.5 sm:p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors cursor-pointer shrink-0"
               title="View Postal Order Basket"
             >
               <ShoppingBag className="w-4 h-4 text-sky-400" />
@@ -284,10 +310,10 @@ export const Navigation: React.FC<NavigationProps> = ({
                 <button
                   data-testid="nav-signin-button"
                   onClick={onOpenSignInModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-950/80 hover:bg-sky-900 text-sky-300 hover:text-white border border-sky-500/40 text-xs font-bold transition-all shadow-sm shadow-sky-950 cursor-pointer active:scale-95"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-sky-950/80 hover:bg-sky-900 text-sky-300 hover:text-white border border-sky-500/40 text-[11px] sm:text-xs font-bold transition-all shadow-sm shadow-sky-950 cursor-pointer active:scale-95 whitespace-nowrap"
                   title="Sign in or register your vessel account"
                 >
-                  <Key className="w-3.5 h-3.5 text-sky-400" />
+                  <Key className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                   <span>Sign In</span>
                 </button>
               </div>
@@ -297,25 +323,25 @@ export const Navigation: React.FC<NavigationProps> = ({
                 <button
                   data-testid="user-account-button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1 pl-1.5 pr-2 sm:pr-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group max-w-[140px] xs:max-w-[170px] sm:max-w-[200px]"
+                  className="flex items-center gap-1 sm:gap-2 p-1 pl-1 sm:pl-1.5 pr-1.5 sm:pr-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group max-w-[105px] sm:max-w-[200px]"
                   title="Account settings & profile menu"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-slate-200 font-bold text-xs shrink-0">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-slate-200 font-bold text-xs shrink-0">
                     {currentUserProfile?.avatarUrl ? (
                       <img src={currentUserProfile.avatarUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <User className="w-3.5 h-3.5 text-sky-400" />
                     )}
                   </div>
-                  <div className="flex flex-col text-left leading-none min-w-0 max-w-[65px] xs:max-w-[90px] sm:max-w-[120px]">
-                    <span data-testid="user-profile-name" className="text-[11px] font-bold text-white truncate block">
+                  <div className="flex flex-col text-left leading-none min-w-0 max-w-[44px] sm:max-w-[120px]">
+                    <span data-testid="user-profile-name" className="text-[10px] sm:text-[11px] font-bold text-white truncate block">
                       {currentUserProfile?.name || 'Account'}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-mono capitalize truncate block">
+                    <span className="text-[8px] sm:text-[9px] text-slate-400 font-mono capitalize truncate block">
                       {ROLE_CONFIGS[currentUserRole].badge}
                     </span>
                   </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform shrink-0 ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 transition-transform shrink-0 ${userDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -386,7 +412,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Primary Action Button */}
           <button
             onClick={onOpenBookingModal}
-            className="px-2.5 sm:px-3.5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 active:scale-95 transition-all rounded-xl shadow-md shadow-sky-600/30 whitespace-nowrap cursor-pointer shrink-0"
+            className="px-2 sm:px-3.5 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 active:scale-95 transition-all rounded-xl shadow-md shadow-sky-600/30 whitespace-nowrap cursor-pointer shrink-0"
           >
             Book (£25/hr)
           </button>
@@ -395,7 +421,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           <button
             data-testid="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 text-slate-400 hover:text-white cursor-pointer"
+            className="xl:hidden p-1.5 sm:p-2 text-slate-400 hover:text-white cursor-pointer shrink-0"
             aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

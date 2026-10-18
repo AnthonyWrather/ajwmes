@@ -4,6 +4,15 @@ import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
 import { FirestoreSyncBanner } from './components/common/FirestoreSyncBanner';
+import { AppUpdateBanner } from './components/common/AppUpdateBanner';
+import {
+  AppUpdateState,
+  applyAppUpdate,
+  getAppUpdateState,
+  initAppUpdater,
+  setUpdateBannerMinimized,
+  subscribeAppUpdateState,
+} from './lib/appUpdater';
 import { LandingHero } from './components/home/LandingHero';
 import { ServicesSection } from './components/home/ServicesSection';
 import { StoreFront } from './components/store/StoreFront';
@@ -131,6 +140,16 @@ export default function App() {
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isEnvironmentModalOpen, setIsEnvironmentModalOpen] = useState(false);
+  const [appUpdateState, setAppUpdateState] = useState<AppUpdateState>(() => getAppUpdateState());
+
+  useEffect(() => {
+    const cleanupUpdater = initAppUpdater();
+    const unsubscribeUpdateState = subscribeAppUpdateState(setAppUpdateState);
+    return () => {
+      unsubscribeUpdateState();
+      cleanupUpdater();
+    };
+  }, []);
 
   const [vessels, setVessels] = useState<VesselSpec[]>(() => {
     return getEnvStorageItem('vessels', (envSeed as any).vessels || DEFAULT_VESSELS);
@@ -1359,7 +1378,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+      {/* In-Browser Release Rollout Indicator Banner: Deploys new version on first refresh */}
+      <AppUpdateBanner
+        updateState={appUpdateState}
+        onApplyUpdate={applyAppUpdate}
+        onMinimize={() => setUpdateBannerMinimized(true)}
+      />
+
       {/* Subtle UI Indicator at the top of the app: Warns users if disconnected from Firestore */}
       <FirestoreSyncBanner
         connectionState={connectionState}
@@ -1404,6 +1430,10 @@ export default function App() {
             setIsEnvironmentModalOpen(true);
           }
         }}
+        appUpdateAvailable={appUpdateState.isUpdateAvailable}
+        appUpdateTargetTag={appUpdateState.remoteManifest?.fullTag}
+        onApplyAppUpdate={() => void applyAppUpdate()}
+        activeVersionTag={appUpdateState.currentTag}
       />
 
       {/* Main Container with Centralized RBAC Route Middleware Guard */}
