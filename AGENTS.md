@@ -68,7 +68,9 @@ ajwmes/
 │   │   ├── firebaseConfig.ts # Extracted client config & dynamic overrides
 │   │   ├── offlineSync.ts  # Offline mutation queue & synchronization controller
 │   │   ├── rbac.ts         # Role matrix & permission checking functions
-│   │   └── storage.ts      # Cloud Storage upload helpers & fallbacks
+│   │   ├── storage.ts      # Cloud Storage upload helpers & fallbacks
+│   │   ├── stripeConfig.ts # Stripe runtime environment & scoped key manager
+│   │   └── stripeService.ts # Stripe checkout redirect & simulated payment processor
 │   ├── types/              # Central type definitions (src/types/index.ts)
 │   ├── utils/              # Pure calculation and business logic (ALWAYS accompanied by *.test.ts):
 │   │   ├── electricalCalculations.ts  # Stopwatch labor (£25/hr), materials, switch panel CAD pricing
@@ -77,12 +79,13 @@ ajwmes/
 │   │   ├── generateVesselPdf.ts       # jsPDF electrical certificate & schematic export
 │   │   ├── imageResize.ts             # Client-side photo compression for offline storage
 │   │   ├── imageUrl.ts                # Image URL resolution & placeholder fallbacks
-│   │   └── postalTimeline.ts          # Royal Mail / DPD dispatch tracking calculations
+│   │   ├── postalTimeline.ts          # Royal Mail / DPD dispatch tracking calculations
+│   │   └── stripeCalculations.ts      # Stripe pence conversion, fee estimation, key validation
 │   ├── version.ts          # Semantic versioning (v1.2.0) and release metadata
 │   ├── App.tsx             # Root application orchestrator
 │   ├── index.css           # Tailwind CSS v4 directives & theme definitions
 │   └── main.tsx            # React 19 application mount point
-└── tests/                  # Playwright E2E browser specifications (authentication.spec.ts)
+└── tests/                  # Playwright E2E browser specifications (authentication.spec.ts, stripe.spec.ts)
 ```
 
 ---

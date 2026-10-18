@@ -99,8 +99,18 @@ export class VesselPortalPage {
   readonly pdfPrintButton: Locator;
   readonly pdfDownloadButton: Locator;
 
+  // Stripe Deposit
+  readonly payDepositButton: Locator;
+  readonly depositSecuredBadge: Locator;
+  readonly depositStatus: Locator;
+
   constructor(page: Page) {
     this.page = page;
+
+    // Stripe Deposit
+    this.payDepositButton = page.getByTestId('stripe-pay-deposit-button');
+    this.depositSecuredBadge = page.getByTestId('stripe-deposit-secured-badge');
+    this.depositStatus = page.getByTestId('job-deposit-status');
 
     // Portal Header & Overview
     this.portalContainer = page.getByTestId('client-vessel-portal');
@@ -385,5 +395,30 @@ export class VesselPortalPage {
   async triggerDirectPrint(): Promise<void> {
     await expect(this.pdfPrintButton).toBeVisible({ timeout: 5000 });
     await this.pdfPrintButton.click({ force: true });
+  }
+
+  // --- Stripe Job Quote Deposit ---
+  async payJobDepositViaStripe(): Promise<void> {
+    // If the currently selected job's deposit is already paid, inspect other job cards to find an unpaid one
+    const payButtonVisible = await this.payDepositButton.isVisible().catch(() => false);
+    if (!payButtonVisible) {
+      const jobCards = this.page.getByTestId('job-list-card');
+      const count = await jobCards.count();
+      for (let i = 0; i < count; i++) {
+        const card = jobCards.nth(i);
+        await card.click();
+        if (await this.payDepositButton.isVisible({ timeout: 1500 }).catch(() => false)) {
+          break;
+        }
+      }
+    }
+
+    if (await this.payDepositButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await this.payDepositButton.scrollIntoViewIfNeeded();
+      await this.payDepositButton.click({ force: true });
+    }
+
+    await expect(this.depositSecuredBadge).toBeVisible({ timeout: 15000 });
+    await expect(this.depositStatus).toContainText('Paid');
   }
 }

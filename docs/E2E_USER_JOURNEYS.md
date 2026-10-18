@@ -357,6 +357,37 @@ graph TD
 
 ---
 
+### Journey 12: Online Hardware Store Checkout & Stripe Payment Settlement (UJ-13)
+- **Test File:** [`tests/stripe.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/stripe.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `StorePage`, `CartDrawerPage`, `AuthModalPage`, `VesselPortalPage`
+- **Target Personas:** `guest`, `client`, `admin`
+
+#### Scenarios Verified:
+1. **Multi-Environment Inspector Stripe Status & Card Management**:
+   - Open Multi-Environment Settings Modal via the version badge in the application header.
+   - Assert Stripe Payment Gateway card rendering and initial state (Safe Dev / Simulated Mode with fallback reference ID generation).
+   - Assert key override inputs, mode badges, and UK interchange fee note (1.5% + 20p).
+2. **Publishable Key Format Validation**:
+   - Attempt to persist an invalid or malformed Stripe key.
+   - Verify immediate validation error banner requiring a valid `pk_test_...` or `pk_live_...` prefix.
+3. **Dynamic Test Mode Activation & Session Reset**:
+   - Enter a valid Stripe test publishable key (`pk_test_...`).
+   - Save the key and assert immediate dynamic mode badge transition to `🧪 Stripe Test Mode (pk_test)`.
+   - Clear the custom key and confirm clean session reset to Simulated Dev Mode.
+4. **End-to-End Marine Hardware Store Checkout with Stripe**:
+   - Navigate to `/store` and add marine tinned cable to the postal basket.
+   - Open Cart Drawer, select Royal Mail delivery, and input recipient shipping address.
+   - Proceed to payment and select **Credit / Debit Card (Stripe Card Checkout)**.
+   - Assert presence of 256-bit encryption badge and card detail fields.
+   - Authorize order and assert `Order Confirmed!` heading with audited `AJW-POST-*` order number and `pi_sim_*` Stripe payment reference.
+5. **Boat Owner Diagnostic Quote Deposit Settlement via Stripe**:
+   - Authenticate as registered Boat Owner client (David Mercer).
+   - Navigate to Vessel Portal (`/portal`) and select the Jobs & Activity sub-tab.
+   - Locate pending diagnostic job quote and trigger `Pay Deposit via Stripe`.
+   - Assert real-time transition to `Deposit Secured via Stripe` with audited deposit balance updated to `Paid (£50)`.
+
+---
+
 ## 2. Future User Journeys Requiring Test Coverage
 
 The following table identifies the operational workflows across AJWMES and their automation status:
@@ -371,6 +402,7 @@ The following table identifies the operational workflows across AJWMES and their
 | **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | Medium (Image upload, Dimensions) | **Done (Automated)** |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | Medium (jsPDF verification, Specs) | **Done (Automated)** |
 | **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | Any / `/technician` | `technician` | **Critical (P0)** | High (IndexedDB, Service Worker) | **Done (Automated)** |
+| **UJ-13** | **Hardware Store Checkout & Stripe Payment Settlement** | `/store`, `/portal` | `guest`, `client`, `admin` | **High (P0)** | Medium (Payment Gateway, POMs, Keys) | **Done (Automated)** |
 
 ---
 
@@ -389,6 +421,7 @@ gantt
     Custom Switch Panel CAD Designer (UJ-07)      :done, 2026-10-18, 1d
     Photo Replica Quoter (UJ-08)                  :done, 2026-10-18, 1d
     Vessel Portal & PDF Certificate Export (UJ-09):done, 2026-10-20, 1d
+    Stripe Checkout & Deposit Settlement (UJ-13)  :done, 2026-10-18, 1d
     section Phase 3 (Admin & Resilience)
     Offline Pontoon Resilience & Mutation Sync (UJ-11):done, 2026-10-17, 1d
 ```
@@ -397,7 +430,7 @@ gantt
 
 ## 4. Recommended Next User Journey & Operational Enhancements
 
-All 8 primary core user journeys across AJWMES are now 100% automated with end-to-end browser specifications and unit test suites. Recommended candidate extensions include:
+All 9 primary core user journeys across AJWMES are now 100% automated with end-to-end browser specifications and unit test suites. Recommended candidate extensions include:
 
 ### Future Candidate: **Technician-to-Client Pontoon Job Discussion & Live Photo Synchronization (UJ-12)**
 - **Target Routes:** `/technician` ↔ `/portal`

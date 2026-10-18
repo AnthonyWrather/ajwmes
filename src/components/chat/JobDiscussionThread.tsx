@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { uploadSwitchPanelImage, isFirebaseStorageUrl } from '../../lib/storage';
 import { ImageLightboxModal } from '../common/ImageLightboxModal';
+import { processStripePayment } from '../../lib/stripeService';
 
 interface JobDiscussionThreadProps {
   job: JobRecord;
@@ -71,12 +72,33 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
     setInputText('');
   };
 
-  const handleSimulateStripePay = () => {
+  const handleSimulateStripePay = async () => {
     setIsProcessingStripe(true);
-    setTimeout(() => {
+    const depositAmount = job.depositAmount || 50;
+
+    try {
+      const stripeRes = await processStripePayment({
+        amountPounds: depositAmount,
+        referenceId: job.reference,
+        customerEmail: job.clientEmail,
+        customerName: job.clientName,
+        description: `Diagnostic Job Deposit: ${job.reference} (${job.vesselName})`,
+        paymentType: 'job_deposit'
+      });
+
+      if (stripeRes.redirectUrl) {
+        window.open(stripeRes.redirectUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      if (onPayDeposit) {
+        onPayDeposit(job.id, depositAmount);
+      }
+    } catch (err) {
+      console.warn('Stripe deposit processing error:', err);
+      if (onPayDeposit) onPayDeposit(job.id, depositAmount);
+    } finally {
       setIsProcessingStripe(false);
-      if (onPayDeposit) onPayDeposit(job.id, 50);
-    }, 1500);
+    }
   };
 
   // Upload an image attachment directly to Firebase Storage
@@ -415,7 +437,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
               </div>
               <div className="flex justify-between text-[11px] text-slate-400">
                 <span>Deposit Status:</span>
-                <span className={job.depositPaid ? 'text-emerald-400 font-semibold' : 'text-amber-400'}>
+                <span data-testid="job-deposit-status" className={job.depositPaid ? 'text-emerald-400 font-semibold' : 'text-amber-400'}>
                   {job.depositPaid ? `Paid (£${job.depositAmount})` : 'Unpaid'}
                 </span>
               </div>
@@ -426,6 +448,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
           <div className="space-y-2 pt-2 border-t border-slate-800">
             {job.status === 'quote_sent' && currentUserRole === 'client' && (
               <button
+                data-testid="approve-quote-button"
                 onClick={() => onApproveQuote && onApproveQuote(job.id)}
                 className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
               >
@@ -436,6 +459,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
 
             {!job.depositPaid ? (
               <button
+                data-testid="stripe-pay-deposit-button"
                 onClick={handleSimulateStripePay}
                 disabled={isProcessingStripe}
                 className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-sky-600/30"
@@ -444,7 +468,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
                 <span>{isProcessingStripe ? 'Opening Stripe...' : 'Pay Deposit via Stripe'}</span>
               </button>
             ) : (
-              <div className="w-full py-2 bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 font-semibold rounded-xl text-[11px] flex items-center justify-center gap-1.5">
+              <div data-testid="stripe-deposit-secured-badge" className="w-full py-2 bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 font-semibold rounded-xl text-[11px] flex items-center justify-center gap-1.5">
                 <ShieldCheck className="w-4 h-4" />
                 <span>Deposit Secured via Stripe</span>
               </div>

@@ -352,7 +352,7 @@ export const INITIAL_JOBS: JobRecord[] = [
     totalLabor: 87.50, // 3.5 hrs * £25
     totalMaterials: 122.50,
     totalEstimated: 210.00,
-    depositPaid: true,
+    depositPaid: false,
     depositAmount: 50.00,
     createdAt: '2026-10-06 11:20',
     messages: [
@@ -815,6 +815,7 @@ export const INITIAL_POSTAL_ORDERS: PostalOrder[] = [
     total: 74.50,
     paymentMethod: 'card',
     paymentStatus: 'paid',
+    stripePaymentId: 'pi_live_2845_mercer',
     orderStatus: 'processing',
     createdAt: '2026-10-08 08:30',
     notes: 'Bench assembly in progress: continuous spool measurement & crimp QA.'
