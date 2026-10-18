@@ -75,7 +75,8 @@ export class NavigationPage {
       await this.mobileStoreTab.click({ force: true });
     } else {
       await expect(this.desktopStoreTab).toBeVisible({ timeout: 10000 });
-      await this.desktopStoreTab.click({ force: true });
+      await this.desktopStoreTab.scrollIntoViewIfNeeded();
+      await this.desktopStoreTab.click();
     }
   }
 
@@ -88,7 +89,8 @@ export class NavigationPage {
       await this.mobileTrackerTab.click({ force: true });
     } else {
       await expect(this.desktopTrackerTab).toBeVisible({ timeout: 10000 });
-      await this.desktopTrackerTab.click({ force: true });
+      await this.desktopTrackerTab.scrollIntoViewIfNeeded();
+      await this.desktopTrackerTab.click();
     }
   }
 
@@ -101,7 +103,8 @@ export class NavigationPage {
       await this.mobileDesignerTab.click({ force: true });
     } else {
       await expect(this.desktopDesignerTab).toBeVisible({ timeout: 10000 });
-      await this.desktopDesignerTab.click({ force: true });
+      await this.desktopDesignerTab.scrollIntoViewIfNeeded();
+      await this.desktopDesignerTab.click();
     }
   }
 
@@ -114,7 +117,8 @@ export class NavigationPage {
       await this.mobileReplicaTab.click({ force: true });
     } else {
       await expect(this.desktopReplicaTab).toBeVisible({ timeout: 10000 });
-      await this.desktopReplicaTab.click({ force: true });
+      await this.desktopReplicaTab.scrollIntoViewIfNeeded();
+      await this.desktopReplicaTab.click();
     }
   }
 
@@ -127,9 +131,10 @@ export class NavigationPage {
       await expect(mobilePostal).toBeVisible({ timeout: 10000 });
       await mobilePostal.click({ force: true });
     } else {
-      const desktopPostal = this.page.getByTestId('nav-tab-postal');
+      const desktopPostal = this.desktopPostalTab;
       await expect(desktopPostal).toBeVisible({ timeout: 10000 });
-      await desktopPostal.click({ force: true });
+      await desktopPostal.scrollIntoViewIfNeeded();
+      await desktopPostal.click();
     }
   }
 
@@ -142,9 +147,10 @@ export class NavigationPage {
       await expect(mobileTech).toBeVisible({ timeout: 10000 });
       await mobileTech.click({ force: true });
     } else {
-      const desktopTech = this.page.getByTestId('nav-tab-technician');
+      const desktopTech = this.desktopTechnicianTab;
       await expect(desktopTech).toBeVisible({ timeout: 10000 });
-      await desktopTech.click({ force: true });
+      await desktopTech.scrollIntoViewIfNeeded();
+      await desktopTech.click();
     }
   }
 
@@ -157,7 +163,8 @@ export class NavigationPage {
       await this.mobileAdminTab.click({ force: true });
     } else {
       await expect(this.desktopAdminTab).toBeVisible({ timeout: 10000 });
-      await this.desktopAdminTab.click({ force: true });
+      await this.desktopAdminTab.scrollIntoViewIfNeeded();
+      await this.desktopAdminTab.click();
     }
   }
 
@@ -170,7 +177,8 @@ export class NavigationPage {
       await this.mobilePortalTab.click({ force: true });
     } else {
       await expect(this.desktopPortalTab).toBeVisible({ timeout: 10000 });
-      await this.desktopPortalTab.click({ force: true });
+      await this.desktopPortalTab.scrollIntoViewIfNeeded();
+      await this.desktopPortalTab.click();
     }
   }
 

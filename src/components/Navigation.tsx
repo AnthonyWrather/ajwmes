@@ -114,7 +114,8 @@ export const Navigation: React.FC<NavigationProps> = ({
             }
           >
             <span className={`w-1.5 h-1.5 rounded-full ${envBadge.dotColor} animate-pulse`} />
-            <span className="font-bold tracking-tight text-white group-hover:underline">{FULL_VERSION_TAG}</span>
+            <span className="font-bold tracking-tight text-white group-hover:underline hidden 2xl:inline">{FULL_VERSION_TAG}</span>
+            <span className="font-bold tracking-tight text-white group-hover:underline 2xl:hidden">v{APP_VERSION}</span>
             <span className="opacity-30">|</span>
             <span className="uppercase text-[9px] font-semibold tracking-wider">{envBadge.shortLabel}</span>
           </button>
@@ -125,7 +126,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           <button
             data-testid="nav-tab-store"
             onClick={() => setCurrentTab('store')}
-            className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
               currentTab === 'store'
                 ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
                 : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300'
@@ -138,7 +139,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           <button
             data-testid="nav-tab-tracker"
             onClick={() => setCurrentTab('tracker')}
-            className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
               currentTab === 'tracker'
                 ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
                 : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300'
@@ -153,7 +154,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-designer"
               onClick={() => setCurrentTab('designer')}
-              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'designer'
                   ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50 font-bold shadow-xs shadow-cyan-950'
                   : 'text-cyan-400/90 border-cyan-500/30 hover:bg-cyan-950/40 hover:text-cyan-300'
@@ -168,7 +169,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-replica"
               onClick={() => setCurrentTab('replica')}
-              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'replica'
                   ? 'bg-teal-950/80 text-teal-300 border-teal-500/50 font-bold shadow-xs shadow-teal-950'
                   : 'text-teal-400/90 border-teal-500/30 hover:bg-teal-950/40 hover:text-teal-300'
@@ -184,7 +185,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-portal"
               onClick={() => setCurrentTab('portal')}
-              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'portal'
                   ? 'bg-sky-950/80 text-sky-300 border-sky-500/50 font-bold shadow-xs shadow-sky-950'
                   : 'text-sky-400/90 border-sky-500/30 hover:bg-sky-950/40 hover:text-sky-300'
@@ -200,7 +201,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-technician"
               onClick={() => setCurrentTab('technician')}
-              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'technician' 
                   ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 font-bold shadow-xs shadow-amber-950' 
                   : 'text-amber-400/90 border-amber-500/30 hover:bg-amber-950/40 hover:text-amber-300'
@@ -216,7 +217,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               data-testid="nav-tab-postal"
               onClick={() => setCurrentTab('postal')}
-              className={`transition-all flex items-center gap-1.5 px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`transition-all flex items-center gap-1.5 px-2 2xl:px-2.5 py-1 rounded-lg border whitespace-nowrap shrink-0 cursor-pointer ${
                 currentTab === 'postal' 
                   ? 'bg-purple-950/80 text-purple-300 border-purple-500/50 font-bold shadow-xs shadow-purple-950' 
                   : 'text-purple-400/90 border-purple-500/30 hover:bg-purple-950/40 hover:text-purple-300'
