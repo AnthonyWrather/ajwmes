@@ -15,6 +15,10 @@ export class NavigationPage {
   readonly mobileAdminTab: Locator;
   readonly desktopPortalTab: Locator;
   readonly mobilePortalTab: Locator;
+  readonly desktopTechnicianTab: Locator;
+  readonly mobileTechnicianTab: Locator;
+  readonly desktopPostalTab: Locator;
+  readonly mobilePostalTab: Locator;
   readonly cartButton: Locator;
   readonly signInNavButton: Locator;
   readonly userAccountButton: Locator;
@@ -29,6 +33,10 @@ export class NavigationPage {
     this.desktopReplicaTab = page.getByTestId('nav-tab-replica');
     this.desktopAdminTab = page.getByTestId('nav-tab-admin');
     this.desktopPortalTab = page.getByTestId('nav-tab-portal');
+    this.desktopTechnicianTab = page.getByTestId('nav-tab-technician');
+    this.mobileTechnicianTab = page.getByTestId('mobile-nav-tab-technician');
+    this.desktopPostalTab = page.getByTestId('nav-tab-postal');
+    this.mobilePostalTab = page.getByTestId('mobile-nav-tab-postal');
     this.mobileMenuToggle = page.getByTestId('mobile-menu-toggle');
     this.mobileStoreTab = page.getByTestId('mobile-nav-tab-store');
     this.mobileTrackerTab = page.getByTestId('mobile-nav-tab-tracker');
