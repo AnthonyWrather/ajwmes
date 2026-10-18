@@ -231,15 +231,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Admin Control Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 mb-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>AJWMES Field &amp; Workshop Control Center</span>
-            <span aria-hidden="true">·</span>
-            <span className="text-emerald-400 font-mono flex items-center gap-1">
-              <Cloud className="w-3.5 h-3.5" />
-              <span>Firebase Storage Active</span>
-            </span>
-          </div>
           <h2 data-testid="admin-dashboard-title" className="text-xl sm:text-2xl font-bold text-white">
             Anthony's Operations Dashboard
           </h2>

@@ -2,6 +2,8 @@ import { Page, Locator, expect } from '@playwright/test';
 
 export class NavigationPage {
   readonly page: Page;
+  readonly desktopNavMenu: Locator;
+  readonly mobileNavGrid: Locator;
   readonly desktopStoreTab: Locator;
   readonly desktopTrackerTab: Locator;
   readonly desktopDesignerTab: Locator;
@@ -27,6 +29,8 @@ export class NavigationPage {
 
   constructor(page: Page) {
     this.page = page;
+    this.desktopNavMenu = page.getByTestId('desktop-nav-menu');
+    this.mobileNavGrid = page.getByTestId('mobile-nav-grid');
     this.desktopStoreTab = page.getByTestId('nav-tab-store');
     this.desktopTrackerTab = page.getByTestId('nav-tab-tracker');
     this.desktopDesignerTab = page.getByTestId('nav-tab-designer');
