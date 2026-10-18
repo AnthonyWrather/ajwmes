@@ -628,6 +628,13 @@ Before code is accepted or deployed:
 2. `npm run test:unit`: All mathematical and electrical specs must pass.
 3. `npm run test:e2e`: Playwright headless suites across Chromium, Firefox, WebKit, and Mobile must succeed.
 
+### 11.2 External Services & Environment Provisioning
+Provisioning of every supporting service — Firebase (Auth, Firestore, Storage, Hosting, Analytics), Stripe (publishable keys & Payment Links), Resend (domain verification & sending keys), Google Gemini, GitHub Actions secrets and custom-domain DNS — is documented step by step in [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md), including a per-environment (dev / preview / production) matrix and checklists.
+
+Known architectural gaps tracked for follow-up:
+- **Client-side Resend key** (`VITE_RESEND_API_KEY`) — move email dispatch to a server-side Cloud Function backed by Secret Manager ([Issue #20](https://github.com/AnthonyWrather/ajwmes/issues/20)).
+- **Single shared Firebase project** with collection-prefix isolation (see ADR 003) — migrate to one Firebase project per environment ([Issue #21](https://github.com/AnthonyWrather/ajwmes/issues/21)).
+
 ---
 
 ## 12. Architecture Decision Records (ADRs)

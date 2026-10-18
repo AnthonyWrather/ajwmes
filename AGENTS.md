@@ -3,6 +3,8 @@
 Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and postal workshop management PWA.
 
 > **System Architecture Reference:** See [`DESIGN.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/DESIGN.md) for full architectural design and technical specifications.
+>
+> **Supporting Services Setup:** See [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md) for provisioning Firebase, Firestore, Storage, Stripe, Resend, Gemini and GitHub Actions secrets across dev / preview / production. Update it (and `.env.example`) whenever an environment variable, secret or external integration changes.
 
 ---
 
