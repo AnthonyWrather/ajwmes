@@ -478,6 +478,17 @@ Expenses are categorized into billable project disbursements vs overhead:
 - Marine DC circuit breaker safety rating bounds verification ($5\text{A} \le I_{\text{rating}} \le 60\text{A}$).
 - Marine battery capacity constraints ($10\text{Ah} \le \text{Capacity} \le 5000\text{Ah}$).
 
+### 8.4 Stripe Payment Gateway & Financial Settlement (`src/utils/stripeCalculations.ts` & `src/lib/stripeService.ts`)
+1. **Pence & Currency Integrity**:
+   $$\text{Pence} = \text{round}(\text{Amount}_{\text{GBP}} \times 100) \quad (\text{IEEE-754 precision guarded})$$
+2. **UK Domestic Merchant Fee Estimation**:
+   $$\text{Fee}_{\text{Stripe}} = \text{round}\left( (\text{Amount} \times 0.015 + 0.20) \times 100 \right) / 100$$
+   $$\text{Net Settlement} = \max(0, \text{Amount} - \text{Fee}_{\text{Stripe}})$$
+3. **Resilient Zero-Backend & Offline Fallback**:
+   - Primary: Stripe Publishable Key (`pk_test_...` / `pk_live_...`) with client-safe Vite injection.
+   - Hosted Direct: Stripe Payment Links (`https://buy.stripe.com/...`) with prefilled client and email reference params.
+   - Fallback: Offline / Pontoon simulated mode with traceable transaction generation (`pi_sim_...`).
+
 ---
 
 ## 9. Progressive Web App (PWA) & Mobile Field Performance
@@ -520,19 +531,21 @@ As Principal QA Automation Specialist, the quality engineering strategy implemen
 graph BT
     subgraph TestPyramid["Quality Assurance Test Pyramid"]
         direction BT
-        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- auth.test.ts\n- rbac.test.ts\n- offlineQueueCalculations.test.ts\n- inventorySync.test.ts\n- postalTimeline.test.ts\n- emailTemplates.test.ts\n- version.test.ts\nExecution: < 1.5s | 200+ Assertions"]
+        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- stripeCalculations.test.ts\n- stripeConfig.test.ts\n- auth.test.ts\n- rbac.test.ts\n- offlineQueueCalculations.test.ts\n- inventorySync.test.ts\n- postalTimeline.test.ts\n- emailTemplates.test.ts\n- version.test.ts\nExecution: < 1.5s | 235+ Passing Tests"]
         
         Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix Conformance Tests\n- Environment Partition Prefix Routing"]
         
-        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline\n- performance-architecture-optimization.spec.ts"]
+        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- stripe.spec.ts (Payment Gateway & Card Checkout)\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline\n- performance-architecture-optimization.spec.ts"]
     end
 ```
 
 ### 10.1 Level 1: Fast Pure Logic Unit Tests (`tsx --test`)
 Executed directly on Node.js using `npm run test:unit`:
 - **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts`.
-- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (210+ passing tests).
+- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (235+ passing tests).
 - **Verification Matrix**:
+  - `stripeCalculations.test.ts`: Verifies IEEE-754 pound/pence conversions, UK card fee estimation (1.5% + 20p), key validator (`pk_test_` / `pk_live_`), and hosted payment link construction.
+  - `stripeConfig.test.ts`: Verifies scoped storage priority overrides, build-time env resolution, and safe fallback to simulated development mode.
   - `electricalCalculations.test.ts`: Verifies stopwatch conversions, fractional decimal hours, zero-second edge cases, and panel pricing tiers.
   - `expenseCalculations.test.ts`: Validates financial rollups, NaN handling, and billable vs overhead categorization.
   - `formValidation.test.ts`: Tests Solent landlines, UK mobile normalizations, breaker amp limits, and email formats.
@@ -635,13 +648,22 @@ Before code is accepted or deployed:
 - **Decision**: Standardize on `@playwright/test` with explicit Pixel 5 and iPhone 12 emulation in CI/CD.
 - **Consequences**: Early detection of viewport overflow, touch target sizing issues, and mobile layout regressions before field rollout.
 
+### ADR 006: Stripe Payment Integration with Zero-Backend Hosted Links & Offline Simulation Fallback
+- **Context**: Solent marine technicians and boat owners frequently process transactions with varying connectivity, requiring card processing for workshop orders and job deposits without heavy backend server maintenance.
+- **Decision**: Architect a three-tier Stripe subsystem in `src/lib/stripeService.ts` and `src/utils/stripeCalculations.ts`:
+  1. *Publishable Key*: Injected client-safe at build time via `VITE_STRIPE_PUBLISHABLE_KEY` (`pk_test_...` or `pk_live_...`).
+  2. *Zero-Backend Hosted Checkout*: Optional Stripe Payment Links (`https://buy.stripe.com/...`) with prefilled client and email references.
+  3. *Offline Resilience*: Automated fallback to simulated local transactions (`pi_sim_...`) when offline or in development environments.
+- **Consequences**: No custom backend or PCI compliance overhead; zero disruptions for field diagnostics in metal yacht hulls or offshore moorings; seamless testing across all environments.
+
 ---
 
 ## 13. Quality Verification & Sign-Off Checklist
 
 Before merging any feature into `main`:
 - [x] **Static Typing**: `npm run lint` passes with 0 type errors.
-- [x] **Unit Test Suite**: `npm run test:unit` passes (211/211 passing tests).
+- [x] **Unit Test Suite**: `npm run test:unit` passes (235/235 passing tests).
+- [x] **Stripe Payment Gateway**: Validated test/live key detection, UK domestic interchange calculations (1.5% + 20p), and simulated fallback.
 - [x] **Offline Resilience**: Field mutations gracefully store to IndexedDB when disconnected (`navigator.onLine = false`).
 - [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 5 roles (`guest`, `client`, `admin`, `technician`, `postal`).
 - [x] **PWA Manifest & Assets**: Icons, theme colors (`#0A192F`), and service worker registered without console warnings.

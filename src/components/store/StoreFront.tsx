@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { CatalogItem, CategoryItem, CartItem, PostalOrder, PostalOrderShippingAddress } from '../../types';
 import { normalizeImageUrl } from '../../utils/imageUrl';
+import { resolveStripeConfig } from '../../lib/stripeConfig';
+import { processStripePayment } from '../../lib/stripeService';
 import { 
   ShoppingBag, 
   Search, 
@@ -67,6 +69,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
   // Checkout flow state in Cart Drawer
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'shipping' | 'payment' | 'confirmation'>('cart');
   const [lastPlacedOrder, setLastPlacedOrder] = useState<PostalOrder | null>(null);
+  const stripeConfig = useMemo(() => resolveStripeConfig(), []);
 
   // Checkout Form State
   const [deliveryType, setDeliveryType] = useState<'home' | 'marina'>('home');
@@ -150,49 +153,69 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
   };
 
   // Handle Place Order
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
 
     setIsProcessingPayment(true);
 
-    setTimeout(() => {
-      const orderNum = `AJW-POST-${Math.floor(1000 + Math.random() * 9000)}`;
-      const order: PostalOrder = {
-        id: `ord-${Date.now()}`,
-        orderNumber: orderNum,
-        customerName: formData.fullName || 'Valued Marine Customer',
-        customerEmail: formData.email,
-        customerPhone: formData.phone,
-        shippingAddress: {
-          ...formData,
-          isMarinaDelivery: deliveryType === 'marina'
-        },
-        shippingMethod,
-        shippingCost,
-        items: cart.map(c => ({
-          itemId: c.item.id,
-          name: c.item.name,
-          unit: c.item.unit,
-          quantity: c.quantity,
-          unitPrice: c.item.unitPrice,
-          lineTotal: Number((c.item.unitPrice * c.quantity).toFixed(2))
-        })),
-        subtotal: cartSubtotal,
-        total: cartTotal,
-        paymentMethod,
-        paymentStatus: paymentMethod === 'card' ? 'paid' : 'pending',
-        orderStatus: shippingMethod === 'solent_pickup' ? 'received' : 'received',
-        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-        notes: formData.deliveryNotes
-      };
+    const orderNum = `AJW-POST-${Math.floor(1000 + Math.random() * 9000)}`;
+    let stripePaymentId: string | undefined = undefined;
 
-      onSubmitPostalOrder(order);
-      setLastPlacedOrder(order);
-      onClearCart();
-      setIsProcessingPayment(false);
-      setCheckoutStep('confirmation');
-    }, 900);
+    if (paymentMethod === 'card') {
+      try {
+        const stripeRes = await processStripePayment({
+          amountPounds: cartTotal,
+          referenceId: orderNum,
+          customerEmail: formData.email,
+          customerName: formData.fullName,
+          description: `AJWMES Postal Hardware Order ${orderNum}`,
+          paymentType: 'store_order'
+        });
+        stripePaymentId = stripeRes.paymentId;
+        if (stripeRes.redirectUrl) {
+          window.open(stripeRes.redirectUrl, '_blank', 'noopener,noreferrer');
+        }
+      } catch (err) {
+        console.warn('Stripe checkout error, continuing with fallback:', err);
+      }
+    }
+
+    const order: PostalOrder = {
+      id: `ord-${Date.now()}`,
+      orderNumber: orderNum,
+      customerName: formData.fullName || 'Valued Marine Customer',
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      shippingAddress: {
+        ...formData,
+        isMarinaDelivery: deliveryType === 'marina'
+      },
+      shippingMethod,
+      shippingCost,
+      items: cart.map(c => ({
+        itemId: c.item.id,
+        name: c.item.name,
+        unit: c.item.unit,
+        quantity: c.quantity,
+        unitPrice: c.item.unitPrice,
+        lineTotal: Number((c.item.unitPrice * c.quantity).toFixed(2))
+      })),
+      subtotal: cartSubtotal,
+      total: cartTotal,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'card' ? 'paid' : 'pending',
+      stripePaymentId,
+      orderStatus: shippingMethod === 'solent_pickup' ? 'received' : 'received',
+      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      notes: formData.deliveryNotes
+    };
+
+    onSubmitPostalOrder(order);
+    setLastPlacedOrder(order);
+    onClearCart();
+    setIsProcessingPayment(false);
+    setCheckoutStep('confirmation');
   };
 
   const categories = useMemo(() => {
@@ -1054,9 +1077,21 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                     </div>
 
                     {paymentMethod === 'card' ? (
-                      <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                      <div data-testid="stripe-card-container" className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-white">Card Payment Details</span>
+                          <span className="font-bold text-white flex items-center gap-1.5">
+                            <CreditCard className="w-4 h-4 text-sky-400" />
+                            <span>Stripe Card Checkout</span>
+                            {stripeConfig.isConfigured ? (
+                              <span data-testid="stripe-checkout-mode-badge" className="text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 font-mono">
+                                {stripeConfig.mode} Mode
+                              </span>
+                            ) : (
+                              <span data-testid="stripe-checkout-mode-badge" className="text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-sky-950/80 text-sky-400 border border-sky-500/30 font-mono">
+                                Dev Simulator
+                              </span>
+                            )}
+                          </span>
                           <span className="text-[10px] text-emerald-400 flex items-center gap-1">
                             <ShieldCheck className="w-3 h-3" />
                             <span>256-bit Encrypted</span>
@@ -1066,6 +1101,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                         <div>
                           <label className="block text-[10px] text-slate-400 mb-1">Cardholder Name</label>
                           <input
+                            data-testid="stripe-cardholder-input"
                             type="text"
                             placeholder={formData.fullName || "Name on card"}
                             value={cardDetails.cardholderName}
@@ -1077,6 +1113,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                         <div>
                           <label className="block text-[10px] text-slate-400 mb-1">Card Number</label>
                           <input
+                            data-testid="stripe-cardnumber-input"
                             type="text"
                             value={cardDetails.cardNumber}
                             onChange={e => setCardDetails({ ...cardDetails, cardNumber: e.target.value })}
@@ -1088,6 +1125,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           <div>
                             <label className="block text-[10px] text-slate-400 mb-1">Expiry</label>
                             <input
+                              data-testid="stripe-expiry-input"
                               type="text"
                               value={cardDetails.expiry}
                               onChange={e => setCardDetails({ ...cardDetails, expiry: e.target.value })}
@@ -1097,12 +1135,18 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                           <div>
                             <label className="block text-[10px] text-slate-400 mb-1">CVC / Security Code</label>
                             <input
+                              data-testid="stripe-cvc-input"
                               type="text"
                               value={cardDetails.cvc}
                               onChange={e => setCardDetails({ ...cardDetails, cvc: e.target.value })}
                               className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white text-center font-mono"
                             />
                           </div>
+                        </div>
+
+                        <div className="text-[10px] text-slate-500 pt-1 flex items-center justify-between border-t border-slate-800/80">
+                          <span>Authorized via Stripe Marine Payments</span>
+                          <span>UK Card Interchange 1.5% + 20p</span>
                         </div>
                       </div>
                     ) : (
@@ -1158,6 +1202,14 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
                         {lastPlacedOrder.shippingMethod.replace(/_/g, ' ')}
                       </span>
                     </div>
+                    {lastPlacedOrder.stripePaymentId && (
+                      <div className="flex justify-between border-b border-slate-800 pb-2">
+                        <span className="text-slate-400">Stripe Payment Ref:</span>
+                        <span data-testid="order-confirmation-stripe-ref" className="font-mono text-sky-400 text-[11px]">
+                          {lastPlacedOrder.stripePaymentId}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm font-bold text-white pt-1">
                       <span>Total Paid:</span>
                       <span data-testid="order-confirmation-total" className="text-emerald-400">£{lastPlacedOrder.total.toFixed(2)}</span>

@@ -107,6 +107,8 @@ export interface JobRecord {
   totalEstimated: number;
   depositPaid: boolean;
   depositAmount: number;
+  stripePaymentId?: string;
+  stripeSessionId?: string;
   createdAt: string;
   messages: MessageItem[];
   customerSignOff?: CustomerSignOffRecord;
@@ -277,6 +279,8 @@ export interface PostalOrder {
   total: number;
   paymentMethod: 'card' | 'bank_transfer';
   paymentStatus: 'paid' | 'pending';
+  stripePaymentId?: string;
+  stripeSessionId?: string;
   orderStatus: PostalOrderStatus;
   trackingNumber?: string;
   trackingCarrier?: string;
@@ -540,6 +544,26 @@ export interface IncomingEmailMessage {
   matchedUserId?: string;
   attachments?: { filename: string; url?: string; sizeBytes?: number }[];
   status: 'unread' | 'read' | 'processed';
+}
+
+export interface StripeAppConfig {
+  publishableKey: string;
+  mode: 'test' | 'live' | 'simulated';
+  isConfigured: boolean;
+  depositPaymentLink?: string;
+  storePaymentLink?: string;
+}
+
+export interface StripePaymentResult {
+  success: boolean;
+  paymentId: string;
+  status: 'paid' | 'pending' | 'failed';
+  amountPounds: number;
+  currency: string;
+  feeEstimated: number;
+  simulated: boolean;
+  error?: string;
+  redirectUrl?: string;
 }
 
 

@@ -20,7 +20,8 @@ import {
   ExternalLink,
   GitCommit,
   Mail,
-  Send
+  Send,
+  CreditCard
 } from 'lucide-react';
 import { 
   detectEnvironment, 
@@ -64,6 +65,12 @@ import {
   clearCustomResendApiKey, 
   isValidResendApiKey 
 } from '../../lib/resendConfig';
+import { 
+  resolveStripeConfig, 
+  setCustomStripeKey, 
+  clearCustomStripeKey 
+} from '../../lib/stripeConfig';
+import { isValidStripePublishableKey } from '../../utils/stripeCalculations';
 import { sendTestEmail } from '../../lib/emailService';
 import { FirestoreConnectionState } from '../../types';
 
@@ -99,6 +106,11 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   const [resendNotice, setResendNotice] = useState<string | null>(null);
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
+  const [stripeConfigState, setStripeConfigState] = useState(() => resolveStripeConfig());
+  const [customStripeKeyInput, setCustomStripeKeyInput] = useState('');
+  const [showStripeKeySecret, setShowStripeKeySecret] = useState(false);
+  const [stripeNotice, setStripeNotice] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   const handleSaveResendKey = () => {
@@ -120,6 +132,27 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
     setResendConfigState(resolveResendConfig());
     setResendNotice('✅ Resend key cleared! Switched to simulated development outbox.');
     setTimeout(() => setResendNotice(null), 3500);
+  };
+
+  const handleSaveStripeKey = () => {
+    const trimmed = customStripeKeyInput.trim();
+    if (!isValidStripePublishableKey(trimmed)) {
+      setStripeNotice('Error: Key must start with "pk_test_" or "pk_live_" and be at least 24 characters.');
+      return;
+    }
+    setCustomStripeKey(trimmed);
+    setStripeConfigState(resolveStripeConfig());
+    setStripeNotice('✅ Stripe Publishable Key saved for this browser session!');
+    setTimeout(() => setStripeNotice(null), 3500);
+  };
+
+  const handleResetStripeKey = () => {
+    clearCustomStripeKey();
+    setCustomStripeKey('');
+    setCustomStripeKeyInput('');
+    setStripeConfigState(resolveStripeConfig());
+    setStripeNotice('✅ Stripe key cleared! Switched to safe simulated mode.');
+    setTimeout(() => setStripeNotice(null), 3500);
   };
 
   const handleTriggerTestEmail = async () => {
@@ -766,6 +799,106 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   {resendNotice && (
                     <div data-testid="resend-notice" className="text-[11px] text-amber-300 font-medium">
                       {resendNotice}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Stripe Payment Gateway & Key Manager */}
+              <div data-testid="stripe-card" className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-sky-400" />
+                    <span className="font-bold text-white text-sm">Stripe Payment Gateway</span>
+                  </div>
+                  {stripeConfigState.mode === 'live' ? (
+                    <span data-testid="stripe-mode-badge" className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-mono text-[10px]">
+                      ✅ Stripe Live Production
+                    </span>
+                  ) : stripeConfigState.mode === 'test' ? (
+                    <span data-testid="stripe-mode-badge" className="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-500/30 font-mono text-[10px]">
+                      🧪 Stripe Test Mode (pk_test)
+                    </span>
+                  ) : (
+                    <span data-testid="stripe-mode-badge" className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/30 font-mono text-[10px]">
+                      ⚡ Simulated Dev Mode (No Key)
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-400">
+                  Stripe powers customer card checkouts, marine switch panel deposits, and diagnostic labor billing. In simulated mode, transactions are authorized locally with full mock audit trails.
+                </p>
+
+                <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Active Publishable Key:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sky-300 text-[11px]">
+                        {stripeConfigState.publishableKey
+                          ? (showStripeKeySecret
+                              ? stripeConfigState.publishableKey
+                              : `${stripeConfigState.publishableKey.slice(0, 7)}••••••••••••${stripeConfigState.publishableKey.slice(-4)}`)
+                          : 'Not configured (Simulated mode)'
+                        }
+                      </span>
+                      {stripeConfigState.publishableKey && (
+                        <button
+                          type="button"
+                          onClick={() => setShowStripeKeySecret(!showStripeKeySecret)}
+                          className="text-slate-400 hover:text-white p-0.5 cursor-pointer"
+                          title={showStripeKeySecret ? 'Hide Key' : 'Reveal Key'}
+                        >
+                          {showStripeKeySecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px] text-slate-400">
+                    <span>Card Processing Fees:</span>
+                    <span className="font-mono text-slate-300">1.5% + 20p per UK transaction</span>
+                  </div>
+                </div>
+
+                {/* Key Override Input */}
+                <div className="space-y-2 pt-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">
+                    Update or Override Stripe Publishable Key for this Browser:
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <input
+                      type="text"
+                      data-testid="stripe-api-key-input"
+                      value={customStripeKeyInput}
+                      onChange={(e) => setCustomStripeKeyInput(e.target.value)}
+                      placeholder="Paste Publishable Key (pk_test_... or pk_live_...)"
+                      className="flex-1 w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-sky-500"
+                    />
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        data-testid="save-stripe-key-button"
+                        onClick={handleSaveStripeKey}
+                        disabled={!customStripeKeyInput.trim()}
+                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white rounded-lg font-bold text-xs cursor-pointer transition-colors"
+                      >
+                        Save Key
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="reset-stripe-key-button"
+                        onClick={handleResetStripeKey}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold text-xs cursor-pointer transition-colors"
+                        title="Clear custom Stripe key and switch to simulated mode"
+                      >
+                        Reset / Clear
+                      </button>
+                    </div>
+                  </div>
+                  {stripeNotice && (
+                    <div data-testid="stripe-notice" className="text-[11px] text-amber-300 font-medium">
+                      {stripeNotice}
                     </div>
                   )}
                 </div>

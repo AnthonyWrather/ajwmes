@@ -700,6 +700,9 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                 {displayedJobs.map(job => (
                   <div
                     key={job.id}
+                    data-testid="job-list-card"
+                    data-job-id={job.id}
+                    data-job-status={job.status}
                     onClick={() => setSelectedJobId(job.id)}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                       selectedJobId === job.id
