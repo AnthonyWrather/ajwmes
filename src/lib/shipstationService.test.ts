@@ -9,7 +9,9 @@ import {
   resolveShipStationConfig, 
   setCustomShipStationApiKey, 
   clearCustomShipStationApiKey,
-  getCustomShipStationApiKey
+  getCustomShipStationApiKey,
+  setCustomShipStationUseFunctions,
+  getCustomShipStationUseFunctions
 } from './shipstationConfig';
 import { PostalOrder } from '../types';
 
@@ -59,17 +61,25 @@ describe('shipstationService and shipstationConfig Suite', () => {
     it('should default to simulated mode when no custom key is configured', () => {
       const config = resolveShipStationConfig();
       assert.strictEqual(config.mode, 'simulated');
+      assert.strictEqual(config.gatewayStatus, 'simulated_local');
       assert.ok(config.carrierDefaults.royalMailServiceCode);
     });
 
-    it('should persist and retrieve custom API key', () => {
+    it('should persist and retrieve custom API key and reflect cloud function status', () => {
       setCustomShipStationApiKey('test_ss_live_key_987654321');
       const retrieved = getCustomShipStationApiKey();
       assert.strictEqual(retrieved, 'test_ss_live_key_987654321');
 
       const config = resolveShipStationConfig();
       assert.strictEqual(config.mode, 'live');
+      assert.strictEqual(config.gatewayStatus, 'cloud_function');
 
+      setCustomShipStationUseFunctions(false);
+      assert.strictEqual(getCustomShipStationUseFunctions(), false);
+      const disabledConfig = resolveShipStationConfig();
+      assert.strictEqual(disabledConfig.gatewayStatus, 'simulated_local');
+
+      setCustomShipStationUseFunctions(true);
       clearCustomShipStationApiKey();
       assert.strictEqual(getCustomShipStationApiKey(), null);
     });

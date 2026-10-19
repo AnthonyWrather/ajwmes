@@ -48,6 +48,7 @@ export class PostalWorkspacePage {
   readonly markDeliveredButton: Locator;
 
   // ShipStation Rate Shopping & Thermal Label Locators
+  readonly connectionBadge: Locator;
   readonly ratesPanel: Locator;
   readonly rateCardRoyalMail24: Locator;
   readonly rateCardRoyalMail48: Locator;
@@ -117,6 +118,7 @@ export class PostalWorkspacePage {
     this.markDeliveredButton = page.getByTestId('mark-delivered-btn');
 
     // ShipStation Rate Shopping & Thermal Label Locators
+    this.connectionBadge = page.getByTestId('shipstation-connection-badge');
     this.ratesPanel = page.getByTestId('shipstation-rates-panel');
     this.rateCardRoyalMail24 = page.getByTestId('shipstation-rate-card-royal_mail_tracked_24');
     this.rateCardRoyalMail48 = page.getByTestId('shipstation-rate-card-royal_mail_tracked_48');
@@ -214,12 +216,14 @@ export class PostalWorkspacePage {
   }
 
   async switchToTimelinesView(): Promise<void> {
-    await expect(this.viewTimelinesTab).toBeVisible();
+    await this.viewTimelinesTab.scrollIntoViewIfNeeded();
+    await expect(this.viewTimelinesTab).toBeVisible({ timeout: 10000 });
     await this.viewTimelinesTab.click({ force: true });
   }
 
   async switchToManagerView(): Promise<void> {
-    await expect(this.viewManagerTab).toBeVisible();
+    await this.viewManagerTab.scrollIntoViewIfNeeded();
+    await expect(this.viewManagerTab).toBeVisible({ timeout: 10000 });
     await this.viewManagerTab.click({ force: true });
   }
 }

@@ -7,6 +7,7 @@ import { getEnvStorageItem, setEnvStorageItem, removeEnvStorageItem } from './en
  */
 export const STORAGE_CUSTOM_SHIPSTATION_KEY = 'custom_shipstation_api_key';
 export const STORAGE_CUSTOM_SHIPSTATION_MODE = 'custom_shipstation_mode';
+export const STORAGE_CUSTOM_SHIPSTATION_USE_FUNCTIONS = 'custom_shipstation_use_functions';
 
 /**
  * Retrieve user-configured ShipStation API key from scoped environment storage.
@@ -50,6 +51,30 @@ export function clearCustomShipStationApiKey(): void {
 }
 
 /**
+ * Check whether Cloud Functions gateway is enabled for ShipStation calls.
+ * Defaults to true.
+ */
+export function getCustomShipStationUseFunctions(): boolean {
+  try {
+    const val = getEnvStorageItem<boolean>(STORAGE_CUSTOM_SHIPSTATION_USE_FUNCTIONS, true);
+    return val !== false;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Toggle Cloud Functions gateway preference.
+ */
+export function setCustomShipStationUseFunctions(enabled: boolean): void {
+  try {
+    setEnvStorageItem(STORAGE_CUSTOM_SHIPSTATION_USE_FUNCTIONS, enabled);
+  } catch (e) {
+    console.warn('Could not persist custom ShipStation use functions:', e);
+  }
+}
+
+/**
  * Resolves active ShipStation configuration using priority hierarchy:
  * 1. User-configured custom key from browser local storage (highest priority)
  * 2. Build-time environment variable (import.meta.env.VITE_SHIPSTATION_API_KEY)
@@ -63,10 +88,13 @@ export function resolveShipStationConfig(): ShipStationAppConfig {
 
   const activeKey = customKey || envKey;
   const isLive = Boolean(activeKey && activeKey.length > 10 && !activeKey.includes('placeholder'));
+  const useFunctions = getCustomShipStationUseFunctions();
 
   return {
     apiKey: activeKey || undefined,
     mode: isLive ? 'live' : 'simulated',
+    useCloudFunctions: useFunctions,
+    gatewayStatus: isLive && useFunctions ? 'cloud_function' : 'simulated_local',
     carrierDefaults: {
       royalMailServiceCode: 'royal_mail_tracked_24',
       dpdServiceCode: 'dpd_next_day'

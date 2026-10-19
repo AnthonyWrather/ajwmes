@@ -340,6 +340,29 @@ For each link (**Product catalogue → Payment Links → New**):
 
 ---
 
+## 7b. ShipStation Carrier API & Cloud Functions Gateway (Postal Dispatch)
+
+1. **Account & Carrier Linking**:
+   - Register or sign in to [ShipStation](https://shipstation.com).
+   - In **Settings → Account → API Settings**, retrieve your **API Key** and **API Secret**.
+   - Link workshop carriers: **Royal Mail Click & Drop / OBA** and **DPD UK**.
+2. **Google Secret Manager Provisioning (Phase 2 Live Mode)**:
+   - Cloud Functions (2nd Gen, `europe-west2`) protect credentials via Google Secret Manager:
+     ```bash
+     firebase functions:secrets:set SHIPSTATION_API_KEY
+     firebase functions:secrets:set SHIPSTATION_API_SECRET
+     ```
+   - Do **never** expose `SHIPSTATION_API_SECRET` in client-side bundles.
+3. **Callable Cloud Functions (`functions/`)**:
+   - `getShippingRates`: Live rate quoting from `/shipments/getrates`.
+   - `generateShippingLabel`: 4x6" carrier thermal label generation from `/shipments/createlabelwithshipmentdetails`.
+   - `createShipStationOrder`: Order synchronization via `/orders/createorder`.
+   - `shipstationWebhook`: Webhook receiver for carrier status events (`ORDER_SHIPPED`, `DELIVERED`).
+4. **Resilient Simulated Fallback**:
+   - When running offline on the pontoon, in local dev, or before credentials are configured, the frontend gracefully falls back to deterministic local rate calculation and 4x6" SVG thermal label emulation (`src/lib/shipstationService.ts`).
+
+---
+
 ## 8. GitHub Repository, Actions & Secrets
 
 ### 8.1 Workflows
@@ -504,4 +527,4 @@ See also [`FIREBASE_GITHUB_DEPLOYMENT_GUIDE.md`](../FIREBASE_GITHUB_DEPLOYMENT_G
 | No automated PR preview workflow | §8.4 |
 | `firestore.rules` not deployed by `firebase.json` / CI; no `storage.rules` in repo | §4.4, §4.5 |
 | Stripe Payment Links and Resend sender variables not passed to the production build | §5.3, §8.3 |
-| ShipStation live carrier API backend & Cloud Functions (Phase 1 client simulation active) | [#23](https://github.com/AnthonyWrather/ajwmes/issues/23) |
+| ShipStation live carrier API backend & Cloud Functions (Phase 2 completed) | [#23](https://github.com/AnthonyWrather/ajwmes/issues/23) |

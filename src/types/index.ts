@@ -331,6 +331,8 @@ export interface ShipStationAppConfig {
   apiKey?: string;
   apiSecret?: string;
   mode: 'live' | 'simulated';
+  useCloudFunctions?: boolean;
+  gatewayStatus?: 'cloud_function' | 'simulated_local';
   carrierDefaults: {
     royalMailServiceCode: string;
     dpdServiceCode: string;

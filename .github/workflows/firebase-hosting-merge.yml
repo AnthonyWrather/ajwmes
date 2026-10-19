@@ -41,6 +41,11 @@ jobs:
         env:
           CI: true
 
+      - name: Run Cloud Functions Tests & Build
+        run: |
+          npm run test:functions
+          npm run build:functions
+
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "version=$(npx playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT

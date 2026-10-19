@@ -13,6 +13,8 @@ import {
   generateSimulatedTrackingNumber,
   generateSimulatedShipmentId
 } from '../utils/shipstationCalculations';
+import { functions } from './firebase';
+import { httpsCallable } from 'firebase/functions';
 
 /**
  * Generate simulated 4x6" (100mm x 150mm) SVG Thermal Shipping Label.
@@ -143,17 +145,50 @@ export function generateThermalLabelSvg(
 
 /**
  * Fetch carrier rates for an order.
- * In Phase 1 simulated mode, evaluates package weight and destination postcode to yield live quotes.
+ * In Phase 2: If live mode with Cloud Functions enabled, queries the getShippingRates callable function.
+ * Seamlessly falls back to local deterministic calculation if offline or unconfigured.
  */
 export async function fetchLiveCarrierRates(
   order: PostalOrder,
   catalogItems?: CatalogItem[]
 ): Promise<ShipStationRateQuote[]> {
+  const config = resolveShipStationConfig();
+  const dimensions = calculateConsignmentDimensions(order.items, catalogItems);
+
+  // Live Cloud Function invocation when configured and online
+  if (config.mode === 'live' && config.useCloudFunctions !== false && typeof navigator !== 'undefined' && navigator.onLine) {
+    try {
+      const getRatesFn = httpsCallable<{
+        orderId: string;
+        orderNumber: string;
+        shippingAddress: unknown;
+        dimensions: unknown;
+      }, ShipStationRateQuote[]>(functions, 'getShippingRates');
+
+      const response = await getRatesFn({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        shippingAddress: order.shippingAddress,
+        dimensions: {
+          weightKg: dimensions.weightKg,
+          lengthCm: dimensions.lengthCm,
+          widthCm: dimensions.widthCm,
+          heightCm: dimensions.heightCm
+        }
+      });
+
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        return response.data;
+      }
+    } catch (backendError) {
+      console.warn('ShipStation Cloud Function getShippingRates call failed, falling back to local rate simulation:', backendError);
+    }
+  }
+
+  // Pure deterministic fallback
   try {
-    const dimensions = calculateConsignmentDimensions(order.items, catalogItems);
     const postcode = order.shippingAddress?.postcode || 'PO12 1NU';
-    const quotes = estimateCarrierRates(dimensions, postcode);
-    return quotes;
+    return estimateCarrierRates(dimensions, postcode);
   } catch (error) {
     console.warn('Failed to calculate carrier rates, falling back to defaults:', error);
     return [
@@ -171,7 +206,8 @@ export async function fetchLiveCarrierRates(
 
 /**
  * Generate a shipping label for an order.
- * In Phase 1 simulated mode, creates a deterministic SVG thermal label and tracking number.
+ * In Phase 2: If live mode with Cloud Functions enabled, calls the generateShippingLabel callable function.
+ * Otherwise creates a deterministic SVG thermal label and tracking number.
  */
 export async function generateCarrierShippingLabel(
   order: PostalOrder,
@@ -179,6 +215,7 @@ export async function generateCarrierShippingLabel(
   catalogItems?: CatalogItem[]
 ): Promise<ShipStationLabelResult> {
   const config = resolveShipStationConfig();
+  const dimensions = calculateConsignmentDimensions(order.items, catalogItems);
 
   // If a specific service was selected, determine carrier
   const isDpd = selectedServiceCode?.includes('dpd') || order.shippingMethod === 'dpd_heavy';
@@ -188,11 +225,44 @@ export async function generateCarrierShippingLabel(
   const serviceCode = selectedServiceCode || mapped.serviceCode;
   const serviceName = isDpd ? 'DPD UK Next Day (Express)' : 'Royal Mail Tracked 24';
 
-  const dimensions = calculateConsignmentDimensions(order.items, catalogItems);
+  // Live Cloud Function invocation when configured and online
+  if (config.mode === 'live' && config.useCloudFunctions !== false && typeof navigator !== 'undefined' && navigator.onLine) {
+    try {
+      const generateLabelFn = httpsCallable<{
+        orderId: string;
+        orderNumber: string;
+        shippingAddress: unknown;
+        dimensions: unknown;
+        carrierCode: string;
+        serviceCode: string;
+      }, ShipStationLabelResult>(functions, 'generateShippingLabel');
+
+      const response = await generateLabelFn({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        shippingAddress: order.shippingAddress,
+        dimensions: {
+          weightKg: dimensions.weightKg,
+          lengthCm: dimensions.lengthCm,
+          widthCm: dimensions.widthCm,
+          heightCm: dimensions.heightCm
+        },
+        carrierCode,
+        serviceCode
+      });
+
+      if (response.data && response.data.success) {
+        return response.data;
+      }
+    } catch (backendError) {
+      console.warn('ShipStation Cloud Function generateShippingLabel failed, falling back to local thermal simulation:', backendError);
+    }
+  }
+
+  // Simulated fallback
   const trackingNumber = generateSimulatedTrackingNumber(carrierCode);
   const shipmentId = generateSimulatedShipmentId();
 
-  // Generate SVG thermal label
   const svgContent = generateThermalLabelSvg(
     order,
     carrierCode,
@@ -201,7 +271,6 @@ export async function generateCarrierShippingLabel(
     dimensions
   );
 
-  // Convert SVG into data URI for direct image display and window.print rendering
   const encodedSvg = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
 
   return {

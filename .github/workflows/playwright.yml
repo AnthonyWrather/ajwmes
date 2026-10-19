@@ -40,6 +40,11 @@ jobs:
         env:
           CI: true
 
+      - name: Run Cloud Functions Tests & Build
+        run: |
+          npm run test:functions
+          npm run build:functions
+
   e2e:
     name: E2E (${{ matrix.project }})
     timeout-minutes: 30

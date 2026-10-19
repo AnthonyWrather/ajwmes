@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFunctions, Functions } from 'firebase/functions';
 import { 
   getFirestore, 
   initializeFirestore,
@@ -61,6 +62,7 @@ export interface FirestoreErrorInfo {
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+export const functions: Functions = getFunctions(app, 'europe-west2');
 export { 
   storage, 
   uploadSwitchPanelImage, 
