@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { PostalOrder } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { PostalOrder, ShipStationRateQuote, ShipStationLabelResult } from '../../types';
 import { PackingSlipModal } from './PackingSlipModal';
+import { ThermalShippingLabelModal } from './ThermalShippingLabelModal';
+import { fetchLiveCarrierRates, generateCarrierShippingLabel } from '../../lib/shipstationService';
+import { calculateConsignmentDimensions, isSolentOrOffshorePostcode } from '../../utils/shipstationCalculations';
 import { 
   Package, 
   Truck, 
@@ -13,7 +16,11 @@ import {
   ExternalLink, 
   Send,
   AlertCircle,
-  FileText
+  FileText,
+  Tag,
+  Scale,
+  Zap,
+  RotateCw
 } from 'lucide-react';
 import { OrderProgressTimeline } from '../postal/OrderProgressTimeline';
 import { OrderMiniProgressBar } from '../postal/OrderMiniProgressBar';
@@ -39,6 +46,15 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
   const [showPrintLabel, setShowPrintLabel] = useState<PostalOrder | null>(null);
   const [packingSlipOrder, setPackingSlipOrder] = useState<PostalOrder | null>(null);
   const [autoPrintSlip, setAutoPrintSlip] = useState<boolean>(false);
+
+  // ShipStation live rate comparison & label generation state
+  const [carrierRates, setCarrierRates] = useState<ShipStationRateQuote[]>([]);
+  const [isLoadingRates, setIsLoadingRates] = useState<boolean>(false);
+  const [selectedServiceCode, setSelectedServiceCode] = useState<string>('royal_mail_tracked_24');
+  const [activeLabelResult, setActiveLabelResult] = useState<ShipStationLabelResult | null>(null);
+  const [showThermalModal, setShowThermalModal] = useState<boolean>(false);
+  const [isGeneratingLabel, setIsGeneratingLabel] = useState<boolean>(false);
+
   const handleOpenPackingSlip = (order: PostalOrder, triggerAutoPrint = false) => {
     setPackingSlipOrder(order);
     setAutoPrintSlip(triggerAutoPrint);
@@ -64,6 +80,80 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
   });
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || filteredOrders[0] || orders[0];
+
+  // Load live carrier rate quotes when selected order changes
+  useEffect(() => {
+    if (!selectedOrder) return;
+    let isMounted = true;
+    setIsLoadingRates(true);
+
+    const defaultService = selectedOrder.shippingMethod === 'dpd_heavy'
+      ? 'dpd_next_day'
+      : 'royal_mail_tracked_24';
+    setSelectedServiceCode(defaultService);
+
+    // If order already has shipping label metadata, initialize activeLabelResult
+    if (selectedOrder.shippingLabelUrl && selectedOrder.trackingNumber) {
+      setActiveLabelResult({
+        success: true,
+        shipmentId: selectedOrder.shipstationShipmentId || 'shp-sim-preassigned',
+        trackingNumber: selectedOrder.trackingNumber,
+        carrierCode: selectedOrder.shippingMethod === 'dpd_heavy' ? 'dpd_uk' : 'royal_mail',
+        serviceCode: defaultService,
+        labelUrl: selectedOrder.shippingLabelUrl,
+        labelPdfBase64: selectedOrder.shippingLabelBase64 || selectedOrder.shippingLabelUrl,
+        isSimulated: true
+      });
+    } else {
+      setActiveLabelResult(null);
+    }
+
+    fetchLiveCarrierRates(selectedOrder)
+      .then(rates => {
+        if (isMounted) {
+          setCarrierRates(rates);
+          setIsLoadingRates(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsLoadingRates(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedOrder?.id]);
+
+  const handleGenerateLabel = async (targetServiceCode?: string) => {
+    if (!selectedOrder) return;
+    setIsGeneratingLabel(true);
+    const serviceToUse = targetServiceCode || selectedServiceCode;
+    try {
+      const result = await generateCarrierShippingLabel(selectedOrder, serviceToUse);
+      if (result.success) {
+        setActiveLabelResult(result);
+        setShowThermalModal(true);
+        const carrierName = result.carrierCode === 'dpd_uk' 
+          ? 'DPD Next Day Courier' 
+          : 'Royal Mail Tracked 24';
+
+        // Update tracking input state for this order
+        setTrackingInputs(prev => ({
+          ...prev,
+          [selectedOrder.id]: {
+            number: result.trackingNumber,
+            carrier: carrierName
+          }
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to generate carrier label:', err);
+    } finally {
+      setIsGeneratingLabel(false);
+    }
+  };
 
   const handleDispatch = (orderId: string) => {
     const tracking = trackingInputs[orderId] || {
@@ -275,6 +365,22 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                     <FileText className="w-3.5 h-3.5" />
                     <span>Address Label</span>
                   </button>
+
+                  <button
+                    data-testid="open-thermal-label-btn"
+                    onClick={() => {
+                      if (activeLabelResult) {
+                        setShowThermalModal(true);
+                      } else {
+                        handleGenerateLabel();
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Open 4x6 thermal shipping label preview"
+                  >
+                    <Tag className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Thermal Label</span>
+                  </button>
                 </div>
               </div>
 
@@ -387,6 +493,116 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                     </span>
                   )}
                 </div>
+
+                {/* Live Carrier Rates & Consignment Sizing Panel (ShipStation Integration) */}
+                {(selectedOrder.orderStatus === 'received' || selectedOrder.orderStatus === 'packed') && (() => {
+                  const dimensions = calculateConsignmentDimensions(selectedOrder.items);
+                  const offshoreInfo = isSolentOrOffshorePostcode(selectedOrder.shippingAddress?.postcode || '');
+
+                  return (
+                    <div 
+                      data-testid="shipstation-rates-panel"
+                      className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <Scale className="w-4 h-4 text-sky-400" />
+                          <span className="text-xs font-bold text-white">Live Carrier Rates &amp; Consignment Sizing</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {offshoreInfo.isOffshore && (
+                            <span 
+                              data-testid="offshore-badge"
+                              className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/30 font-semibold"
+                            >
+                              {offshoreInfo.areaLabel} (+£{offshoreInfo.surchargePounds.toFixed(2)})
+                            </span>
+                          )}
+                          <span 
+                            data-testid="consignment-specs"
+                            className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800"
+                          >
+                            {dimensions.weightKg} kg · {dimensions.lengthCm}x{dimensions.widthCm}x{dimensions.heightCm} cm
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Dynamic Rate Comparison Cards */}
+                      {isLoadingRates ? (
+                        <div className="p-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                          <RotateCw className="w-4 h-4 animate-spin text-sky-400" />
+                          <span>Fetching live carrier rates...</span>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          {carrierRates.map(quote => {
+                            const isSelected = selectedServiceCode === quote.serviceCode;
+                            return (
+                              <div
+                                key={quote.serviceCode}
+                                data-testid={`shipstation-rate-card-${quote.serviceCode}`}
+                                onClick={() => {
+                                  setSelectedServiceCode(quote.serviceCode);
+                                  const carrierName = quote.carrierCode === 'dpd_uk' 
+                                    ? 'DPD Next Day Courier' 
+                                    : (quote.serviceCode === 'royal_mail_tracked_48' ? 'Royal Mail Tracked 48' : 'Royal Mail Tracked 24');
+                                  setTrackingInputs(prev => ({
+                                    ...prev,
+                                    [selectedOrder.id]: {
+                                      number: prev[selectedOrder.id]?.number || `GB${Math.floor(100000000 + Math.random() * 900000000)}RM`,
+                                      carrier: carrierName
+                                    }
+                                  }));
+                                }}
+                                className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                                  isSelected
+                                    ? 'bg-sky-950/40 border-sky-500 text-white shadow-sm shadow-sky-950/40'
+                                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-bold text-white text-[11px]">{quote.serviceName}</span>
+                                  <span className="font-mono font-bold text-emerald-400">
+                                    £{quote.shipmentCostPounds.toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                                  <span>{quote.carrierCode === 'dpd_uk' ? 'DPD Express' : 'Royal Mail'}</span>
+                                  <span>{quote.estimatedDeliveryDays ? `${quote.estimatedDeliveryDays}d transit` : 'Standard'}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* 1-Click Generate Carrier Label Button & View Modal Action */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          data-testid="shipstation-generate-label-btn"
+                          onClick={() => handleGenerateLabel()}
+                          disabled={isGeneratingLabel}
+                          className="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-sky-600/20 cursor-pointer"
+                        >
+                          <Zap className={`w-3.5 h-3.5 ${isGeneratingLabel ? 'animate-spin' : 'text-amber-300'}`} />
+                          <span>{isGeneratingLabel ? 'Generating 4x6" Label...' : 'Generate Carrier Label (1-Click ShipStation)'}</span>
+                        </button>
+
+                        {activeLabelResult && (
+                          <button
+                            data-testid="view-thermal-label-btn"
+                            onClick={() => setShowThermalModal(true)}
+                            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
+                          >
+                            <Tag className="w-3.5 h-3.5" />
+                            <span>Inspect 4x6" Label ({activeLabelResult.trackingNumber})</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {selectedOrder.orderStatus === 'received' && (
                   <div className="flex flex-wrap items-center gap-3">
@@ -591,6 +807,14 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
           setPackingSlipOrder(null);
           setAutoPrintSlip(false);
         }}
+      />
+
+      {/* Modal: 4x6" Thermal Shipping Label Preview & Print */}
+      <ThermalShippingLabelModal
+        isOpen={showThermalModal}
+        order={selectedOrder}
+        labelResult={activeLabelResult}
+        onClose={() => setShowThermalModal(false)}
       />
     </div>
   );

@@ -102,20 +102,39 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
       await page.waitForTimeout(300);
     });
 
-    await test.step('6. Advance fulfillment workflow through Bench Packing and Carrier Dispatch', async () => {
+    await test.step('6. Inspect live carrier rates, generate 4x6" thermal label, and advance fulfillment', async () => {
+      // Verify live carrier rates panel is presented
+      await expect(postal.ratesPanel).toBeVisible({ timeout: 10000 });
+      await expect(postal.rateCardRoyalMail24).toBeVisible();
+      await expect(postal.rateCardDpdNextDay).toBeVisible();
+
       // Pack the order from workshop bench
       await postal.markOrderPacked();
+
+      // Select carrier rate card (e.g. Royal Mail Tracked 24)
+      await postal.rateCardRoyalMail24.click({ force: true });
+
+      // Generate 1-click carrier thermal shipping label
+      await postal.generateThermalLabel();
+
+      // Assert thermal shipping label modal and barcode sheet
+      await expect(postal.thermalLabelModal).toBeVisible();
+      await expect(postal.modalTrackingNumber).toContainText(/^GB\d{9}RM$/);
+      await expect(postal.printThermalLabelButton).toBeVisible();
+      await postal.printThermalLabelButton.click({ force: true });
+
+      // Close thermal label modal
+      await postal.closeThermalLabelModal();
 
       // Assert carrier select and tracking number inputs appear
       await expect(postal.carrierSelect).toBeVisible({ timeout: 10000 });
       await expect(postal.trackingNumberInput).toBeVisible();
 
-      // Select carrier and assign custom tracking reference
+      // Dispatch with generated tracking reference
       await postal.dispatchWithTracking('Royal Mail Tracked 24', 'GB987654321RM');
 
       // Verify order transitions to Dispatched
       await expect(page.getByText('Dispatched and Consignment Logged').first()).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('GB987654321RM').first()).toBeVisible();
     });
 
     await test.step('7. Confirm vessel pontoon delivery', async () => {

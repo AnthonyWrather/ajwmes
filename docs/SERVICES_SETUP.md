@@ -504,3 +504,4 @@ See also [`FIREBASE_GITHUB_DEPLOYMENT_GUIDE.md`](../FIREBASE_GITHUB_DEPLOYMENT_G
 | No automated PR preview workflow | §8.4 |
 | `firestore.rules` not deployed by `firebase.json` / CI; no `storage.rules` in repo | §4.4, §4.5 |
 | Stripe Payment Links and Resend sender variables not passed to the production build | §5.3, §8.3 |
+| ShipStation live carrier API backend & Cloud Functions (Phase 1 client simulation active) | [#23](https://github.com/AnthonyWrather/ajwmes/issues/23) |

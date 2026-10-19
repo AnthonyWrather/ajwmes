@@ -136,6 +136,8 @@ export interface CatalogItem {
   imageUrl?: string;
   imageStoragePath?: string;
   badge?: string;
+  weightKg?: number;
+  dimensions?: { lengthCm: number; widthCm: number; heightCm: number };
 }
 
 export interface StockAlert {
@@ -285,12 +287,54 @@ export interface PostalOrder {
   trackingNumber?: string;
   trackingCarrier?: string;
   carrier?: string;
+  shipstationOrderId?: string;
+  shipstationShipmentId?: string;
+  shippingLabelUrl?: string;
+  shippingLabelBase64?: string;
   createdAt: string;
   packedAt?: string;
   dispatchedAt?: string;
   deliveredAt?: string;
   notes?: string;
   timeline?: PostalOrderTimelineEvent[];
+}
+
+export interface ConsignmentDimensions {
+  weightKg: number;
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
+}
+
+export interface ShipStationRateQuote {
+  serviceCode: string;
+  serviceName: string;
+  carrierCode: 'royal_mail' | 'dpd_uk';
+  shipmentCostPounds: number;
+  otherCostPounds: number;
+  estimatedDeliveryDays?: number;
+}
+
+export interface ShipStationLabelResult {
+  success: boolean;
+  shipmentId: string;
+  trackingNumber: string;
+  carrierCode: string;
+  serviceCode: string;
+  labelPdfBase64?: string;
+  labelUrl?: string;
+  isSimulated: boolean;
+  error?: string;
+}
+
+export interface ShipStationAppConfig {
+  apiKey?: string;
+  apiSecret?: string;
+  mode: 'live' | 'simulated';
+  carrierDefaults: {
+    royalMailServiceCode: string;
+    dpdServiceCode: string;
+  };
 }
 
 export interface CatalogSnapshot {
