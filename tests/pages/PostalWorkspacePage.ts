@@ -47,6 +47,19 @@ export class PostalWorkspacePage {
   readonly confirmDispatchButton: Locator;
   readonly markDeliveredButton: Locator;
 
+  // ShipStation Rate Shopping & Thermal Label Locators
+  readonly ratesPanel: Locator;
+  readonly rateCardRoyalMail24: Locator;
+  readonly rateCardRoyalMail48: Locator;
+  readonly rateCardDpdNextDay: Locator;
+  readonly generateCarrierLabelButton: Locator;
+  readonly viewThermalLabelButton: Locator;
+  readonly openThermalLabelHeaderButton: Locator;
+  readonly thermalLabelModal: Locator;
+  readonly modalTrackingNumber: Locator;
+  readonly closeThermalLabelButton: Locator;
+  readonly printThermalLabelButton: Locator;
+
   // Timeline View Locators
   readonly timelineSearchInput: Locator;
   readonly timelineFilterAll: Locator;
@@ -103,6 +116,19 @@ export class PostalWorkspacePage {
     this.confirmDispatchButton = page.getByTestId('confirm-dispatch-btn');
     this.markDeliveredButton = page.getByTestId('mark-delivered-btn');
 
+    // ShipStation Rate Shopping & Thermal Label Locators
+    this.ratesPanel = page.getByTestId('shipstation-rates-panel');
+    this.rateCardRoyalMail24 = page.getByTestId('shipstation-rate-card-royal_mail_tracked_24');
+    this.rateCardRoyalMail48 = page.getByTestId('shipstation-rate-card-royal_mail_tracked_48');
+    this.rateCardDpdNextDay = page.getByTestId('shipstation-rate-card-dpd_next_day');
+    this.generateCarrierLabelButton = page.getByTestId('shipstation-generate-label-btn');
+    this.viewThermalLabelButton = page.getByTestId('view-thermal-label-btn');
+    this.openThermalLabelHeaderButton = page.getByTestId('open-thermal-label-btn');
+    this.thermalLabelModal = page.getByTestId('shipstation-label-modal');
+    this.modalTrackingNumber = page.getByTestId('modal-tracking-number');
+    this.closeThermalLabelButton = page.getByTestId('close-thermal-label-btn');
+    this.printThermalLabelButton = page.getByTestId('print-thermal-label-btn');
+
     // Timeline View
     this.timelineSearchInput = page.getByTestId('timeline-search-input');
     this.timelineFilterAll = page.getByTestId('timeline-filter-all');
@@ -111,6 +137,25 @@ export class PostalWorkspacePage {
     this.timelineFilterDispatched = page.getByTestId('timeline-filter-dispatched');
     this.timelineFilterDelivered = page.getByTestId('timeline-filter-delivered');
     this.timelineContainer = page.getByTestId('order-progress-timeline');
+  }
+
+  async generateThermalLabel(): Promise<void> {
+    await this.generateCarrierLabelButton.scrollIntoViewIfNeeded();
+    await expect(this.generateCarrierLabelButton).toBeVisible({ timeout: 10000 });
+    await this.generateCarrierLabelButton.click({ force: true });
+    await expect(this.thermalLabelModal).toBeVisible({ timeout: 10000 });
+    await expect(this.modalTrackingNumber).toBeVisible();
+  }
+
+  async closeThermalLabelModal(): Promise<void> {
+    const footerClose = this.page.getByTestId('close-thermal-label-footer-btn');
+    if (await footerClose.isVisible()) {
+      await footerClose.click({ force: true });
+    } else {
+      await this.closeThermalLabelButton.scrollIntoViewIfNeeded();
+      await this.closeThermalLabelButton.click({ force: true });
+    }
+    await expect(this.thermalLabelModal).not.toBeVisible({ timeout: 10000 });
   }
 
   async verifyWorkspaceVisible(): Promise<void> {
