@@ -12,11 +12,14 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "lint:functions": "npm run --prefix functions lint",
     "test:unit": "tsx --test \"src/**/*.test.ts\"",
+    "test:functions": "npm run --prefix functions test",
+    "build:functions": "npm run --prefix functions build",
     "test": "npm run test:unit",
     "test:e2e": "playwright test",
     "test:e2e:all": "ALL_BROWSERS=true playwright test",
-    "validate": "npm run lint && npm run test:unit && npm run build"
+    "validate": "npm run lint && npm run test:unit && npm run build && npm run test:functions && npm run build:functions"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",

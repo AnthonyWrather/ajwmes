@@ -3,6 +3,7 @@ import { PostalOrder, ShipStationRateQuote, ShipStationLabelResult } from '../..
 import { PackingSlipModal } from './PackingSlipModal';
 import { ThermalShippingLabelModal } from './ThermalShippingLabelModal';
 import { fetchLiveCarrierRates, generateCarrierShippingLabel } from '../../lib/shipstationService';
+import { resolveShipStationConfig } from '../../lib/shipstationConfig';
 import { calculateConsignmentDimensions, isSolentOrOffshorePostcode } from '../../utils/shipstationCalculations';
 import { 
   Package, 
@@ -505,9 +506,19 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                       className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-3"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Scale className="w-4 h-4 text-sky-400" />
                           <span className="text-xs font-bold text-white">Live Carrier Rates &amp; Consignment Sizing</span>
+                          <span 
+                            data-testid="shipstation-connection-badge"
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border ${
+                              resolveShipStationConfig().gatewayStatus === 'cloud_function'
+                                ? 'bg-emerald-950 text-emerald-400 border-emerald-500/30'
+                                : 'bg-amber-950 text-amber-300 border-amber-500/30'
+                            }`}
+                          >
+                            {resolveShipStationConfig().gatewayStatus === 'cloud_function' ? 'Live Gateway (Cloud Function)' : 'Simulated Gateway (Local)'}
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-2">

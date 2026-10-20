@@ -103,8 +103,9 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
     });
 
     await test.step('6. Inspect live carrier rates, generate 4x6" thermal label, and advance fulfillment', async () => {
-      // Verify live carrier rates panel is presented
+      // Verify live carrier rates panel is presented and connection badge is visible
       await expect(postal.ratesPanel).toBeVisible({ timeout: 10000 });
+      await expect(postal.connectionBadge).toBeVisible();
       await expect(postal.rateCardRoyalMail24).toBeVisible();
       await expect(postal.rateCardDpdNextDay).toBeVisible();
 

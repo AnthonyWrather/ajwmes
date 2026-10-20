@@ -677,8 +677,8 @@ Known architectural gaps tracked for follow-up:
 - **Decision**: Adopt a dual-mode ShipStation architecture:
   1. *Pure Marine Sizing Engine*: Calculate package weight and box dimensions deterministically from order items using marine electrical density tables (`src/utils/shipstationCalculations.ts`).
   2. *Simulated 4x6" Thermal Label Generator*: Emulate standard UK carrier barcodes (Royal Mail 2D DataMatrix and Code128) via responsive vector SVG (`src/lib/shipstationService.ts`), rendering in true-to-life 4x6" (100x150mm) aspect ratio with direct thermal printer triggering (`window.print`).
-  3. *Cloud Function Gateway (Phase 2)*: Protect secret ShipStation API credentials via Google Secret Manager; delegate rate quoting and label creation via Firebase Cloud Functions without exposing secrets to client bundle.
-- **Consequences**: Bench dispatchers can prepare, label, and track consignments seamlessly even during marina cellular blackouts; zero secrets exposed to client; 100% testable via Playwright automation.
+  3. *Cloud Function Gateway (Phase 2 - Implemented)*: Protect secret ShipStation API credentials (`SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`) via Google Secret Manager; 2nd Gen Firebase Cloud Functions (`europe-west2`) expose `getShippingRates`, `generateShippingLabel`, `createShipStationOrder`, and webhook endpoints with RBAC enforcement (`canPerformAction(role, 'pack_postal_consignment')`).
+- **Consequences**: Bench dispatchers can prepare, label, and track consignments seamlessly whether online with live carrier APIs or during pontoon cellular blackouts; zero secrets exposed to client; 100% testable via Playwright automation.
 
 ---
 
@@ -687,7 +687,7 @@ Known architectural gaps tracked for follow-up:
 Before merging any feature into `main`:
 - [x] **Static Typing**: `npm run lint` passes with 0 type errors.
 - [x] **Unit Test Suite**: `npm run test:unit` passes (267/267 passing tests).
-- [x] **ShipStation & Postal Dispatch**: Validated marine weight heuristics, live rate comparison, and 4x6" thermal label generation.
+- [x] **ShipStation & Postal Dispatch**: Validated marine weight heuristics, live rate comparison, 4x6" thermal label generation, and Cloud Functions 2nd Gen backend gateway.
 - [x] **Stripe Payment Gateway**: Validated test/live key detection, UK domestic interchange calculations (1.5% + 20p), and simulated fallback.
 - [x] **Offline Resilience**: Field mutations gracefully store to IndexedDB when disconnected (`navigator.onLine = false`).
 - [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 5 roles (`guest`, `client`, `admin`, `technician`, `postal`).
