@@ -26,6 +26,8 @@ export class NavigationPage {
   readonly userAccountButton: Locator;
   readonly userProfileName: Locator;
   readonly headerVersionBadge: Locator;
+  readonly pwaInstallButton: Locator;
+  readonly pwaIosInstallButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -53,6 +55,8 @@ export class NavigationPage {
     this.userAccountButton = page.getByTestId('user-account-button');
     this.userProfileName = page.getByTestId('user-profile-name');
     this.headerVersionBadge = page.getByTestId('header-version-badge');
+    this.pwaInstallButton = page.getByTestId('pwa-install-button');
+    this.pwaIosInstallButton = page.getByTestId('pwa-ios-install-button');
   }
 
   async navigateToLanding(): Promise<void> {

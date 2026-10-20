@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { usePWAInstall } from './usePWAInstall';
 import { Download, Smartphone, X } from 'lucide-react';
+import { getPWAInstallState } from '../../utils/pwaInstallCalculations';
 
 export const PWAInstallButton: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
-  // If already running as an installed PWA, hide the button
-  if (isInstalled) {
+  const installState = getPWAInstallState({ isInstalled, isInstallable, isIOS });
+
+  // If installed or cannot be installed in current browser environment, hide completely
+  if (installState === 'hidden') {
     return null;
   }
 
-  // Chromium / Android / Desktop flow
-  if (isInstallable) {
+  // Chromium / Android / Desktop flow (native prompt available)
+  if (installState === 'native_prompt') {
     return (
       <button
+        data-testid="pwa-install-button"
         onClick={install}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-semibold transition-all shadow-sm"
       >
@@ -24,11 +28,12 @@ export const PWAInstallButton: React.FC = () => {
     );
   }
 
-  // iOS Safari flow
-  if (isIOS) {
+  // iOS Safari flow (manual Add to Home Screen guide)
+  if (installState === 'ios_guide') {
     return (
       <>
         <button
+          data-testid="pwa-ios-install-button"
           onClick={() => setShowIOSGuide(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-semibold transition-all"
         >
@@ -37,7 +42,10 @@ export const PWAInstallButton: React.FC = () => {
         </button>
 
         {showIOSGuide && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div
+            data-testid="pwa-ios-guide-modal"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          >
             <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl text-slate-100">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -45,8 +53,10 @@ export const PWAInstallButton: React.FC = () => {
                   <span>Install AJWMES App</span>
                 </h3>
                 <button
+                  data-testid="pwa-ios-guide-close-icon"
                   onClick={() => setShowIOSGuide(false)}
                   className="p-1 text-slate-400 hover:text-white rounded-lg"
+                  aria-label="Close guide"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -60,6 +70,7 @@ export const PWAInstallButton: React.FC = () => {
                 <p>3. Tap <strong className="text-white">Add</strong> in the top right corner.</p>
               </div>
               <button
+                data-testid="pwa-ios-guide-close"
                 onClick={() => setShowIOSGuide(false)}
                 className="mt-4 w-full rounded-xl bg-sky-600 py-2.5 text-xs font-semibold text-white hover:bg-sky-500 transition-colors shadow-sm"
               >
@@ -72,16 +83,5 @@ export const PWAInstallButton: React.FC = () => {
     );
   }
 
-  // Fallback desktop/general install link
-  return (
-    <button
-      onClick={() => {
-        alert("To install AJWMES on your mobile device or computer, open this page in Chrome, Edge, or Safari and select 'Install' or 'Add to Home Screen'!");
-      }}
-      className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-semibold transition-all"
-    >
-      <Download className="w-3.5 h-3.5" />
-      <span>Install PWA</span>
-    </button>
-  );
+  return null;
 };

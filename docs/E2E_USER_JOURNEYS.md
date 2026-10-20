@@ -436,6 +436,10 @@ graph TD
    - Verify `desktopNavMenu` wraps cleanly into 2 rows (`rowCount === 2`) with zero horizontal scrollbar (`scrollWidth <= clientWidth`) and zero viewport overflow (`document.documentElement.scrollWidth <= 1280`).
 3. **Compact Tablet & Mobile Hamburger Drawer Grid (`768×900` & `375×667`)**:
    - Verify mobile drawer buttons match compact pill dimensions (`px-2.5`, `py-1`, `rounded-lg`) fitting `>= 4` items on the first row at `768px` width and staying strictly contained within narrow portrait viewports (`375×667`).
+4. **PWA Install Button Conditional Visibility Contract (Issue #29)**:
+   - Verify in-app PWA install button (`pwa-install-button`) is strictly hidden by default on desktop viewports when `beforeinstallprompt` has not fired.
+   - Verify the button transitions cleanly to visible upon browser dispatch of `beforeinstallprompt`, triggers native installation when clicked, and disappears upon acceptance.
+   - Verify install triggers remain strictly hidden when running in standalone PWA display mode (`display-mode: standalone`).
 
 ---
 

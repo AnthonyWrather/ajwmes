@@ -47,7 +47,6 @@ import { StockAlertEmailModal } from './components/admin/StockAlertEmailModal';
 import { BookingQuoteModal } from './components/forms/BookingQuoteModal';
 import { FreeHostingGuideModal } from './components/modals/FreeHostingGuideModal';
 import { Logo } from './components/brand/Logo';
-import { PWAInstallButton } from './components/pwa/PWAInstallButton';
 import { ShieldCheck, MapPin, Clock, Github, HelpCircle, Phone, Mail, Bell, Truck, CheckCircle2, ArrowRight, X, AlertTriangle } from 'lucide-react';
 import { 
   AppRoute, 
