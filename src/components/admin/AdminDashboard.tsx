@@ -66,6 +66,7 @@ interface AdminDashboardProps {
   onCreateExpense?: (expense: Omit<JobExpense, 'id' | 'createdAt'>) => void;
   onUpdateExpense?: (expense: JobExpense) => void;
   onDeleteExpense?: (expenseId: string) => void;
+  currentUserRole?: UserRole;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -77,6 +78,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   stockAlerts = [],
   users = [],
   expenses = [],
+  currentUserRole = 'admin',
   onSendMessage,
   onSaveJobSheet,
   onUpdateCatalog,
@@ -775,6 +777,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeAdminTab === 'accounts' && (
         <UserAccountsManager
           users={users}
+          currentUserRole={currentUserRole}
           onSaveUser={onSaveUser || (() => {})}
           onUpdateUserRole={onUpdateUserRole || (() => {})}
           onDeleteUser={onDeleteUser}

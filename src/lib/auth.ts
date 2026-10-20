@@ -146,11 +146,41 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
       'Manage Stock, Catalog, item pricing, and restore snapshots',
       'Automated zero-stock depletion alerts & supplier reordering',
       'Print & Laser Studio: Marine flyers, business cards, and CAD exports',
-      'Full administrative oversight and role governance'
+      'Full administrative oversight and role governance for application roles'
     ],
-    restrictedFeatures: [],
+    restrictedFeatures: [
+      'Cannot access Multi-Environment & Release Manager or switch deployment targets',
+      'Cannot view, override, or reset Firebase, Stripe, or Resend API keys',
+      'Cannot export, import, or reset environment storage datasets',
+      'Cannot modify, assign, or delete Website Administrator (site) accounts',
+      'Cannot access Free Hosting & GitHub Setup Guide'
+    ],
     color: 'text-emerald-400',
     badgeClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'
+  },
+  site: {
+    role: 'site',
+    label: 'Anthony Wrather (Website Administrator)',
+    shortLabel: 'Site Admin',
+    badge: 'Site Admin',
+    tagline: 'Platform infrastructure, keys & deployment configuration',
+    description: 'Platform infrastructure and configuration role. Can manage environment settings, API keys, test mailer dispatch, deployment modes, and test datasets.',
+    allowedFeatures: [
+      'Manage multi-environment settings and release tags',
+      'View, set, override, and reset Firebase Web API and Stripe publishable keys',
+      'Inspect Resend Cloud Function gateway & dispatch verification test emails',
+      'Switch active environment simulation modes',
+      'Export, import, and reset environment test data fixtures',
+      'Access Free Hosting & GitHub Setup Guide',
+      'Manage and assign Website Administrator (site) accounts'
+    ],
+    restrictedFeatures: [
+      'Cannot access pontoon technician diagnostic workstation',
+      'Cannot fulfill or dispatch warehouse postal orders',
+      'Cannot access master workshop catalog pricing or POs'
+    ],
+    color: 'text-cyan-400',
+    badgeClass: 'bg-cyan-950/90 text-cyan-300 border-cyan-500/40'
   }
 };
 

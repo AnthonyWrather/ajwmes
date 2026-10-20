@@ -348,16 +348,23 @@ test.describe('Landing & Authentication E2E Flows', () => {
     const headerBadge = page.getByTestId('header-version-badge');
     await expect(headerBadge).toBeVisible();
     await expect(headerBadge).toHaveText(/v\d+\.\d+\.\d+-[a-f0-9]+/i);
+    await expect(headerBadge).toBeDisabled();
 
-    // 2. Click version badge to open Environment Settings Modal
+    // 2. Sign in as Website Administrator (site)
+    await nav.openSignInModal();
+    await auth.verifyModalVisible();
+    await auth.signIn('site@ajwmes.co.uk', 'ajwmes2026');
+
+    // 3. Header badge is enabled for site role; click to open Environment Settings Modal
+    await expect(headerBadge).toBeEnabled();
     await headerBadge.click();
 
-    // 3. Verify modal version tag matches
+    // 4. Verify modal version tag matches
     const modalVersionTag = page.getByTestId('modal-version-tag');
     await expect(modalVersionTag).toBeVisible();
     await expect(modalVersionTag).toHaveText(/v\d+\.\d+\.\d+-[a-f0-9]+/i);
 
-    // 4. Verify GitHub commit verification card is present with SHA and links
+    // 5. Verify GitHub commit verification card is present with SHA and links
     const commitCard = page.getByTestId('github-commit-card');
     await expect(commitCard).toBeVisible();
 
@@ -369,7 +376,7 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(githubLink).toBeVisible();
     await expect(githubLink).toHaveAttribute('href', /https:\/\/github\.com\/anthonywrather\/ajwmes\/commit\/[a-f0-9]+/i);
 
-    // 5. Switch to Production Live ('github-deployed') and close modal
+    // 6. Switch to Production Live ('github-deployed') and close modal
     const prodSwitchBtn = page.getByTestId('env-switch-github-deployed');
     await prodSwitchBtn.scrollIntoViewIfNeeded();
     await prodSwitchBtn.click({ force: true });
@@ -377,10 +384,13 @@ test.describe('Landing & Authentication E2E Flows', () => {
     const closeEnvModalBtn = page.getByTestId('close-env-settings-modal');
     await closeEnvModalBtn.click({ force: true });
 
-    // 6. In Production as Guest, the header version badge must be disabled
+    // 7. Sign out of site role
+    await nav.signOut();
+
+    // In Production as Guest, the header version badge must be disabled
     await expect(headerBadge).toBeDisabled();
 
-    // 7. Open Sign In modal in Production and verify production UI rules
+    // 8. Open Sign In modal in Production and verify production UI rules
     await nav.openSignInModal();
     await auth.verifyModalVisible();
     await expect(auth.signInHeading).toContainText('Sign In');
@@ -391,16 +401,16 @@ test.describe('Landing & Authentication E2E Flows', () => {
     await expect(page.getByTestId('test-password-hint')).toHaveCount(0);
     await expect(page.getByTestId('tab-quick-personas')).toHaveCount(0);
 
-    // 8. Switch to Create Account tab in Production and verify heading is "Create Your Account"
+    // 9. Switch to Create Account tab in Production and verify heading is "Create Your Account"
     await auth.switchToRegisterTab();
     await expect(auth.registerHeading).toBeVisible();
     await expect(auth.registerHeading).toHaveText('Create Your Account');
 
-    // 9. Sign in as Administrator in Production and verify header version badge becomes enabled
+    // 10. Sign in as Workshop Administrator in Production and verify header version badge remains disabled (decoupled from admin)
     await page.getByTestId('tab-signin').click({ force: true });
     await auth.signIn('anthonywrather@gmail.com', 'ajwmes2026');
 
     await expect(page.getByTestId('admin-dashboard')).toBeVisible({ timeout: 10000 });
-    await expect(headerBadge).toBeEnabled();
+    await expect(headerBadge).toBeDisabled();
   });
 });

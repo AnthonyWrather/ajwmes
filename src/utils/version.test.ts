@@ -83,25 +83,25 @@ describe('Version & Release Tag Verification', () => {
     assert.strictEqual(isProductionEnvironment('github-deployed'), true);
   });
 
-  it('should restrict Multi-Environment & Release Manager link to admins in production while allowing all roles in dev/preview', () => {
-    const nonProdEnvs = ['aistudio-dev', 'aistudio-preview', 'github-preview'] as const;
-    const roles = ['guest', 'client', 'technician', 'postal', 'admin'] as const;
+  it('should restrict Multi-Environment & Release Manager link strictly to site role across all environments', () => {
+    const allEnvs = ['aistudio-dev', 'aistudio-preview', 'github-preview', 'github-deployed'] as const;
+    const nonSiteRoles = ['guest', 'client', 'technician', 'postal', 'admin'] as const;
 
-    for (const env of nonProdEnvs) {
-      for (const role of roles) {
+    for (const env of allEnvs) {
+      assert.strictEqual(
+        canAccessEnvironmentSettings(env, 'site'),
+        true,
+        `Expected site role to access environment settings in ${env}`
+      );
+
+      for (const role of nonSiteRoles) {
         assert.strictEqual(
           canAccessEnvironmentSettings(env, role),
-          true,
-          `Expected ${role} to access environment settings in ${env}`
+          false,
+          `Expected ${role} to be denied environment settings access in ${env}`
         );
       }
     }
-
-    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'admin'), true);
-    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'guest'), false);
-    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'client'), false);
-    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'technician'), false);
-    assert.strictEqual(canAccessEnvironmentSettings('github-deployed', 'postal'), false);
   });
 
   it('should return appropriate AuthModal UI configuration for dev/preview vs production', () => {

@@ -126,7 +126,7 @@ describe('enrichUserProfile', () => {
 });
 
 describe('canAccessRoute', () => {
-  const ALL_ROLES: UserRole[] = ['guest', 'client', 'technician', 'postal', 'admin'];
+  const ALL_ROLES: UserRole[] = ['guest', 'client', 'technician', 'postal', 'admin', 'site'];
   const ALL_ROUTES: AppRoute[] = [
     'home',
     'store',
@@ -246,6 +246,31 @@ describe('canAccessRoute', () => {
           canAccessRoute('postal', route),
           false,
           `Expected postal role to be denied access to "${route}"`
+        );
+      }
+    });
+  });
+
+  describe('Site Administrator Role (Platform Infrastructure & Storefront)', () => {
+    const allowedForSite: AppRoute[] = ['home', 'store', 'tracker', 'designer', 'replica'];
+    const forbiddenForSite: AppRoute[] = ['portal', 'technician', 'postal', 'admin'];
+
+    it('allows site admin to access public storefront and custom panel visualizers', () => {
+      for (const route of allowedForSite) {
+        assert.equal(
+          canAccessRoute('site', route),
+          true,
+          `Expected site role to have access to "${route}"`
+        );
+      }
+    });
+
+    it('denies site admin access to private client portal, technician jobs, postal fulfillment, and workshop admin', () => {
+      for (const route of forbiddenForSite) {
+        assert.equal(
+          canAccessRoute('site', route),
+          false,
+          `Expected site role to be denied access to "${route}"`
         );
       }
     });

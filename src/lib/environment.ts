@@ -213,14 +213,11 @@ export function isProductionEnvironment(envCode: AppEnvironment): boolean {
 
 /**
  * Determines whether the Multi-Environment & Release Manager link is enabled.
- * In AI Studio and preview environments, all roles can open it.
- * In Production ('github-deployed'), only administrators ('admin') can open it.
+ * Restricted strictly to Website Administrators ('site') across all environments
+ * (Dev, Preview, Staging, and Production) to enforce least-privilege security.
  */
 export function canAccessEnvironmentSettings(envCode: AppEnvironment, userRole: UserRole): boolean {
-  if (isProductionEnvironment(envCode)) {
-    return userRole === 'admin';
-  }
-  return true;
+  return userRole === 'site';
 }
 
 export interface AuthModalEnvironmentConfig {

@@ -15,7 +15,7 @@ Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and p
 - **Frontend Core**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
 - **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions` v6 & `firebase-admin` v13 with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
 - **Reporting & Icons**: `jspdf` (marine certificate rendering), `lucide-react`
-- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (287 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests), Playwright (`@playwright/test` across 15 E2E browser specs & 11 Page Object Models)
+- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (291 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests), Playwright (`@playwright/test` across 16 E2E browser specs & 11 Page Object Models)
 
 ---
 
@@ -26,7 +26,7 @@ npm run build           # Production build (Vite + PWA service worker + /version
 npm run preview         # Preview production build locally
 npm run lint            # Typecheck frontend via `tsc --noEmit` (MUST pass with 0 errors)
 npm run lint:functions  # Typecheck Cloud Functions (`functions/`) via `tsc --noEmit`
-npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (287 tests)
+npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (291 tests)
 npm run test:functions  # Run Cloud Functions unit tests matching functions/src/**/*.test.ts (21 tests)
 npm run build:functions # Compile Cloud Functions TypeScript to functions/lib/
 npm run test            # Alias for test:unit
@@ -119,7 +119,7 @@ ajwmes/
 │   ├── App.tsx             # Root application orchestrator
 │   ├── index.css           # Tailwind CSS v4 directives & theme definitions
 │   └── main.tsx            # React 19 application mount point
-└── tests/                  # Playwright E2E browser specifications (15 spec files + 11 Page Object Models in tests/pages/):
+└── tests/                  # Playwright E2E browser specifications (16 spec files + 11 Page Object Models in tests/pages/):
     ├── pages/              # Page Object Models (AdminDashboardPage, AuthModalPage, CartDrawerPage, ConsignmentTrackerPage, NavigationPage, PostalWorkspacePage, ReplicaPanelUploaderPage, StorePage, SwitchPanelCADPage, TechnicianWorkspacePage, VesselPortalPage)
     ├── admin-workshop-management.spec.ts
     ├── app-version-update.spec.ts
@@ -130,6 +130,7 @@ ajwmes/
     ├── offline-pontoon-resilience.spec.ts
     ├── performance-architecture-optimization.spec.ts
     ├── postal-fulfillment-dispatch.spec.ts
+    ├── rbac-site-role.spec.ts
     ├── resend.spec.ts
     ├── stripe.spec.ts
     ├── switch-panel-cad.spec.ts
@@ -170,10 +171,10 @@ The app runs across 4 isolated hosting environments:
 - High-payload assets (photos, customer signatures) are queued in IndexedDB (`ajw_marine_field_db`).
 
 ### 5. Role-Based Access Control (RBAC)
-- 5 User Roles: `guest` | `client` | `admin` | `technician` | `postal`.
+- 6 User Roles: `guest` | `client` | `admin` | `technician` | `postal` | `site`.
 - Route access is governed by `canAccessRoute(role, route)` in `src/lib/rbac.ts`.
 - Action permissions are governed by `canPerformAction(role, action)` in `src/lib/rbac.ts` and enforced server-side in `functions/src/authMiddleware.ts`.
-- Never bypass or remove RBAC checks when adding or altering routes/actions.
+- Never bypass or remove RBAC checks when adding or altering routes/actions. Platform configuration (`EnvironmentSettingsModal`, API keys, environment switching, test data fixtures) is strictly reserved for the `site` role.
 
 ### 6. Tailwind CSS v4 & Styling Guidelines
 - The application uses Tailwind v4 `@tailwindcss/vite` integration (`@import "tailwindcss";` in `src/index.css`).

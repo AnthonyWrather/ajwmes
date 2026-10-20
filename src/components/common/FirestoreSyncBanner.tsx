@@ -13,13 +13,14 @@ import {
   Layers,
   Sparkles
 } from 'lucide-react';
-import { FirestoreConnectionState } from '../../types';
+import { FirestoreConnectionState, UserRole } from '../../types';
 
 interface FirestoreSyncBannerProps {
   connectionState: FirestoreConnectionState;
   onRetry: () => Promise<boolean | void>;
   onToggleSimulatedOffline?: (forceOffline: boolean) => Promise<boolean | void>;
   onOpenEnvironmentSettings?: () => void;
+  userRole?: UserRole;
 }
 
 export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
@@ -27,6 +28,7 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
   onRetry,
   onToggleSimulatedOffline,
   onOpenEnvironmentSettings,
+  userRole,
 }) => {
   const [isDismissed, setIsDismissed] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -107,7 +109,7 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
             </button>
 
             <div className="flex items-center gap-2">
-              {onOpenEnvironmentSettings && (
+              {onOpenEnvironmentSettings && userRole === 'site' && (
                 <button
                   onClick={onOpenEnvironmentSettings}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 text-[10px] font-semibold transition-all cursor-pointer"
@@ -162,7 +164,7 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
             </div>
 
             <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-              {onOpenEnvironmentSettings && (
+              {onOpenEnvironmentSettings && userRole === 'site' && (
                 <button
                   onClick={onOpenEnvironmentSettings}
                   className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-bold transition-all shadow-sm shadow-sky-600/30 cursor-pointer"
@@ -286,7 +288,7 @@ export const FirestoreSyncBanner: React.FC<FirestoreSyncBannerProps> = ({
               {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </button>
 
-            {onOpenEnvironmentSettings && (
+            {onOpenEnvironmentSettings && userRole === 'site' && (
               <button
                 onClick={onOpenEnvironmentSettings}
                 className="text-[11px] font-medium text-sky-300 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-sky-500/10 transition-colors cursor-pointer"

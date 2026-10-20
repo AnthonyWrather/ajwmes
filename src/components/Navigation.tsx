@@ -119,7 +119,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             title={
               canOpenEnvSettings
                 ? `Release ${displayedFullTag} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Click to open Multi-Environment & Release Manager`
-                : `Release ${displayedFullTag} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Multi-Environment & Release Manager requires Administrator privileges`
+                : `Release ${displayedFullTag} [${envBadge.label}] · Commit: ${GIT_COMMIT_SHA} · Multi-Environment & Release Manager requires Website Administrator (site) privileges`
             }
           >
             <span className={`w-1.5 h-1.5 rounded-full ${envBadge.dotColor} animate-pulse`} />
@@ -374,6 +374,20 @@ export const Navigation: React.FC<NavigationProps> = ({
                       <User className="w-3.5 h-3.5 text-sky-400" />
                       <span>{canAccessRoute(currentUserRole, 'portal') ? 'Manage Account & Specs' : 'Manage Account'}</span>
                     </button>
+
+                    {currentUserRole === 'site' && (
+                      <button
+                        data-testid="nav-site-settings-button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          onOpenEnvironmentSettings?.();
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-cyan-300 hover:text-cyan-200 flex items-center gap-2 cursor-pointer font-medium"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Platform &amp; Environment Settings</span>
+                      </button>
+                    )}
 
                     {currentUserRole === 'client' && (
                       <button

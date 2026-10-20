@@ -313,15 +313,17 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    { label: 'Admin (Anthony)', email: 'anthonywrather@gmail.com' },
-                    { label: 'Technician (Jack)', email: 'jack.tech@ajwmes.co.uk' },
-                    { label: 'Postal (Sarah)', email: 'sarah.postal@ajwmes.co.uk' },
-                    { label: 'Client (David)', email: 'd.mercer@solent-sail.co.uk' },
-                    { label: 'Guest', email: 'guest@solent-visitor.co.uk' }
+                    { label: 'Admin (Anthony)', email: 'anthonywrather@gmail.com', role: 'admin' },
+                    { label: 'Site Admin (Anthony)', email: 'site@ajwmes.co.uk', role: 'site' },
+                    { label: 'Technician (Jack)', email: 'jack.tech@ajwmes.co.uk', role: 'technician' },
+                    { label: 'Postal (Sarah)', email: 'sarah.postal@ajwmes.co.uk', role: 'postal' },
+                    { label: 'Client (David)', email: 'd.mercer@solent-sail.co.uk', role: 'client' },
+                    { label: 'Guest', email: 'guest@solent-visitor.co.uk', role: 'guest' }
                   ].map(acc => (
                     <button
                       key={acc.email}
                       type="button"
+                      data-testid={`test-account-chip-${acc.role}`}
                       onClick={() => {
                         setEmail(acc.email);
                         setPassword('ajwmes2026');
@@ -578,6 +580,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 return (
                   <div
                     key={profile.id}
+                    data-testid={`quick-persona-${profile.role}`}
                     onClick={() => handleSelectQuickPersona(profile)}
                     className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                       isCurrent
@@ -588,6 +591,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
                         {profile.role === 'admin' && <Wrench className="w-5 h-5 text-emerald-400" />}
+                        {profile.role === 'site' && <Zap className="w-5 h-5 text-cyan-400" />}
                         {profile.role === 'technician' && <Zap className="w-5 h-5 text-amber-400" />}
                         {profile.role === 'postal' && <Package className="w-5 h-5 text-purple-400" />}
                         {profile.role === 'client' && <Ship className="w-5 h-5 text-sky-400" />}

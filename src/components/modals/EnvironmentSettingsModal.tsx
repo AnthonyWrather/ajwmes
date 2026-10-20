@@ -69,7 +69,7 @@ import {
 } from '../../lib/stripeConfig';
 import { isValidStripePublishableKey } from '../../utils/stripeCalculations';
 import { sendTestEmail } from '../../lib/emailService';
-import { FirestoreConnectionState } from '../../types';
+import { FirestoreConnectionState, UserRole } from '../../types';
 import {
   AppUpdateState,
   checkForAppUpdate,
@@ -84,6 +84,7 @@ interface EnvironmentSettingsModalProps {
   connectionState: FirestoreConnectionState;
   onDataResetOrImported?: () => void;
   onRetryConnection?: () => Promise<boolean | void>;
+  userRole?: UserRole;
 }
 
 export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> = ({
@@ -91,7 +92,8 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   onClose,
   connectionState,
   onDataResetOrImported,
-  onRetryConnection
+  onRetryConnection,
+  userRole
 }) => {
   const [envInfo, setEnvInfo] = useState<EnvironmentInfo>(() => detectEnvironment());
   const [activeTab, setActiveTab] = useState<'overview' | 'testdata' | 'guide'>('overview');
@@ -119,6 +121,31 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   }, []);
 
   if (!isOpen) return null;
+
+  if (userRole && userRole !== 'site') {
+    return (
+      <div 
+        data-testid="env-settings-access-denied"
+        className="fixed inset-0 z-50 w-full max-w-full overflow-hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in"
+      >
+        <div className="bg-slate-900 border border-rose-500/40 w-full max-w-md rounded-2xl p-6 text-center shadow-2xl space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-950/80 border border-rose-500/40 text-rose-400 mx-auto flex items-center justify-center">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-white">Website Administration Access Required</h3>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            The Multi-Environment &amp; Release Manager is restricted strictly to Website Administrators (<code className="text-cyan-300 font-mono">site</code>). Operational administrators (<code className="text-emerald-300 font-mono">admin</code>) and other roles cannot view or alter platform infrastructure, deployment modes, or API keys.
+          </p>
+          <button
+            onClick={onClose}
+            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSaveStripeKey = () => {
     const trimmed = customStripeKeyInput.trim();
@@ -243,7 +270,10 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 w-full max-w-full overflow-hidden flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+      data-testid="env-settings-modal"
+      className="fixed inset-0 z-50 w-full max-w-full overflow-hidden flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       <div className="bg-slate-900 border border-slate-700/80 w-full max-w-3xl min-w-0 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-4 sm:px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-start sm:items-center justify-between gap-3 min-w-0">
@@ -671,6 +701,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </label>
                   <div className="flex flex-col sm:flex-row items-center gap-2">
                     <input
+                      data-testid="firebase-api-key-input"
                       type="text"
                       value={customKeyInput}
                       onChange={(e) => setCustomKeyInput(e.target.value)}
@@ -679,6 +710,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                     />
                     <div className="flex items-center gap-1.5 w-full sm:w-auto">
                       <button
+                        data-testid="save-firebase-key-button"
                         type="button"
                         onClick={handleSaveApiKey}
                         disabled={!customKeyInput.trim()}

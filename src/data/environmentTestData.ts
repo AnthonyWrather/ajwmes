@@ -513,6 +513,26 @@ export const AI_STUDIO_DEV_USERS: UserProfile[] = [
     notifyDispatchSms: false,
     createdAt: '2026-10-01T08:00:00Z',
     lastLoginAt: '2026-10-10T16:00:00Z'
+  },
+  {
+    id: 'usr-site-0000-0000-0000-000000000006',
+    name: 'Anthony Wrather — Website Admin',
+    email: 'site@ajwmes.co.uk',
+    role: 'site',
+    phone: '07700 900551',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'AJW Solent Response',
+    vesselType: 'Workboat / Fast Tender',
+    marinaBerth: 'Gosport Marina (HQ Workshop)',
+    systemVoltage: '12V',
+    vesselIds: [],
+    environment: 'aistudio-dev',
+    notifyJobUpdates: false,
+    notifyDispatchSms: false,
+    createdAt: '2026-10-15T09:00:00Z',
+    lastLoginAt: '2026-10-20T16:00:00Z'
   }
 ];
 
@@ -633,10 +653,30 @@ export const AI_STUDIO_PREVIEW_USERS: UserProfile[] = [
     notifyDispatchSms: false,
     createdAt: '2026-10-01T08:00:00Z',
     lastLoginAt: '2026-10-10T16:00:00Z'
+  },
+  {
+    id: 'usr-site-0000-0000-0000-000000000006',
+    name: 'Anthony Wrather — Website Admin',
+    email: 'site@ajwmes.co.uk',
+    role: 'site',
+    phone: '07700 900551',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'AJW Solent Response',
+    vesselType: 'Workboat / Fast Tender',
+    marinaBerth: 'Gosport Marina (HQ Workshop)',
+    systemVoltage: '12V',
+    vesselIds: [],
+    environment: 'aistudio-preview',
+    notifyJobUpdates: false,
+    notifyDispatchSms: false,
+    createdAt: '2026-10-15T09:00:00Z',
+    lastLoginAt: '2026-10-20T16:00:00Z'
   }
 ];
 
-// 3. GITHUB LIVE PRODUCTION SEED ACCOUNTS (Only 3 accounts under ajwmes.co.uk domain)
+// 3. GITHUB LIVE PRODUCTION SEED ACCOUNTS (Only 4 staff accounts under ajwmes.co.uk domain)
 export const GITHUB_LIVE_PROD_USERS: UserProfile[] = [
   {
     id: 'usr-admin-prod-001',
@@ -695,6 +735,26 @@ export const GITHUB_LIVE_PROD_USERS: UserProfile[] = [
     environment: 'github-deployed',
     notifyJobUpdates: false,
     notifyDispatchSms: true,
+    createdAt: '2026-10-14T10:00:00Z',
+    lastLoginAt: '2026-10-14T10:00:00Z'
+  },
+  {
+    id: 'usr-site-prod-004',
+    name: 'Anthony Wrather — Website Admin',
+    email: 'site@ajwmes.co.uk',
+    role: 'site',
+    phone: '07700 900551',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'AJW Solent Response',
+    vesselType: 'Workboat / Fast Tender',
+    marinaBerth: 'Gosport Marina (HQ Workshop)',
+    systemVoltage: '12V',
+    vesselIds: [],
+    environment: 'github-deployed',
+    notifyJobUpdates: false,
+    notifyDispatchSms: false,
     createdAt: '2026-10-14T10:00:00Z',
     lastLoginAt: '2026-10-14T10:00:00Z'
   }
