@@ -3,8 +3,14 @@ name: Playwright Cross-Browser Matrix Tests
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,6 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24.21.0'
+          cache: 'npm'
 
       - name: Install dependencies
         run: |
@@ -57,6 +64,7 @@ jobs:
 
   e2e:
     name: E2E (${{ matrix.project }})
+    needs: validate
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
@@ -97,6 +105,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24.21.0'
+          cache: 'npm'
 
       - name: Install dependencies
         run: |
@@ -106,8 +115,27 @@ jobs:
             npm install
           fi
 
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright Browser Binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || '~/.cache/ms-playwright' }}
+          key: ${{ runner.os }}-playwright-${{ matrix.browser }}-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright Browser and System Dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Install Playwright System Dependencies (Linux Cache Hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true' && runner.os == 'Linux'
+        run: npx playwright install-deps ${{ matrix.browser }}
+
+      - name: Build Application for E2E Preview
+        run: npm run build
 
       - name: Run Playwright E2E (${{ matrix.project }})
         run: npx playwright test --project="${{ matrix.project }}"

@@ -61,9 +61,11 @@ export default defineConfig({
         }
       ],
 
-  /* Boot local Vite development server automatically before test suite executes */
+  /* Boot local Vite server: uses production preview in CI for speed & determinism, dev server locally */
   webServer: {
-    command: 'npx vite --port 5173 --host 127.0.0.1',
+    command: process.env.CI
+      ? 'npm run preview -- --port 5173 --host 127.0.0.1'
+      : 'npx vite --port 5173 --host 127.0.0.1',
     url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000

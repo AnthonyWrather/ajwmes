@@ -137,7 +137,8 @@ The app runs across 4 isolated hosting environments:
 ### 7. Playwright E2E Automation Standards
 - E2E tests are located in `tests/`.
 - All interactive elements must have clear, stable `data-testid` attributes (e.g. `data-testid="auth-modal"`, `data-testid="diagnostic-timer-button"`).
-- Playwright automatically spins up the Vite dev server on port `5173` to prevent collision with regular dev on `3000`.
+- Playwright automatically spins up the Vite server on port `5173` (serving pre-built production assets via `vite preview` in CI, and `vite` dev server locally).
+- CI/CD optimizations include OS-aware Playwright caching (macOS `~/Library/Caches/ms-playwright`, Linux `~/.cache/ms-playwright`), global npm caching (`setup-node@v4`), validation gating (`needs: validate`), and shared `dist/` build artifacts for Firebase deployments.
 
 ### 8. Secrets & Environment Variables
 - Client-side variables must use the `VITE_*` prefix and are public by design.
