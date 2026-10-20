@@ -69,12 +69,14 @@ flowchart TB
         FBAuth["Firebase Authentication\n(Google OAuth 2.0 & Email/Password)"]
         Firestore[("Cloud Firestore\n- Multi-Environment Partitioned\n- Realtime Listeners onSnapshot")]
         FBStorage[("Cloud Storage for Firebase\n- Panel Designs & Replica Photos\n- Pontoon Work & Fitment Proof")]
+        CloudFuncs["Cloud Functions 2nd Gen (europe-west2)\n- sendEmail (Resend + Secret Manager)\n- getShippingRates & generateShippingLabel\n- createShipStationOrder & Webhook"]
         GeminiAI["Google GenAI SDK (@google/genai)\n- Multimodal Panel Diagnosis\n- Generative Workshop Intelligence"]
     end
 
     subgraph ExternalServices["External Ecosystem"]
         StripeCheckout["Stripe Checkout API\n(Deposit & Invoice Clearing)"]
-        Carriers["Royal Mail & DPD APIs\n(Consignment Tracking)"]
+        Carriers["ShipStation / Royal Mail & DPD APIs\n(Rates, 4x6 Thermal Labels & Tracking)"]
+        ResendAPI["Resend Email API\n(Transactional Marine Notifications)"]
         Suppliers["Marine Wholesale Supply EDI/Email\n(Victron UK, MakeFast, Solent Marine)"]
     end
 
@@ -86,9 +88,11 @@ flowchart TB
     SyncEngine <--> Firestore
     SyncEngine <--> FBStorage
     ReactApp <--> FBAuth
+    ReactApp <--> CloudFuncs
     ReactApp <--> GeminiAI
     ReactApp -.-> StripeCheckout
-    ReactApp -.-> Carriers
+    CloudFuncs --> Carriers
+    CloudFuncs --> ResendAPI
     ReactApp -.-> Suppliers
 ```
 
@@ -449,18 +453,20 @@ Enforcement is centralized in [`src/lib/rbac.ts`](file:///Users/anthonywrather/D
    $$\text{Labor Cost} = \text{Hours} \times \text{Hourly Rate} \quad (\text{default } \pounds 25.00/\text{hr})$$
 2. **Materials Summation**:
    $$\text{Materials Cost} = \sum (\text{Quantity}_i \times \text{UnitPrice}_i)$$
-3. **Switch Panel CAD Pricing Model**:
+3. **Switch Panel CAD Pricing Model (`calculateSwitchPanelPrice`)**:
    - Base laser cut & setup fee: **£35.00**
    - Premium Teak Surcharge: **+£25.00** | Birch Surcharge: **+£15.00**
    - Per-Gang Breaker Surcharge: **+£2.50** per switch
    - Digital Voltmeter Cutout: **+£8.00**
    - Dual USB Fast Charger Cutout: **+£10.00**
-   - 12V Heavy-Duty Marine Socket Cutout: **+£8.00**
-   - Packaging Tiers: Assembled & Wired (**+£45.00**), DIY Kit (**+£18.00**), Faceplate Only (**+£0.00**).
-4. **Physical Panel Geometry Validation**:
-   - Baseline minimum faceplate width: **160mm**.
-   - Gang scaling: Add **18mm** per gang over 4 gangs.
-   - Accessory cutouts: Add **35mm** for voltmeter, **30mm** for USB/12V sockets.
+   - 12V Heavy-Duty Marine Socket Cutout: **+£6.00**
+   - Packaging Tiers:
+     - *Faceplate Only* (`faceplate_only`): $\text{round}(\text{base})$
+     - *DIY Assembly Kit* (`diy_kit`): $\text{round}(\text{base} + \text{gangs} \times 8 + 12)$
+     - *Assembled & Bench-Tested* (`assembled_wired`): $\text{round}(\text{base} + \text{gangs} \times 12 + 35)$
+4. **Physical Panel Geometry Validation (`calculateMinimumPanelWidth`)**:
+   - Enforces a strict **160mm** baseline minimum faceplate width:
+     $$\text{Width}_{\min} = \max\left(160, \lceil \text{gangs} / 2 \rceil \times 55 + (\text{hasVoltmeter} ? 45 : 0)\right)\text{ mm}$$
 5. **Weathered Switchboard Photo Replica Pricing Engine (`calculateReplicaPanelQuote`)**:
    - Digitizing labor & optical laser scanning: **£25.00** (1 hour diagnostic rate).
    - Base laser cutout plate: **£35.00**.
@@ -540,26 +546,26 @@ As Principal QA Automation Specialist, the quality engineering strategy implemen
 graph BT
     subgraph TestPyramid["Quality Assurance Test Pyramid"]
         direction BT
-        Unit["Level 1: Pure Unit & Logic Tests\n(Node.js Built-in Runner via tsx --test)\n- electricalCalculations.test.ts\n- expenseCalculations.test.ts\n- formValidation.test.ts\n- stripeCalculations.test.ts\n- stripeConfig.test.ts\n- auth.test.ts\n- rbac.test.ts\n- offlineQueueCalculations.test.ts\n- inventorySync.test.ts\n- postalTimeline.test.ts\n- emailTemplates.test.ts\n- version.test.ts\n- versionCheck.test.ts\nExecution: < 1.5s | 240+ Passing Tests"]
+        Unit["Level 1: Pure Unit & Cloud Function Tests\n(Node.js Built-in Runner via tsx --test)\n- src/utils/*.test.ts & src/lib/*.test.ts (281 tests)\n- functions/src/*.test.ts (21 tests)\n- electricalCalculations, expenseCalculations, formValidation\n- stripeCalculations, stripeConfig, shipstationCalculations, shipstationService\n- emailTemplates, emailService, resendConfig, resendValidation, incomingEmail\n- auth, rbac, offlineQueueCalculations, inventorySync, postalTimeline\n- generateVesselPdf, imageResize, imageUrl, version, versionCheck\nExecution: < 1.5s | 302 Passing Unit Tests"]
         
-        Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix Conformance Tests\n- Environment Partition Prefix Routing"]
+        Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix & Cloud Function Auth Middleware\n- Environment Partition Prefix Routing"]
         
-        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test)\n- authentication.spec.ts\n- app-version-update.spec.ts (In-Browser Rollout Indicator & 1st Refresh Deploy)\n- navigation-responsive-menu.spec.ts (Responsive Pill Bar & Viewport Containment)\n- stripe.spec.ts (Payment Gateway & Card Checkout)\n- Multi-Role Portal Navigation\n- Switch Panel CAD Configurator\n- Pontoon Digital Signature Flow\n- Consignment Tracker Timeline\n- performance-architecture-optimization.spec.ts"]
+        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test - 15 Spec Suites & 11 POMs)\n- authentication.spec.ts\n- inventory-stock-sync.spec.ts\n- resend.spec.ts\n- technician-diagnostic-flow.spec.ts\n- postal-fulfillment-dispatch.spec.ts\n- consignment-tracker.spec.ts\n- admin-workshop-management.spec.ts\n- offline-pontoon-resilience.spec.ts\n- switch-panel-cad.spec.ts\n- switchboard-photo-replica.spec.ts\n- vessel-portal-pdf.spec.ts\n- stripe.spec.ts\n- app-version-update.spec.ts\n- navigation-responsive-menu.spec.ts\n- performance-architecture-optimization.spec.ts"]
     end
 ```
 
-### 10.1 Level 1: Fast Pure Logic Unit Tests (`tsx --test`)
-Executed directly on Node.js using `npm run test:unit`:
-- **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts`.
-- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (240+ passing tests).
+### 10.1 Level 1: Fast Pure Logic & Cloud Function Unit Tests (`tsx --test`)
+Executed directly on Node.js using `npm run test:unit` and `npm run test:functions`:
+- **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts` (20 files, 281 tests), and `functions/src/*.test.ts` (2 files, 21 tests).
+- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (**302 passing unit tests**).
 - **Verification Matrix**:
-  - `stripeCalculations.test.ts`: Verifies IEEE-754 pound/pence conversions, UK card fee estimation (1.5% + 20p), key validator (`pk_test_` / `pk_live_`), and hosted payment link construction.
-  - `stripeConfig.test.ts`: Verifies scoped storage priority overrides, build-time env resolution, and safe fallback to simulated development mode.
-  - `electricalCalculations.test.ts`: Verifies stopwatch conversions, fractional decimal hours, zero-second edge cases, and panel pricing tiers.
+  - `stripeCalculations.test.ts` & `stripeConfig.test.ts`: Verifies IEEE-754 pound/pence conversions, UK card fee estimation (1.5% + 20p), key validator (`pk_test_` / `pk_live_`), hosted payment link construction, and scoped storage overrides.
+  - `shipstationCalculations.test.ts`, `shipstationService.test.ts`, & `functions/src/shipstationClient.test.ts`: Verifies marine conductor weight heuristics, parcel dimensioning, 4x6" SVG thermal label generation, Basic Auth encoding, and ShipStation Cloud Function API mapping.
+  - `emailTemplates.test.ts`, `emailService.test.ts`, `resendConfig.test.ts`, `resendValidation.test.ts`, `incomingEmail.test.ts`, & `functions/src/resendClient.test.ts`: Verifies HTML/text transactional templates, simulated outbox fallback, Resend inbound webhook parsing (`JOB-*` / `ORD-*`), and `sendEmail` Cloud Function security.
+  - `electricalCalculations.test.ts`: Verifies stopwatch conversions, fractional decimal hours, zero-second edge cases, CAD switch panel pricing tiers, and weathered replica quotes.
   - `expenseCalculations.test.ts`: Validates financial rollups, NaN handling, and billable vs overhead categorization.
   - `formValidation.test.ts`: Tests Solent landlines, UK mobile normalizations, breaker amp limits, and email formats.
-  - `auth.test.ts`: Tests profile enrichment, guest restrictions, technician permissions, and admin elevation.
-  - `rbac.test.ts`: Verifies dual-tier access control matrix, route guarding, and action middleware enforcement across all 5 user roles.
+  - `auth.test.ts` & `rbac.test.ts`: Tests profile enrichment, dual-tier access control matrix, route guarding, and action middleware enforcement across all 5 user roles.
   - `inventorySync.test.ts`: Tests JSON catalog import/export parsing, duplicate item reconciliation, and envelope deserialization.
   - `offlineQueueCalculations.test.ts`: Tests IndexedDB mutation prioritization, queue progression clamp, and connection state resolvers.
   - `postalTimeline.test.ts`: Verifies Royal Mail/DPD tracking milestones, progress calculation, and delivery status tiers.
@@ -685,14 +691,15 @@ Known architectural gaps and status:
 ## 13. Quality Verification & Sign-Off Checklist
 
 Before merging any feature into `main`:
-- [x] **Static Typing**: `npm run lint` passes with 0 type errors.
-- [x] **Unit Test Suite**: `npm run test:unit` passes (267/267 passing tests).
+- [x] **Static Typing**: `npm run lint` and `npm run lint:functions` pass with 0 type errors.
+- [x] **Unit Test Suite**: `npm run test:unit` (281/281) and `npm run test:functions` (21/21) pass (**302/302 passing unit tests**).
 - [x] **ShipStation & Postal Dispatch**: Validated marine weight heuristics, live rate comparison, 4x6" thermal label generation, and Cloud Functions 2nd Gen backend gateway.
+- [x] **Resend Transactional Email Gateway**: Validated server-side `sendEmail` 2nd Gen Cloud Function (`europe-west2`), Google Secret Manager key isolation, inbound webhook parsing (`incomingEmail.ts`), and simulated offline outbox fallback.
 - [x] **Stripe Payment Gateway**: Validated test/live key detection, UK domestic interchange calculations (1.5% + 20p), and simulated fallback.
 - [x] **Offline Resilience**: Field mutations gracefully store to IndexedDB when disconnected (`navigator.onLine = false`).
 - [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 5 roles (`guest`, `client`, `admin`, `technician`, `postal`).
-- [x] **PWA Manifest & Assets**: Icons, theme colors (`#0A192F`), and service worker registered without console warnings.
-- [x] **End-to-End Validation**: `npm run test:e2e` completes successfully in Playwright headless runners.
+- [x] **PWA Manifest & Assets**: Icons, theme colors (`#0A192F`), `/version.json` rollout manifest, and service worker registered without console warnings.
+- [x] **End-to-End Validation**: `npm run test:e2e` completes successfully across all 15 Playwright specification suites and 11 Page Object Models.
 
 ---
 *Signed off by:*  
