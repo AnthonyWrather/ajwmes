@@ -13,9 +13,10 @@ Specialized marine electrical diagnostics, lithium/solar power calculation, cust
 Headquartered in Gosport, Hampshire, supporting marine vessels across the Solent marine basin (Portsmouth, Southampton, Hamble, Cowes, and Chichester).
 
 - **Primary Domain**: [https://ajwmes.co.uk](https://ajwmes.co.uk)
-- **Architecture Specification**: See [`DESIGN.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/DESIGN.md) for the 12-section technical architecture specification.
+- **Architecture Specification**: See [`DESIGN.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/DESIGN.md) for the 13-section technical architecture specification.
+- **E2E User Journeys & QA Roadmap**: See [`docs/E2E_USER_JOURNEYS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/docs/E2E_USER_JOURNEYS.md) for the 15 automated Playwright E2E user journeys, Page Object Models (`tests/pages/`), and next recommended journeys.
 - **AI Agent Guidelines**: See [`AGENTS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/AGENTS.md) and [`GEMINI.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/GEMINI.md) for automated agent pair-programming rules.
-- **Services Setup Guide**: See [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md) for step-by-step creation of every account, key and endpoint (Firebase, Firestore, Storage, Stripe, Resend, Gemini, GitHub Actions, DNS) needed to run development, preview and production.
+- **Services Setup Guide**: See [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md) for step-by-step creation of every account, key and endpoint (Firebase, Firestore, Storage, Cloud Functions, Stripe, Resend, ShipStation, Gemini, GitHub Actions, DNS) needed to run development, preview and production.
 
 ---
 
@@ -64,12 +65,12 @@ flowchart TD
 
 ## High-Level Architecture
 
-The system uses an **Offline-First Single-Page Application (SPA) / Progressive Web App (PWA)** architecture built on React 19 and Vite 8, backed by Google Firebase serverless cloud services and Google Gemini Generative AI.
+The system uses an **Offline-First Single-Page Application (SPA) / Progressive Web App (PWA)** architecture built on React 19 and Vite 8, backed by Google Firebase serverless cloud services, 2nd Gen Cloud Functions (`europe-west2`), and Google Gemini Generative AI.
 
 - **Frontend & Build**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
-- **Cloud & Backend**: Firebase v13 (Authentication & Cloud Firestore), `@google/genai`
+- **Cloud & Backend**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` for Resend `sendEmail` and ShipStation `getShippingRates`, `generateShippingLabel`, `createShipStationOrder`, `shipstationWebhook` with Google Secret Manager), `@google/genai`
 - **Persistence**: Multi-tier storage with IndexedDB (`ajw_marine_field_db`), scoped LocalStorage (`ajwmes_<env>_*`), and Cloud Firestore realtime listeners.
-- **Resilience**: Full offline degradation with automatic queuing of mutations when disconnected on the pontoon.
+- **Resilience**: Full offline degradation with automatic queuing of mutations when disconnected on the pontoon, plus deterministic local fallbacks for email outbox and 4x6" SVG thermal shipping labels.
 
 ---
 
@@ -103,38 +104,44 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Quality Assurance & Testing Strategy
 
-This codebase enforces strict automated verification using a dual-tier testing pyramid:
+This codebase enforces strict automated verification using a multi-tier testing pyramid (see [`docs/E2E_USER_JOURNEYS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/docs/E2E_USER_JOURNEYS.md)):
 
 ```mermaid
 flowchart LR
-    Unit["Unit Tests (Node Native Runner via tsx)\nsrc/**/*.test.ts\n- Pure electrical & CAD math\n- Form & Solent phone validation\n- Expense & VAT rollup\n- RBAC route matrix"]
-    E2E["End-to-End Tests (Playwright)\ntests/*.spec.ts\n- Multi-viewport (Desktop & Mobile)\n- Authentication & RBAC flows\n- Port 5173 isolated Vite server"]
+    Unit["Unit Tests (302 Passing via tsx)\nsrc/**/*.test.ts (281) & functions/src/**/*.test.ts (21)\n- Pure electrical, CAD & replica math\n- ShipStation weight & box sizing\n- Form, Solent phone & Resend validation\n- Expense, Stripe & RBAC route matrix"]
+    E2E["End-to-End Tests (Playwright - 15 Specs)\ntests/*.spec.ts + tests/pages/* (11 POMs)\n- 5-Browser Matrix (Desktop & Mobile)\n- Authentication, RBAC & Offline Sync\n- Port 5173 isolated Vite server"]
     
     Unit --> CI["GitHub Actions CI Pipeline"]
     E2E --> CI
 ```
 
-### 1. Unit Testing Suite (`npm run test:unit`)
-- Uses Node.js's built-in test runner (`node:test`, `node:assert/strict`) via `tsx --test "src/**/*.test.ts"`.
-- Executes in under 2 seconds across all mathematical engines, validation schemas, and versioning tests.
-- **Dynamic Test Discovery**: Any new test file matching `src/**/*.test.ts` is automatically picked up and run without modifying configuration files.
+### 1. Unit Testing Suite (`npm run test:unit` & `npm run test:functions`)
+- Uses Node.js's built-in test runner (`node:test`, `node:assert/strict`) via `tsx --test`.
+- Executes **302 unit tests** (**281 frontend tests** across 20 files in `src/` + **21 Cloud Functions tests** across 2 files in `functions/src/`) in under 2 seconds.
+- **Dynamic Test Discovery**: Any new test file matching `src/**/*.test.ts` or `functions/src/**/*.test.ts` is automatically picked up and run without modifying configuration files.
 
 ```bash
-# Run unit test suite
+# Run frontend unit test suite (281 tests)
 npm run test:unit
 
-# Or alias
+# Run Cloud Functions unit test suite (21 tests)
+npm run test:functions
+
+# Or alias for frontend unit tests
 npm test
 ```
 
 ### 2. End-to-End Browser Testing (`npm run test:e2e`)
-- Built on **Playwright** (`@playwright/test`).
+- Built on **Playwright** (`@playwright/test`) with **15 E2E specification files** and **11 Page Object Models** (`tests/pages/`).
 - Automatically launches an isolated Vite server on port `5173` before test execution to prevent port conflicts with active local development on port `3000`.
-- Tests authenticate using deterministic `data-testid` selectors across Desktop Chrome and Mobile viewports (Pixel 5, iPhone 12).
+- Tests authenticate using deterministic `data-testid` selectors across Desktop (Chromium, Firefox, WebKit) and Mobile viewports (Pixel 5, iPhone 12).
 
 ```bash
-# Run Playwright E2E suite headless
+# Run Playwright E2E suite headless (Desktop Chrome & Mobile Chrome)
 npm run test:e2e
+
+# Run full 5-browser cross-platform matrix
+npm run test:e2e:all
 
 # Run with interactive UI
 npx playwright test --ui
@@ -144,7 +151,7 @@ npx playwright show-report
 ```
 
 ### 3. Full Pre-Flight Validation (`npm run validate`)
-Runs the full battery of static type checks, unit tests, and production build verification:
+Runs the full battery of static type checks, frontend unit tests, production bundle build, Cloud Functions unit tests, and Cloud Functions build verification:
 ```bash
 npm run validate
 ```
@@ -157,11 +164,11 @@ The system features 5 distinct user roles governed by [`src/lib/rbac.ts`](file:/
 
 | Role | Access Scope | Accessible Application Routes |
 | :--- | :--- | :--- |
-| **`guest`** | Public visitors | Store, Switch Panel CAD Designer, Postal Order Tracking |
-| **`client`** | Boat owners | Store, Switch Panel CAD, Postal Tracker, **Client Vessel Portal** |
-| **`technician`** | Pontoon engineers | **Technician Field Workstation** (Stopwatch, Materials, Sign-Off), Store |
-| **`postal`** | Workshop fulfillment | **Postal Dispatch Workstation** (Consignment Tracking, Packing), Store |
-| **`admin`** | Master administrator | **Unrestricted Access** to all routes, Admin Operations Dashboard, Inventory, Expenses |
+| **`guest`** | Public visitors | Store (`/store`), Switch Panel CAD Designer (`/designer`), Replica Panels (`/replica`), Postal Order Tracking (`/tracker`) |
+| **`client`** | Boat owners | Store, Switch Panel CAD, Replica Panels, Postal Tracker, **Client Vessel Portal** (`/portal`) |
+| **`technician`** | Pontoon engineers | **Technician Field Workstation** (`/technician`: Stopwatch, Materials, Sign-Off), Store, Postal Tracker |
+| **`postal`** | Workshop fulfillment | **Postal Dispatch Workstation** (`/postal`: Consignment Tracking, Packing, 4x6" Thermal Labels), Store, Postal Tracker |
+| **`admin`** | Master administrator | **Unrestricted Access** to all routes, Admin Operations Dashboard (`/admin`), Inventory, Expenses, User Accounts, Print & Laser Studio |
 
 ---
 
@@ -188,6 +195,9 @@ The system features 5 distinct user roles governed by [`src/lib/rbac.ts`](file:/
 | `RESEND_API_KEY` | Server-side | **Secret** (Google Secret Manager) | Resend | `re_…` email key for `sendEmail` Cloud Function (`europe-west2`). Resolved via Secret Manager. |
 | `VITE_RESEND_FROM_EMAIL` | Optional | **Public** (Client bundle) | Resend (verified domain) | Sender, default `AJW Marine <notifications@ajwmes.co.uk>`. |
 | `VITE_RESEND_REPLY_TO` | Optional | **Public** (Client bundle) | — | Reply-to address, default `info@ajwmes.co.uk`. |
+| `SHIPSTATION_API_KEY` | Server-side | **Secret** (Google Secret Manager) | ShipStation | API key for 2nd Gen Cloud Functions (`getShippingRates`, `generateShippingLabel`, `createShipStationOrder`). |
+| `SHIPSTATION_API_SECRET` | Server-side | **Secret** (Google Secret Manager) | ShipStation | API secret for ShipStation Basic Auth in Cloud Functions (`europe-west2`). Never expose to client. |
+| `VITE_SHIPSTATION_API_KEY` | Optional | **Public** (Client bundle) | ShipStation | Optional client indicator; leave empty to use Cloud Function gateway or simulated 4x6" thermal label mode. |
 | `FIREBASE_SERVICE_ACCOUNT` | **CI/CD Only** | **Secret** (GitHub Secrets) | Firebase Console (GCP IAM) | Service account private key JSON string used by GitHub Actions to deploy to Firebase Hosting. |
 
 > [!TIP]
@@ -301,16 +311,26 @@ This codebase is specifically optimized for pair programming with autonomous AI 
 # Start local dev server (port 3000)
 npm run dev
 
-# Run TypeScript type check
+# Run TypeScript type check (frontend + Cloud Functions)
 npm run lint
+npm run lint:functions
 
-# Run all unit tests (Auth, Electrical, Expenses, Forms, Versioning)
+# Run all frontend unit tests (281 tests across 20 suites)
 npm run test:unit
 
-# Run Playwright end-to-end browser tests
+# Run Cloud Functions unit tests (21 tests across Resend & ShipStation gateways)
+npm run test:functions
+
+# Build Cloud Functions TypeScript
+npm run build:functions
+
+# Run Playwright end-to-end browser tests (15 spec files)
 npm run test:e2e
 
-# Run complete pre-flight check (lint + unit tests + build)
+# Run Playwright across all 5 desktop & mobile browsers
+npm run test:e2e:all
+
+# Run complete pre-flight check (lint + test:unit + build + test:functions + build:functions)
 npm run validate
 
 # Build production assets for deployment
@@ -319,8 +339,9 @@ npm run build
 # Preview production build locally
 npm run preview
 
-# Deploy manually to Firebase Hosting
+# Deploy manually to Firebase Hosting or Cloud Functions
 firebase deploy --only hosting
+firebase deploy --only functions
 
 # Deploy to a temporary PR preview channel (valid for 7 days)
 firebase hosting:channel:deploy preview-feature-name

@@ -178,7 +178,7 @@ npx playwright install
 3. Database ID:
    - Use `(default)` for a new project and leave `VITE_FIREBASE_FIRESTORE_DATABASE_ID` empty or set it to `(default)`.
    - If you create a **named** database, put its exact name in `VITE_FIREBASE_FIRESTORE_DATABASE_ID`.
-4. Deploy the security rules from [`firestore.rules`](../firestore.rules). `firebase.json` currently only configures Hosting, so add a `firestore` block once (locally) or deploy with an explicit path:
+4. Deploy the security rules from [`firestore.rules`](../firestore.rules). `firebase.json` configures `functions` and `hosting`; add a `firestore` block once (locally) or deploy rules with an explicit command:
 
    ```jsonc
    // firebase.json (add alongside "hosting")
@@ -477,7 +477,8 @@ There is no automated PR-preview workflow yet. Options:
 - [ ] API key restricted by referrer and API
 - [ ] GitHub secrets: `FIREBASE_SERVICE_ACCOUNT`, `VITE_FIREBASE_API_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY` (`pk_live_…`)
 - [ ] Stripe live mode activated, live Payment Links created (and wired into the workflow if used)
-- [ ] Resend domain verified (email stays simulated until [#20](https://github.com/AnthonyWrather/ajwmes/issues/20) lands, unless risk accepted)
+- [ ] Resend domain verified and `RESEND_API_KEY` provisioned in Google Secret Manager for the `sendEmail` Cloud Function ([§6](#6-resend-transactional-email))
+- [ ] ShipStation credentials (`SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`) provisioned in Google Secret Manager if using live carrier label generation ([§7b](#7b-shipstation-carrier-api--cloud-functions-gateway-postal-dispatch))
 - [ ] Custom domain connected with SSL
 - [ ] Merge to `main` → both workflows green → environment badge shows **Production Live**
 
@@ -525,11 +526,11 @@ See also [`FIREBASE_GITHUB_DEPLOYMENT_GUIDE.md`](../FIREBASE_GITHUB_DEPLOYMENT_G
 
 ## 13. Known Limitations & Roadmap
 
-| Limitation | Tracking |
+| Limitation / Architecture Item | Status / Tracking |
 | :--- | :--- |
-| Resend key is client-side; email should be sent from a Cloud Function using Secret Manager | [#20](https://github.com/AnthonyWrather/ajwmes/issues/20) |
-| All environments share one Firebase project (prefix isolation only) | [#21](https://github.com/AnthonyWrather/ajwmes/issues/21) |
-| No automated PR preview workflow | §8.4 |
-| `firestore.rules` not deployed by `firebase.json` / CI; no `storage.rules` in repo | §4.4, §4.5 |
-| Stripe Payment Links and Resend sender variables not passed to the production build | §5.3, §8.3 |
-| ShipStation live carrier API backend & Cloud Functions (Phase 2 completed) | [#23](https://github.com/AnthonyWrather/ajwmes/issues/23) |
+| Server-side Resend email dispatch via 2nd Gen Cloud Function (`sendEmail`) & Secret Manager | **Resolved** ([#20](https://github.com/AnthonyWrather/ajwmes/issues/20)) |
+| ShipStation live carrier API backend & 2nd Gen Cloud Functions (`functions/`) | **Resolved** ([#23](https://github.com/AnthonyWrather/ajwmes/issues/23)) |
+| All environments share one Firebase project (collection-prefix isolation) | Open ([#21](https://github.com/AnthonyWrather/ajwmes/issues/21)) |
+| No automated PR preview workflow | Open (§8.4) |
+| `firestore.rules` not deployed automatically by CI; no `storage.rules` in repo | Open (§4.4, §4.5) |
+| Stripe Payment Links and Resend sender variables not passed in CI production workflow `env:` | Open (§5.3, §8.3) |

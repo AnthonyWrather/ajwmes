@@ -5,22 +5,23 @@ You are pair programming on the AJW Marine Electrical Services codebase. Follow 
 ## 1. Tech Stack & Environment
 - Runtime: Node >=24.12.0
 - Framework: React 19, TypeScript strict mode, Vite 8, Tailwind CSS v4 (@tailwindcss/vite).
-- Cloud: Firebase v13 (Auth, Firestore), Google GenAI SDK (@google/genai).
+- Cloud: Firebase v13 (Auth, Firestore, Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2`), Google GenAI SDK (@google/genai).
 - Do NOT generate legacy config files like `tailwind.config.js` or `postcss.config.js`.
 
 ## 2. Code Structure & Conventions
 - Pure business logic belongs in `src/utils/` as standalone, side-effect-free pure functions.
 - Domain types are strictly centralized in `src/types/index.ts` (re-exported in `src/types.ts`).
-- Route guards and action authorization must use `src/lib/rbac.ts` (`canAccessRoute`, `canPerformAction`).
+- Route guards and action authorization must use `src/lib/rbac.ts` (`canAccessRoute`, `canPerformAction`) and `functions/src/authMiddleware.ts` on the server.
 - LocalStorage keys must always be scoped using `src/lib/envStorage.ts` (`getScopedStorageKey`). Never use raw strings in `localStorage`.
 
-## 3. Offline Resilience
+## 3. Offline Resilience & Server Gateways
 - Technicians work offline on pontoon berths and inside steel boats.
 - Mutations must pass through `src/lib/offlineSync.ts`.
-- Firestore connection failures (e.g. Code 14 UNAVAILABLE) must never crash the UI or throw unhandled promise rejections.
+- Firestore connection failures (e.g. Code 14 UNAVAILABLE) and Cloud Function disconnects (`sendEmail`, `getShippingRates`, `generateShippingLabel`) must never crash the UI or throw unhandled promise rejections — always degrade gracefully to local caches / simulated fallbacks.
+- True secrets (`RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`, Stripe `sk_...`) must never be exposed in `VITE_*` client variables; they reside in Google Secret Manager (`functions/src/index.ts`).
 
 ## 4. Testing & Verification Checklist
-- Any modification to business logic requires companion unit tests in `src/utils/<name>.test.ts`.
-- Unit tests use Node's built-in test runner via `npm run test:unit`.
-- All new interactive UI controls must have `data-testid` attributes for Playwright E2E tests (`tests/*.spec.ts`).
-- Always run `npm run lint` and `npm run test:unit` to verify changes before presenting your solution.
+- Any modification to business logic requires companion unit tests in `src/utils/<name>.test.ts` (and `src/lib/<name>.test.ts` or `functions/src/<name>.test.ts` for service/cloud layers).
+- Unit tests use Node's built-in test runner via `npm run test:unit` (281+ tests) and `npm run test:functions` (21+ tests).
+- All new interactive UI controls must have `data-testid` attributes for Playwright E2E tests (`tests/*.spec.ts` and Page Object Models in `tests/pages/`).
+- Always run `npm run lint`, `npm run test:unit`, `npm run test:functions`, and `npm run validate` to verify changes before presenting your solution.

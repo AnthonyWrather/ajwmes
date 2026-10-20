@@ -4,7 +4,7 @@ You are acting as an expert pair programmer on the **AJW Marine Electrical Servi
 
 ## Core Directives
 1. **Runtime & Language**:
-   - Node `>=24.12.0`, React 19.3, TypeScript 5.x (strict mode).
+   - Node `>=24.12.0`, React 19.3, TypeScript (strict mode), Vite 8, Firebase v13 + 2nd Gen Cloud Functions (`functions/` in `europe-west2`).
    - Never use `any` unless strictly unavoidable with explicit explanatory comments.
 2. **Styling & CSS**:
    - The project uses **Tailwind CSS v4** with `@tailwindcss/vite`.
@@ -12,17 +12,17 @@ You are acting as an expert pair programmer on the **AJW Marine Electrical Servi
    - Theme styling is defined directly in `src/index.css` via `@theme` directives and standard Tailwind utility classes.
 3. **Decoupled Architecture**:
    - Keep React components purely presentational or state-coordinating.
-   - All domain calculations, sizing algorithms, financial math, and form validations must be kept as pure functions in `src/utils/`.
-   - Every utility function in `src/utils/` must be tested in `src/utils/<name>.test.ts`.
+   - All domain calculations, sizing algorithms, financial math, carrier package dimensioning, and form validations must be kept as pure functions in `src/utils/`.
+   - Every utility function in `src/utils/` must be tested in `src/utils/<name>.test.ts`. Core infrastructure services in `src/lib/` and `functions/src/` also maintain companion `*.test.ts` suites.
 4. **Resilience & Offline Handling**:
    - Pontoon diagnostics require offline capability.
-   - Never fail hard on Firestore network disconnection errors (`Code: 14 UNAVAILABLE`). Catch and degrade gracefully using `src/lib/offlineSync.ts`.
+   - Never fail hard on Firestore network disconnection errors (`Code: 14 UNAVAILABLE`) or unreachable Cloud Functions (`sendEmail`, `getShippingRates`, `generateShippingLabel`). Catch and degrade gracefully using `src/lib/offlineSync.ts`, `src/lib/emailService.ts` (simulated outbox), and `src/lib/shipstationService.ts` (deterministic 4x6" SVG thermal label fallback).
    - High payload assets (photos, pontoon digital signatures) must be persisted to IndexedDB (`ajw_marine_field_db`).
 5. **Environment Scoping**:
    - Always route browser storage through `src/lib/envStorage.ts` via `getScopedStorageKey()`. Never use un-scoped raw keys.
 6. **Testing Verification Protocol**:
-   - Before finishing any task, run `npm run lint` and `npm run test:unit`. Both must pass with zero errors.
-   - For UI changes, ensure interactive elements have meaningful `data-testid` attributes to preserve Playwright E2E compatibility.
+   - Before finishing any task, run `npm run lint`, `npm run test:unit`, `npm run test:functions`, and `npm run validate`. All must pass with zero errors.
+   - For UI changes, ensure interactive elements have meaningful `data-testid` attributes and update/create Page Object Models in `tests/pages/` to preserve Playwright E2E compatibility (`tests/*.spec.ts`, documented in `docs/E2E_USER_JOURNEYS.md`).
 7. **Supporting Services & Secrets**:
-   - Account, key and endpoint provisioning for Firebase, Firestore, Storage, Stripe, Resend, Gemini and GitHub Actions is documented in `docs/SERVICES_SETUP.md`. Keep it in sync when adding or changing any environment variable, secret, or external integration (and update `.env.example`).
-   - Never place secret keys (Stripe `sk_…`, service accounts, server-only API keys) in `VITE_*` variables or committed files.
+   - Account, key and endpoint provisioning for Firebase, Firestore, Storage, Cloud Functions, Stripe, Resend, ShipStation, Gemini and GitHub Actions is documented in `docs/SERVICES_SETUP.md`. Keep it in sync when adding or changing any environment variable, secret, or external integration (and update `.env.example`).
+   - Never place secret keys (Stripe `sk_…`, `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`, service accounts, or server-only API keys) in `VITE_*` variables or committed files. Server secrets belong in Google Secret Manager (`defineSecret()` in `functions/src/index.ts`).
