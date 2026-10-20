@@ -55,7 +55,7 @@ function getGitMetadata() {
   };
 }
 
-let appVersion = '1.2.0';
+let appVersion = '0.0.1';
 try {
   const pkgPath = path.resolve(import.meta.dirname ?? '.', 'package.json');
   if (fs.existsSync(pkgPath)) {

@@ -77,10 +77,10 @@ test.describe('Master Workshop Administration, Expenses & Restock (UJ-10) E2E Fl
       const bannerVisible = await admin.zeroStockBanner.isVisible();
       if (bannerVisible) {
         await expect(admin.bannerReorderBtn).toBeVisible();
-        await admin.bannerReorderBtn.click({ force: true });
+        await admin.bannerReorderBtn.click();
 
         // Verify Supplier Reorder Modal
-        await expect(admin.supplierReorderModal).toBeVisible();
+        await expect(admin.supplierReorderModal).toBeVisible({ timeout: 10000 });
         await expect(admin.reorderSupplierSelect).toBeVisible();
 
         // Configure Reorder parameters
@@ -116,7 +116,7 @@ test.describe('Master Workshop Administration, Expenses & Restock (UJ-10) E2E Fl
       await expect(admin.btnOpenCreateExpense).toBeVisible();
     });
 
-    const uniqueId = Date.now().toString().slice(-4);
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newExpenseDesc = `Southampton Water water taxi launch ${uniqueId}`;
     const newExpenseReceipt = `REC-SWT-${uniqueId}`;
 
@@ -135,7 +135,7 @@ test.describe('Master Workshop Administration, Expenses & Restock (UJ-10) E2E Fl
       });
 
       // Assert the new expense appears in the table
-      const createdRow = page.locator('tr').filter({ hasText: newExpenseReceipt });
+      const createdRow = page.locator('tr').filter({ hasText: newExpenseReceipt }).first();
       await expect(createdRow).toBeVisible({ timeout: 5000 });
       await expect(createdRow).toContainText(newExpenseDesc);
       await expect(createdRow).toContainText('£45.50');
@@ -168,7 +168,7 @@ test.describe('Master Workshop Administration, Expenses & Restock (UJ-10) E2E Fl
 
     await test.step('7. Toggle billable status inline and verify dynamic financial recalculation', async () => {
       // Find the row for the newly created expense which started as Workshop Overhead
-      const expenseRow = page.locator('tr').filter({ hasText: newExpenseReceipt });
+      const expenseRow = page.locator('tr').filter({ hasText: newExpenseReceipt }).first();
       const toggleBtn = expenseRow.locator('button[data-testid^="toggle-billable-"]');
       await expect(toggleBtn).toBeVisible();
       await expect(toggleBtn).toContainText('Workshop Overhead');

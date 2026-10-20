@@ -65,7 +65,7 @@ Every time you commit or merge changes into your GitHub repository, GitHub Actio
    - The workflow (`.github/workflows/firebase-hosting-merge.yml`) runs the full automated test suite (TypeScript check, unit tests, and Playwright E2E browser tests) in the `test` job.
    - The `build_and_deploy` job only runs if all tests pass with zero failures.
    - If any test breaks, deployment is immediately aborted to protect production live.
-   - Track active releases directly via the header release badge (e.g. `v1.2.0 | LIVE` vs `v1.2.0 | DEV`).
+   - Track active releases directly via the header release badge (e.g. `v0.0.1 | LIVE` vs `v0.0.1 | DEV`).
 
 ---
 

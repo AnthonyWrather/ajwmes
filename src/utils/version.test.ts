@@ -20,7 +20,7 @@ import {
 
 describe('Version & Release Tag Verification', () => {
   it('should export valid semantic version number', () => {
-    assert.strictEqual(APP_VERSION, '1.2.0');
+    assert.strictEqual(APP_VERSION, '0.0.1');
     assert.match(APP_VERSION, /^\d+\.\d+\.\d+$/);
   });
 
@@ -33,7 +33,7 @@ describe('Version & Release Tag Verification', () => {
 
   it('should generate structured release metadata with Git traceability', () => {
     const info = getVersionInfo();
-    assert.strictEqual(info.version, '1.2.0');
+    assert.strictEqual(info.version, '0.0.1');
     assert.strictEqual(info.commitSha, GIT_COMMIT_SHA);
     assert.strictEqual(info.fullTag, FULL_VERSION_TAG);
     assert.strictEqual(info.githubRepo, 'anthonywrather/ajwmes');

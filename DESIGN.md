@@ -2,7 +2,7 @@
 
 > **Document Classification:** Engineering Architecture & Quality Assurance Specification  
 > **Author:** Principal Full Stack Engineer & QA Automation Specialist  
-> **Application Version:** `1.2.0` | **Target Runtime:** Node `>=24.12.0`  
+> **Application Version:** `0.0.1` (Proof of Concept) | **Target Runtime:** Node `>=24.12.0`  
 > **Repository:** `ajwmes/ajwmes` | **Primary Domain:** [ajwmes.co.uk](https://ajwmes.co.uk)  
 > **Last Updated:** October 2026  
 
