@@ -42,7 +42,8 @@
 flowchart LR
     Dev["Developer / Browser (PWA)"] -->|"VITE_FIREBASE_*"| FB["Firebase\nAuth + Firestore + Storage"]
     Dev -->|"VITE_STRIPE_*"| ST["Stripe\nPublishable key + Payment Links"]
-    Dev -->|"VITE_RESEND_*"| RS["Resend\nEmail API"]
+    Dev -->|"sendEmail Cloud Function"| CF["Cloud Function\n(europe-west2)"]
+    CF -->|"Secret Manager (RESEND_API_KEY)"| RS["Resend\nEmail API"]
     GH["GitHub Actions"] -->|"FIREBASE_SERVICE_ACCOUNT"| HO["Firebase Hosting\nlive + preview channels"]
     HO --> Dev
     DNS["Domain Registrar DNS"] --> HO
@@ -289,10 +290,11 @@ For each link (**Product catalogue → Payment Links → New**):
 
 ## 6. Resend (Transactional Email)
 
-> [!CAUTION]
-> **Security limitation:** The current implementation reads `VITE_RESEND_API_KEY` at build time and calls `https://api.resend.com/emails` **from the browser**. Any key supplied this way is embedded in the public bundle and can be extracted by anyone. Resend may also reject browser (CORS) requests. Until email sending is moved to a server-side Cloud Function ([Issue #20](https://github.com/AnthonyWrather/ajwmes/issues/20)):
-> - Leave `VITE_RESEND_API_KEY` **unset** in GitHub Secrets for production and preview (the app falls back to the simulated outbox), **or**
-> - Accept the risk only with a **Sending access** key restricted to the verified domain, monitor usage, and rotate it regularly.
+> [!NOTE]
+> **Server-Side Architecture (Issue #20):**
+> Transactional email is dispatched server-side via the 2nd generation Firebase Cloud Function `sendEmail` (`europe-west2`).
+> The `RESEND_API_KEY` is securely stored in **Google Secret Manager** (`defineSecret('RESEND_API_KEY')`) and is never shipped to or accessible from the client browser bundle.
+> When offline or when the Cloud Function is in local test mode, the application falls back gracefully to IndexedDB offline queueing and the in-memory simulated outbox.
 
 ### 6.1 Account & domain verification
 
@@ -309,25 +311,28 @@ For each link (**Product catalogue → Payment Links → New**):
 
 4. Click **Verify DNS Records** and wait for *Verified* (minutes to a few hours).
 
-### 6.2 API key
+### 6.2 API key & Secret Manager Configuration
 
 1. **API Keys → Create API Key**.
 2. Permission: **Sending access** (never *Full access*). Domain: **`ajwmes.co.uk`** only.
 3. Name keys per environment (e.g. `ajwmes-dev`, `ajwmes-prod`) so they can be rotated independently.
-4. The app validates that keys start with `re_` ([`src/lib/resendConfig.ts`](../src/lib/resendConfig.ts)).
+4. Set the secret in Google Secret Manager for the Firebase Cloud Function:
+   ```bash
+   firebase functions:secrets:set RESEND_API_KEY
+   ```
 
 ### 6.3 Sender settings
 
 | Variable | Default | Notes |
 | :--- | :--- | :--- |
-| `VITE_RESEND_API_KEY` | *(empty → simulated)* | See security caution above. |
-| `VITE_RESEND_FROM_EMAIL` | `AJW Marine <notifications@ajwmes.co.uk>` | Must be on the verified domain. Before verification, use `AJW Marine <onboarding@resend.dev>` (can only send to your own Resend account email). |
+| `RESEND_API_KEY` | *(Secret Manager)* | Server-only secret accessed by `sendEmail` Cloud Function. |
+| `VITE_RESEND_FROM_EMAIL` | `AJW Marine <notifications@ajwmes.co.uk>` | Must be on the verified domain. Before verification, use `AJW Marine <onboarding@resend.dev>`. |
 | `VITE_RESEND_REPLY_TO` | `info@ajwmes.co.uk` | A monitored inbox. |
 
 ### 6.4 Testing
 
-- With no key, emails are captured in the in-memory **simulated outbox** and logged to the console — this is what Playwright ([`tests/resend.spec.ts`](../tests/resend.spec.ts)) relies on.
-- The *Environment Settings* modal (`data-testid="resend-card"`) shows the mode badge (*Simulated Outbox* / *Resend Live API*) and a test-email button (`data-testid="test-resend-email-button"`).
+- With no key or in development test suites, emails are captured in the in-memory **simulated outbox** and logged to the console — this is what Playwright ([`tests/resend.spec.ts`](../tests/resend.spec.ts)) relies on.
+- The *Environment Settings* modal (`data-testid="resend-card"`) shows the Cloud Function gateway status (`data-testid="resend-mode-badge"`) and a test-email button (`data-testid="test-resend-email-button"`).
 - Resend dashboard → **Emails** shows delivery status, bounces and complaints.
 
 ---
@@ -408,7 +413,7 @@ Set via **Settings → Secrets and variables → Actions** or `gh secret set <NA
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Production build | `pk_live_…` | Optional |
 | `VITE_STRIPE_PAYMENT_LINK_DEPOSIT` | *(not yet wired)* | Live Payment Link | Add to workflow `env:` to use |
 | `VITE_STRIPE_PAYMENT_LINK_STORE` | *(not yet wired)* | Live Payment Link | Add to workflow `env:` to use |
-| `VITE_RESEND_API_KEY` | *(not yet wired — intentionally)* | `re_…` | See [§6 caution](#6-resend-transactional-email) |
+| `RESEND_API_KEY` | Cloud Function (`sendEmail`) | `re_…` in Secret Manager | See [§6](#6-resend-transactional-email) |
 | `VITE_RESEND_FROM_EMAIL` / `VITE_RESEND_REPLY_TO` | *(not yet wired)* | Sender addresses | Optional |
 
 ```bash
@@ -453,7 +458,7 @@ There is no automated PR-preview workflow yet. Options:
 - [ ] Node 24, `npm install`, `npx playwright install`
 - [ ] `cp .env.example .env` and fill in `VITE_FIREBASE_*`
 - [ ] (Optional) `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_…`
-- [ ] Leave `VITE_RESEND_API_KEY` empty (simulated) unless testing real delivery
+- [ ] Email runs in simulated mode locally unless `RESEND_API_KEY` is provided to Cloud Function emulator
 - [ ] `npm run dev` → <http://localhost:3000>; sign in with Google or a 1-click developer profile
 - [ ] `npm run validate` passes
 

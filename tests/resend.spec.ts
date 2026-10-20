@@ -23,23 +23,21 @@ test.describe('Resend Email Integration E2E Flows', () => {
     await resendCard.scrollIntoViewIfNeeded();
     await expect(resendCard).toBeVisible();
 
-    // 4. Verify mode badge (default safe dev / simulated outbox mode)
+    // 4. Verify server-side Cloud Function gateway mode badge
     const modeBadge = page.getByTestId('resend-mode-badge');
     await expect(modeBadge).toBeVisible();
+    await expect(modeBadge).toContainText('Cloud Function');
 
-    // 5. Verify configuration inputs and action controls
-    const keyInput = page.getByTestId('resend-api-key-input');
-    const saveButton = page.getByTestId('save-resend-key-button');
+    // 5. Verify test dispatch action control is present
     const testButton = page.getByTestId('test-resend-email-button');
-    const resetButton = page.getByTestId('reset-resend-key-button');
-
-    await expect(keyInput).toBeVisible();
-    await expect(saveButton).toBeVisible();
     await expect(testButton).toBeVisible();
-    await expect(resetButton).toBeVisible();
+
+    // 6. Verify client-side API key inputs are strictly NOT rendered (preventing credential leakage)
+    const keyInput = page.getByTestId('resend-api-key-input');
+    await expect(keyInput).not.toBeAttached();
   });
 
-  test('should validate and reject invalid Resend API key formats', async ({ page }) => {
+  test('should trigger test email dispatch via server Cloud Function gateway', async ({ page }) => {
     await page.goto('/');
 
     // 1. Open Multi-Environment Settings Modal
@@ -51,64 +49,31 @@ test.describe('Resend Email Integration E2E Flows', () => {
     await resendCard.scrollIntoViewIfNeeded();
     await expect(resendCard).toBeVisible();
 
-    // 2. Enter malformed key (does not start with 're_' and too short)
-    const keyInput = page.getByTestId('resend-api-key-input');
-    await keyInput.scrollIntoViewIfNeeded();
-    await keyInput.fill('bad_api_key_format');
-
-    // 3. Attempt to save
-    const saveButton = page.getByTestId('save-resend-key-button');
-    await saveButton.scrollIntoViewIfNeeded();
-    await saveButton.click({ force: true });
-
-    // 4. Verify validation error message
-    const notice = page.getByTestId('resend-notice');
-    await expect(notice).toBeVisible();
-    await expect(notice).toContainText(/must start with "re_" and be at least 24 characters/i);
-  });
-
-  test('should allow saving valid Resend API key, testing email send, and resetting to simulated mode', async ({ page }) => {
-    await page.goto('/');
-
-    // 1. Open Multi-Environment Settings Modal
-    const headerBadge = page.getByTestId('header-version-badge');
-    await expect(headerBadge).toBeVisible();
-    await headerBadge.click();
-
-    const resendCard = page.getByTestId('resend-card');
-    await resendCard.scrollIntoViewIfNeeded();
-    await expect(resendCard).toBeVisible();
-
-    // 2. Input a validly formatted Resend API key
-    const keyInput = page.getByTestId('resend-api-key-input');
-    await keyInput.scrollIntoViewIfNeeded();
-    await keyInput.fill('re_test_solent_marine_key_1234567890abcdef');
-
-    // 3. Save key
-    const saveButton = page.getByTestId('save-resend-key-button');
-    await saveButton.scrollIntoViewIfNeeded();
-    await saveButton.click({ force: true });
-
-    // 4. Verify key saved feedback & mode badge updates to Live API
-    const notice = page.getByTestId('resend-notice');
-    await expect(notice).toBeVisible();
-    await expect(notice).toContainText(/Resend API Key saved/i);
-
-    const modeBadge = page.getByTestId('resend-mode-badge');
-    await expect(modeBadge).toContainText('Resend Live API');
-
-    // 5. Reset / Clear Key back to simulated mode
-    const resetButton = page.getByTestId('reset-resend-key-button');
-    await resetButton.scrollIntoViewIfNeeded();
-    await resetButton.click({ force: true });
-    await expect(notice).toContainText(/switched to simulated/i);
-    await expect(modeBadge).toContainText('Simulated Outbox');
-
-    // 6. Test Send button in simulated mode
+    // 2. Click Send Verification Test Email button
     const testButton = page.getByTestId('test-resend-email-button');
     await testButton.scrollIntoViewIfNeeded();
     await testButton.click({ force: true });
+
+    // 3. Verify user feedback notice confirming dispatch
+    const notice = page.getByTestId('resend-notice');
+    await expect(notice).toBeVisible({ timeout: 10000 });
     await expect(notice).toContainText(/Test email dispatched/i);
+  });
+
+  test('should verify no Resend API key is present in client localStorage', async ({ page }) => {
+    await page.goto('/');
+
+    const hasResendKeyInStorage = await page.evaluate(() => {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i) || '';
+        if (key.toLowerCase().includes('resend')) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    expect(hasResendKeyInStorage).toBe(false);
   });
 
   test('should trigger welcome email during vessel owner registration without blocking navigation', async ({ page }) => {

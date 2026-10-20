@@ -185,21 +185,21 @@ The system features 5 distinct user roles governed by [`src/lib/rbac.ts`](file:/
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Optional | **Public** (Client bundle) | Stripe Dashboard | `pk_test_…` (dev/preview) or `pk_live_…` (prod). Empty → simulated payments. Never use `sk_…`. |
 | `VITE_STRIPE_PAYMENT_LINK_DEPOSIT` | Optional | **Public** (Client bundle) | Stripe Payment Links | Hosted checkout URL for diagnostic deposits. |
 | `VITE_STRIPE_PAYMENT_LINK_STORE` | Optional | **Public** (Client bundle) | Stripe Payment Links | Hosted checkout URL for storefront orders. |
-| `VITE_RESEND_API_KEY` | Optional | ⚠️ **Public** (Client bundle) | Resend | `re_…` email key. Empty → simulated outbox. Currently exposed client-side — see [Issue #20](https://github.com/AnthonyWrather/ajwmes/issues/20). |
+| `RESEND_API_KEY` | Server-side | **Secret** (Google Secret Manager) | Resend | `re_…` email key for `sendEmail` Cloud Function (`europe-west2`). Resolved via Secret Manager. |
 | `VITE_RESEND_FROM_EMAIL` | Optional | **Public** (Client bundle) | Resend (verified domain) | Sender, default `AJW Marine <notifications@ajwmes.co.uk>`. |
 | `VITE_RESEND_REPLY_TO` | Optional | **Public** (Client bundle) | — | Reply-to address, default `info@ajwmes.co.uk`. |
 | `FIREBASE_SERVICE_ACCOUNT` | **CI/CD Only** | **Secret** (GitHub Secrets) | Firebase Console (GCP IAM) | Service account private key JSON string used by GitHub Actions to deploy to Firebase Hosting. |
 
 > [!TIP]
-> Step-by-step instructions for creating each of these (including Stripe Payment Links, Resend domain verification and the GitHub deploy service account) are in [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md).
+> Step-by-step instructions for creating each of these (including Stripe Payment Links, Resend domain verification, Cloud Functions secrets, and the GitHub deploy service account) are in [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md).
 
 ### Deploying Development, Preview & Production
 
 | Environment | How it runs / deploys | Config source | Stripe | Resend |
 | :--- | :--- | :--- | :--- | :--- |
-| **Development** | `npm run dev` (localhost:3000) | Local `.env` | Test key or simulated | Simulated |
-| **Preview** | `firebase hosting:channel:deploy <name>` → `*--*.web.app` | Build-time env | Test key | Simulated |
-| **Production** | Merge to `main` → [`firebase-hosting-merge.yml`](.github/workflows/firebase-hosting-merge.yml) → `ajwmes.co.uk` | GitHub Secrets | Live key | Simulated until [#20](https://github.com/AnthonyWrather/ajwmes/issues/20) |
+| **Development** | `npm run dev` (localhost:3000) | Local `.env` | Test key or simulated | Simulated outbox / Cloud Function |
+| **Preview** | `firebase hosting:channel:deploy <name>` → `*--*.web.app` | Build-time env | Test key | Cloud Function (europe-west2) |
+| **Production** | Merge to `main` → [`firebase-hosting-merge.yml`](.github/workflows/firebase-hosting-merge.yml) → `ajwmes.co.uk` | GitHub Secrets / Secret Manager | Live key | Cloud Function (Secret Manager) |
 
 All environments currently share one Firebase project with prefixed Firestore collections; per-environment projects are tracked in [Issue #21](https://github.com/AnthonyWrather/ajwmes/issues/21).
 

@@ -1,19 +1,13 @@
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
   isValidResendApiKey, 
-  getCustomResendApiKey, 
-  setCustomResendApiKey, 
-  clearCustomResendApiKey,
   resolveResendConfig,
-  DEFAULT_RESEND_FROM
+  DEFAULT_RESEND_FROM,
+  DEFAULT_RESEND_REPLY_TO
 } from './resendConfig';
 
-describe('Resend API Key Management & Validation', () => {
-  beforeEach(() => {
-    clearCustomResendApiKey();
-  });
-
+describe('Resend Configuration & Validation', () => {
   describe('isValidResendApiKey', () => {
     it('accepts valid Resend API keys with re_ prefix and adequate length', () => {
       const validKey = 're_1234567890abcdef12345678';
@@ -22,7 +16,7 @@ describe('Resend API Key Management & Validation', () => {
 
     it('rejects keys that do not start with re_', () => {
       assert.equal(isValidResendApiKey('AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg'), false);
-      assert.equal(isValidResendApiKey('sk_live_1234567890abcdef'), false);
+      assert.equal(isValidResendApiKey('invalid_format_test_1234567890abcdef'), false);
     });
 
     it('rejects keys shorter than 24 characters', () => {
@@ -43,38 +37,18 @@ describe('Resend API Key Management & Validation', () => {
     });
   });
 
-  describe('Custom Key Persistence (LocalStorage / Memory Backend)', () => {
-    it('saves, retrieves, and clears custom API key', () => {
-      const testKey = 're_live_solent_test_key_987654321';
-
-      setCustomResendApiKey(testKey);
-      assert.equal(getCustomResendApiKey(), testKey);
-
-      const config = resolveResendConfig();
-      assert.equal(config.apiKey, testKey);
-      assert.equal(config.isConfigured, true);
-      assert.equal(config.isSimulatedMode, false);
-
-      clearCustomResendApiKey();
-      assert.equal(getCustomResendApiKey(), null);
-
-      const clearedConfig = resolveResendConfig();
-      assert.equal(clearedConfig.isConfigured, false);
-      assert.equal(clearedConfig.isSimulatedMode, true);
-    });
-
-    it('ignores invalid keys during persistence', () => {
-      setCustomResendApiKey('invalid-key');
-      assert.equal(getCustomResendApiKey(), null);
-    });
-  });
-
-  describe('Default Configuration Resolution', () => {
-    it('provides standard marine notifications sender address by default', () => {
+  describe('Server-Side Gateway Configuration Resolution', () => {
+    it('provides standard marine notifications sender and reply-to addresses', () => {
       const config = resolveResendConfig();
       assert.equal(config.fromEmail, DEFAULT_RESEND_FROM);
       assert.equal(config.fromName, 'AJW Marine Electrical Services');
-      assert.equal(config.replyTo, 'info@ajwmes.co.uk');
+      assert.equal(config.replyTo, DEFAULT_RESEND_REPLY_TO);
+    });
+
+    it('never exposes client-side API keys in resolved config', () => {
+      const config = resolveResendConfig();
+      assert.equal(config.apiKey, '');
+      assert.equal(config.isConfigured, true);
     });
   });
 });

@@ -1,18 +1,24 @@
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { validatePostalDispatcherAuth } from './authMiddleware.js';
+import { validatePostalDispatcherAuth, validateEmailCallerAuth } from './authMiddleware.js';
 import { 
   fetchRatesFromShipStation, 
   createLabelInShipStation, 
   createOrderInShipStation 
 } from './shipstationClient.js';
 import {
+  sendEmailViaResend,
+  validateEmailPayload
+} from './resendClient.js';
+import {
   GetShippingRatesRequest,
   ShipStationRateQuoteResponse,
   GenerateShippingLabelRequest,
   ShipStationLabelResponse,
-  CreateShipStationOrderRequest
+  CreateShipStationOrderRequest,
+  SendEmailFunctionRequest,
+  SendEmailFunctionResponse
 } from './types.js';
 
 if (getApps().length === 0) {
@@ -22,6 +28,7 @@ if (getApps().length === 0) {
 // Google Secret Manager secrets
 export const shipstationApiKey = defineSecret('SHIPSTATION_API_KEY');
 export const shipstationApiSecret = defineSecret('SHIPSTATION_API_SECRET');
+export const resendApiKey = defineSecret('RESEND_API_KEY');
 
 const REGION = 'europe-west2';
 
@@ -154,3 +161,44 @@ export const shipstationWebhook = onRequest(
     }
   }
 );
+
+/**
+ * Callable Function: sendEmail
+ * Proxies transactional email dispatch through Resend with Google Secret Manager.
+ * Validates RBAC caller privileges and email payload to prevent open relay abuse.
+ */
+export const sendEmail = onCall<SendEmailFunctionRequest, Promise<SendEmailFunctionResponse>>(
+  {
+    region: REGION,
+    secrets: [resendApiKey],
+    cors: true
+  },
+  async (request) => {
+    // 1. Validate payload format and template
+    const validation = validateEmailPayload(request.data);
+    if (!validation.isValid) {
+      throw new HttpsError('invalid-argument', validation.error || 'Invalid email dispatch payload.');
+    }
+
+    // 2. Authorize caller
+    validateEmailCallerAuth(request, request.data.templateType);
+
+    // 3. Resolve API key from Secret Manager (or process env fallback)
+    const apiKey = resendApiKey.value() || process.env.RESEND_API_KEY;
+
+    // 4. Send via Resend client (handles simulated fallback when unprovisioned)
+    try {
+      const result = await sendEmailViaResend(apiKey || '', request.data);
+      if (!result.success) {
+        throw new HttpsError('internal', result.error || 'Failed to dispatch email via Resend.');
+      }
+      return result;
+    } catch (err: unknown) {
+      if (err instanceof HttpsError) throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('sendEmail Cloud Function error:', message);
+      throw new HttpsError('internal', `Failed to send email: ${message}`);
+    }
+  }
+);
+

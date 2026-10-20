@@ -12,17 +12,15 @@ import {
   getSimulatedOutbox, 
   clearSimulatedOutbox 
 } from './emailService';
-import { clearCustomResendApiKey } from './resendConfig';
 import { UserProfile, PostalOrder, JobRecord, CustomerSignOffRecord, StockAlert } from '../types';
 
 describe('emailService', () => {
   beforeEach(() => {
-    clearCustomResendApiKey();
     clearSimulatedOutbox();
   });
 
   describe('sendEmail in simulated mode', () => {
-    it('dispatches to simulated outbox when no live Resend key is configured', async () => {
+    it('dispatches to simulated outbox when Cloud Function is in local test mode', async () => {
       const res = await sendEmail({
         to: 'skipper@solent-yacht.co.uk',
         subject: 'Diagnostic Scheduled',
@@ -39,9 +37,27 @@ describe('emailService', () => {
       assert.equal(outbox[0].subject, 'Diagnostic Scheduled');
     });
 
+    it('rejects invalid email payloads cleanly', async () => {
+      const res1 = await sendEmail({
+        to: 'not-an-email',
+        subject: 'Invalid Recipient',
+        text: 'Text'
+      });
+      assert.equal(res1.success, false);
+      assert.match(res1.error || '', /Invalid recipient/i);
+
+      const res2 = await sendEmail({
+        to: 'valid@solent.co.uk',
+        subject: '',
+        text: 'Missing Subject'
+      });
+      assert.equal(res2.success, false);
+      assert.match(res2.error || '', /subject is required/i);
+    });
+
     it('clears simulated outbox successfully', async () => {
-      await sendEmail({ to: 'one@solent.co.uk', subject: 'One' });
-      await sendEmail({ to: 'two@solent.co.uk', subject: 'Two' });
+      await sendEmail({ to: 'one@solent.co.uk', subject: 'One', text: 'Text 1' });
+      await sendEmail({ to: 'two@solent.co.uk', subject: 'Two', text: 'Text 2' });
       assert.equal(getSimulatedOutbox().length, 2);
 
       clearSimulatedOutbox();
