@@ -63,8 +63,14 @@ export class NavigationPage {
   async ensureMobileMenuOpen(): Promise<void> {
     await expect(this.mobileMenuToggle).toBeVisible({ timeout: 10000 });
     const storeTab = this.page.getByTestId('mobile-nav-tab-store');
-    const isOpen = await storeTab.isVisible().catch(() => false);
-    if (!isOpen) {
+    if (await storeTab.isVisible().catch(() => false)) {
+      return;
+    }
+    await this.mobileMenuToggle.click({ force: true });
+    try {
+      await expect(storeTab).toBeVisible({ timeout: 5000 });
+    } catch {
+      // If click was swallowed by an active drawer backdrop unmount animation, re-trigger
       await this.mobileMenuToggle.click({ force: true });
       await expect(storeTab).toBeVisible({ timeout: 5000 });
     }
