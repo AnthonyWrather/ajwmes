@@ -76,3 +76,40 @@ export interface CreateShipStationOrderRequest {
   }>;
   dimensions: ConsignmentDimensionsInput;
 }
+
+export type EmailTemplateType =
+  | 'welcome'
+  | 'order_confirmation'
+  | 'order_dispatch'
+  | 'diagnostic_quote'
+  | 'pontoon_signoff'
+  | 'zero_stock_alert'
+  | 'custom';
+
+export interface EmailAttachmentInput {
+  filename: string;
+  content: string; // Base64
+  contentType?: string;
+}
+
+export interface SendEmailFunctionRequest {
+  to: string | string[];
+  subject: string;
+  html?: string;
+  text?: string;
+  from?: string;
+  replyTo?: string;
+  templateType?: EmailTemplateType;
+  tags?: { name: string; value: string }[];
+  attachments?: EmailAttachmentInput[];
+  jobReference?: string;
+  orderId?: string;
+}
+
+export interface SendEmailFunctionResponse {
+  success: boolean;
+  messageId: string;
+  isSimulated?: boolean;
+  error?: string;
+}
+

@@ -44,3 +44,58 @@ export function validatePostalDispatcherAuth(request: CallableRequest<unknown>):
     role: role || (email.includes('postal') ? 'postal' : 'admin')
   };
 }
+
+/**
+ * Validates RBAC permissions for transactional email dispatch based on template type.
+ */
+export function validateEmailCallerAuth(
+  request: CallableRequest<unknown>,
+  templateType?: string
+): CallerAuthContext | null {
+  // Public flows: user registration welcome email and store order confirmation
+  if (templateType === 'welcome' || templateType === 'order_confirmation') {
+    if (request.auth) {
+      return {
+        uid: request.auth.uid,
+        email: request.auth.token.email,
+        role: (request.auth.token.role as string) || 'client'
+      };
+    }
+    return null;
+  }
+
+  // Privileged templates require authentication
+  if (!request.auth) {
+    throw new HttpsError(
+      'unauthenticated',
+      `Dispatching template "${templateType || 'custom'}" requires an authenticated session.`
+    );
+  }
+
+  const token = request.auth.token;
+  const role = (token.role as string) || (token.admin ? 'admin' : undefined);
+  const email = token.email?.toLowerCase() || '';
+
+  const isAdmin = role === 'admin' || email === 'anthonywrather@gmail.com' || email.includes('admin');
+  const isPostal = role === 'postal' || email.includes('postal') || email === 'sarah.postal@ajwmes.co.uk';
+  const isTechnician = role === 'technician' || email.includes('tech') || email === 'dave.tech@ajwmes.co.uk';
+
+  if (isAdmin) {
+    return { uid: request.auth.uid, email: token.email, role: 'admin' };
+  }
+
+  if (templateType === 'order_dispatch' && !isPostal) {
+    throw new HttpsError('permission-denied', 'Only postal dispatchers or administrators can send order dispatch notifications.');
+  }
+
+  if (templateType === 'diagnostic_quote' && !isTechnician) {
+    throw new HttpsError('permission-denied', 'Only field technicians or administrators can send diagnostic quote notifications.');
+  }
+
+  return {
+    uid: request.auth.uid,
+    email: token.email,
+    role: role || (isTechnician ? 'technician' : isPostal ? 'postal' : 'client')
+  };
+}
+
