@@ -17,13 +17,13 @@ test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh De
 
     let serveNewRelease = false;
     const simulatedNewRelease = {
-      version: '1.2.0',
+      version: '0.0.1',
       commitSha: '9cf41a2',
       commitFullSha: '9cf41a2000000000000000000000000000000000',
       commitMessage: 'feat: deploy instant single-refresh marine release update',
       branch: 'main',
       buildDate: '2026-10-18',
-      fullTag: 'v1.2.0-9cf41a2',
+      fullTag: 'v0.0.1-9cf41a2',
     };
 
     await page.route('**/version.json*', async (route) => {
@@ -55,7 +55,7 @@ test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh De
 
       const updateBanner = page.getByTestId('app-update-banner');
       await expect(updateBanner).toBeVisible({ timeout: 10000 });
-      await expect(page.getByTestId('app-update-target-version')).toHaveText('v1.2.0-9cf41a2');
+      await expect(page.getByTestId('app-update-target-version')).toHaveText('v0.0.1-9cf41a2');
       await expect(page.getByTestId('header-update-available-badge')).toBeVisible();
     });
 
@@ -72,7 +72,7 @@ test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh De
       // and the new version is active immediately
       await expect(page.getByTestId('app-update-banner')).toHaveCount(0);
       await expect(page.getByTestId('header-update-available-badge')).toHaveCount(0);
-      await expect(nav.headerVersionBadge).toHaveAttribute('title', /v1\.2\.0-9cf41a2/);
+      await expect(nav.headerVersionBadge).toHaveAttribute('title', /v0\.0\.1-9cf41a2/);
     });
   });
 
@@ -87,7 +87,7 @@ test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh De
       await expect(commitCard).toBeVisible();
 
       await page.getByTestId('simulate-version-update-button').click();
-      await expect(page.getByTestId('app-update-status-notice')).toContainText('v1.2.0-9cf41a2');
+      await expect(page.getByTestId('app-update-status-notice')).toContainText('v0.0.1-9cf41a2');
       await expect(page.getByTestId('app-update-banner')).toBeVisible();
     });
 
@@ -101,7 +101,7 @@ test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh De
       // Wait for single reload to complete and verify new version is deployed
       await expect(page.getByTestId('app-update-banner')).toHaveCount(0);
       await expect(page.getByTestId('header-update-available-badge')).toHaveCount(0);
-      await expect(nav.headerVersionBadge).toHaveAttribute('title', /v1\.2\.0-9cf41a2/);
+      await expect(nav.headerVersionBadge).toHaveAttribute('title', /v0\.0\.1-9cf41a2/);
     });
 
     await test.step('3. Verify offline resilience when checking for updates without network', async () => {

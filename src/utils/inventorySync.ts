@@ -16,7 +16,7 @@ import {
  * for independent stock control (Google Sheets sync) and catalog rollback points.
  */
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '0.0.1';
 
 /**
  * Exports catalog items as a standalone JSON envelope

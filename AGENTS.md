@@ -115,7 +115,7 @@ ajwmes/
 │   │   ├── shipstationCalculations.ts   # Marine package weight heuristics & box dimensioning
 │   │   ├── stripeCalculations.ts        # Stripe pence conversion, fee estimation, key validation
 │   │   └── versionCheck.ts              # Pure version manifest parsing & rollout comparison (+ version.test.ts)
-│   ├── version.ts          # Semantic versioning (v1.2.0) and release metadata
+│   ├── version.ts          # Semantic versioning (v0.0.1 PoC) and release metadata
 │   ├── App.tsx             # Root application orchestrator
 │   ├── index.css           # Tailwind CSS v4 directives & theme definitions
 │   └── main.tsx            # React 19 application mount point

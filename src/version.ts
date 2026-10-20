@@ -38,7 +38,7 @@ export const RELEASE_BUILD_DATE =
   (import.meta.env?.VITE_BUILD_DATE as string) ||
   '2026-10-15';
 
-// Format confirmed by user: SemVer with short commit hash (e.g. v1.2.0-8ba2ee3)
+// Format confirmed by user: SemVer with short commit hash (e.g. v0.0.1-8ba2ee3)
 export const FULL_VERSION_TAG = `v${APP_VERSION}-${GIT_COMMIT_SHA}`;
 
 export interface VersionInfo {

@@ -124,7 +124,7 @@ export function createSimulatedVersionManifest(
   currentBranch: string = 'main',
   simulatedSha: string = '9cf41a2'
 ): RemoteVersionManifest {
-  const cleanVersion = currentVersion.replace(/^v/, '').trim() || '1.2.0';
+  const cleanVersion = currentVersion.replace(/^v/, '').trim() || '0.0.1';
   const cleanSha = simulatedSha.trim().slice(0, 7) || '9cf41a2';
   return {
     version: cleanVersion,
