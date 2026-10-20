@@ -44,7 +44,7 @@ export const RBACPermissionsModal: React.FC<RBACPermissionsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const roles: UserRole[] = ['guest', 'client', 'technician', 'postal', 'admin'];
+  const roles: UserRole[] = ['guest', 'client', 'technician', 'postal', 'admin', 'site'];
 
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
@@ -53,6 +53,7 @@ export const RBACPermissionsModal: React.FC<RBACPermissionsModalProps> = ({
       case 'technician': return <Zap className="w-3.5 h-3.5" />;
       case 'postal': return <Package className="w-3.5 h-3.5" />;
       case 'admin': return <Wrench className="w-3.5 h-3.5" />;
+      case 'site': return <Key className="w-3.5 h-3.5" />;
     }
   };
 

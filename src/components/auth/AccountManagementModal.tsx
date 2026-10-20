@@ -850,8 +850,8 @@ export const AccountManagementModal: React.FC<AccountManagementModalProps> = ({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                {(['guest', 'client', 'technician', 'postal', 'admin'] as UserRole[]).map((r) => {
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
+                {(['guest', 'client', 'technician', 'postal', 'admin', 'site'] as UserRole[]).map((r) => {
                   const isCurrent = currentUserRole === r;
                   const profileMatch = DEMO_PROFILES.find(p => p.role === r);
                   return (

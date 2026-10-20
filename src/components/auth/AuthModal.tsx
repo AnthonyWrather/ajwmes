@@ -482,7 +482,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div>email: string (128 chars)</div>
                   <div>displayName: string (128 chars)</div>
                   <div>photoURL: string (512 chars)</div>
-                  <div>role: 'guest' | 'client' | 'admin' | 'technician' | 'postal'</div>
+                  <div>role: 'guest' | 'client' | 'admin' | 'technician' | 'postal' | 'site'</div>
                   <div>createdAt: ISO Timestamp</div>
                   <div>lastLoginAt: ISO Timestamp</div>
                 </div>
@@ -512,7 +512,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <ul className="list-disc list-inside text-slate-300 space-y-1 text-[11px]">
                 <li>Firebase Auth SDK (<code className="text-slate-200">getAuth</code>) is already initialized and connected to Firebase project <code className="text-slate-200">gen-lang-client-0618772940</code>.</li>
                 <li>When enabled in the Firebase Console, Google Authentication works out of the box with <code className="text-slate-200">signInWithGoogle()</code>.</li>
-                <li>All 5 roles (<code className="text-slate-200">guest</code>, <code className="text-slate-200">client</code>, <code className="text-slate-200">technician</code>, <code className="text-slate-200">postal</code>, <code className="text-slate-200">admin</code>) are completely active in UI routing and permissions.</li>
+                <li>All 6 roles (<code className="text-slate-200">guest</code>, <code className="text-slate-200">client</code>, <code className="text-slate-200">technician</code>, <code className="text-slate-200">postal</code>, <code className="text-slate-200">admin</code>, <code className="text-slate-200">site</code>) are completely active in UI routing and permissions.</li>
               </ul>
             </div>
           </div>

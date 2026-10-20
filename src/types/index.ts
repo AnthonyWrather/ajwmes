@@ -1,4 +1,4 @@
-export type UserRole = 'guest' | 'client' | 'admin' | 'technician' | 'postal';
+export type UserRole = 'guest' | 'client' | 'admin' | 'technician' | 'postal' | 'site';
 
 export interface RoleInfo {
   role: UserRole;

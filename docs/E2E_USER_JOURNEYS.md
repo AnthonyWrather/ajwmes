@@ -3,30 +3,30 @@
 > **Classification:** Engineering & QA Automation Architecture Document  
 > **Author:** Principal Full Stack Engineer, Cloud Infrastructure Platform Engineer & QA Automation Specialist  
 > **Application Version:** `v1.2.0` | **Target Runtime:** Node `>=24.12.0`  
-> **Test Framework:** Playwright (`@playwright/test`) with 15 E2E Spec Suites, 11 Page Object Models (POM) & 302 Unit Tests  
+> **Test Framework:** Playwright (`@playwright/test`) with 16 E2E Spec Suites, 11 Page Object Models (POM) & 291 Unit Tests  
 > **Date:** October 2026  
 
 ---
 
 ## Executive Summary
 
-AJW Marine Electrical Services (AJWMES) operates a mission-critical, offline-first Progressive Web App (PWA) servicing boat owners, pontoon field technicians, postal fulfillment staff, and workshop administration across the Solent marine basin.
+AJW Marine Electrical Services (AJWMES) operates a mission-critical, offline-first Progressive Web App (PWA) servicing boat owners, pontoon field technicians, postal fulfillment staff, workshop administration, and platform infrastructure administrators across the Solent marine basin.
 
 To guarantee zero regression in critical business paths, high-stakes electrical calculations, server-side Cloud Function gateways, and resilient offline operations, this document:
-1. **Audits and details all 15 existing end-to-end (E2E) test suites** currently executed in `tests/` alongside the **11 Page Object Models** in `tests/pages/`.
-2. **Maps the complete user journey coverage matrix** across all 5 RBAC personas (`guest`, `client`, `technician`, `postal`, `admin`).
+1. **Audits and details all 16 existing end-to-end (E2E) test suites** currently executed in `tests/` alongside the **11 Page Object Models** in `tests/pages/`.
+2. **Maps the complete user journey coverage matrix** across all 6 RBAC personas (`guest`, `client`, `technician`, `postal`, `admin`, `site`).
 3. **Presents a prioritized Phase 1–4 engineering and QA automation roadmap** with risk and complexity scoring.
 4. **Specifies the next set of recommended user journeys (`UJ-12`, `UJ-17`, `UJ-18`, `UJ-19`)**, complete with component trees, state matrices, `data-testid` locator contracts, and Page Object Model (POM) blueprints.
 
 ---
 
-## 1. Existing Covered User Journeys (15 Automated Spec Suites)
+## 1. Existing Covered User Journeys (16 Automated Spec Suites)
 
-The Playwright E2E test suite covers **15 core operational and architectural journeys** utilizing **11 dedicated Page Object Models** (`tests/pages/`):
+The Playwright E2E test suite covers **16 core operational and architectural journeys** utilizing **11 dedicated Page Object Models** (`tests/pages/`):
 
 ```mermaid
 graph TD
-    subgraph ExistingJourneys["Covered E2E Journeys (15 Spec Suites)"]
+    subgraph ExistingJourneys["Covered E2E Journeys (16 Spec Suites)"]
         J1["1. Authentication & RBAC Navigation (UJ-01)\n(tests/authentication.spec.ts)"]
         J2["2. Hardware Catalog & Stock Sync (UJ-02)\n(tests/inventory-stock-sync.spec.ts)"]
         J3["3. Cloud Function Resend Email Gateway (UJ-03)\n(tests/resend.spec.ts)"]
@@ -42,6 +42,7 @@ graph TD
         J13["13. In-Browser Version Rollout & 1st-Refresh Deploy (UJ-14)\n(tests/app-version-update.spec.ts)"]
         J14["14. Responsive Pill Menu & 2-Row Containment (UJ-15)\n(tests/navigation-responsive-menu.spec.ts)"]
         J15["15. Lazy Code-Splitting & PWA Asset Integrity (UJ-16)\n(tests/performance-architecture-optimization.spec.ts)"]
+        J16["16. Site Admin Role & Config Decoupling (UJ-20)\n(tests/rbac-site-role.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -59,6 +60,7 @@ graph TD
     J13 -->|"version.json Poll, Banner & 1-Click Reload"| POM13["NavigationPage\nAppUpdateBanner"]
     J14 -->|"2-Row Desktop Wrap & Compact Mobile Grid"| POM14["NavigationPage\nAuthModalPage"]
     J15 -->|"Dynamic Chunks & Raster/SVG Icons"| POM15["NavigationPage\nSwitchPanelCADPage\nReplicaPanelUploaderPage"]
+    J16 -->|"Exclusive Platform Config & Role Isolation"| POM16["NavigationPage\nAdminDashboardPage\nAuthModalPage"]
 ```
 
 ---
@@ -458,31 +460,53 @@ graph TD
 
 ---
 
+### Journey 16: Website Administrator Role & Platform Configuration Decoupling (UJ-20)
+- **Test File:** [`tests/rbac-site-role.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/rbac-site-role.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AdminDashboardPage`, `AuthModalPage`
+- **Target Personas:** `guest`, `admin`, `site`
+
+#### Scenarios Verified:
+1. **Exclusive Site Admin Platform Configuration**:
+   - Verify `site` user (`site@ajwmes.co.uk`) can open `EnvironmentSettingsModal` via header version badge, mobile version button, and user dropdown menu.
+   - Verify `site` user can update Firebase, Resend, and ShipStation API keys and trigger test mailers.
+2. **Operational Admin Environment Lockdown**:
+   - Verify `admin` user is strictly locked out of `EnvironmentSettingsModal` across all environments.
+   - Verify `admin` header version badge is disabled (`cursor-default`) and does not launch the modal.
+   - Verify direct URL attempts or backdoor modal mounts render `env-settings-access-denied` fallback.
+3. **Role Elevation & Deletion Guardrails**:
+   - Verify `admin` viewing `/admin` (`accounts` tab) sees `locked-site-role-badge` for `site` accounts with disabled edit/delete actions.
+   - Verify `site` cannot be selected when creating or editing accounts as `admin`.
+4. **Site Admin Navigation Scope**:
+   - Verify `site` user has clean access to public routes (`/home`, `/store`, `/designer`, `/replica`, `/tracker`) and is blocked from private vessel portal and workshop operational workstations (`/admin`, `/technician`, `/postal`).
+
+---
+
 ## 2. Comprehensive User Journey Coverage Matrix
 
-The following table tracks all 19 operational and architectural journeys across AJWMES:
+The following table tracks all 20 operational and architectural journeys across AJWMES:
 
 | Journey ID | Journey Title | Target Route(s) | Primary Persona(s) | Business Impact | Test Spec File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **UJ-01** | **Authentication, Multi-Persona RBAC & Profile Management** | `/`, `/store`, `/portal`, `/admin` | All 5 Roles | **Critical (P0)** | `tests/authentication.spec.ts` | **Done (Automated)** |
+| **UJ-01** | **Authentication, Multi-Persona RBAC & Profile Management** | `/`, `/store`, `/portal`, `/admin` | All 6 Roles | **Critical (P0)** | `tests/authentication.spec.ts` | **Done (Automated)** |
 | **UJ-02** | **Marine Hardware Store, Cart Drawer & Stock Sync** | `/store`, `/admin` | `guest`, `client`, `admin` | **High (P0)** | `tests/inventory-stock-sync.spec.ts` | **Done (Automated)** |
-| **UJ-03** | **Server-Side Cloud Function Resend Email Gateway** | `/`, Env Modal | `guest`, `client`, `admin` | **High (P0)** | `tests/resend.spec.ts` | **Done (Automated)** |
+| **UJ-03** | **Server-Side Cloud Function Resend Email Gateway** | `/`, Env Modal | `guest`, `client`, `site` | **High (P0)** | `tests/resend.spec.ts` | **Done (Automated)** |
 | **UJ-04** | **Solent Field Technician Diagnostics & Digital Sign-Off** | `/technician` | `technician`, `admin` | **Critical (P0)** | `tests/technician-diagnostic-flow.spec.ts` | **Done (Automated)** |
 | **UJ-05** | **Postal Fulfillment, ShipStation Rates & 4x6" Thermal Labels** | `/postal` | `postal`, `admin` | **High (P0)** | `tests/postal-fulfillment-dispatch.spec.ts` | **Done (Automated)** |
 | **UJ-06** | **Postal Consignment Timeline Tracker** | `/tracker` | `guest`, `client`, `admin` | **Medium (P1)** | `tests/consignment-tracker.spec.ts` | **Done (Automated)** |
-| **UJ-07** | **Custom Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin` | **High (P1)** | `tests/switch-panel-cad.spec.ts` | **Done (Automated)** |
-| **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin` | **Medium (P2)** | `tests/switchboard-photo-replica.spec.ts` | **Done (Automated)** |
+| **UJ-07** | **Custom Switch Panel CAD Configurator** | `/designer` | `guest`, `client`, `admin`, `site` | **High (P1)** | `tests/switch-panel-cad.spec.ts` | **Done (Automated)** |
+| **UJ-08** | **Weathered Switchboard Photo Replica Quoter** | `/replica` | `guest`, `client`, `admin`, `site` | **Medium (P2)** | `tests/switchboard-photo-replica.spec.ts` | **Done (Automated)** |
 | **UJ-09** | **Boat Owner Vessel Portal & Certificate PDF Export** | `/portal` | `client`, `admin` | **High (P1)** | `tests/vessel-portal-pdf.spec.ts` | **Done (Automated)** |
 | **UJ-10** | **Master Workshop Administration, Expenses & Restock** | `/admin` | `admin` | **High (P1)** | `tests/admin-workshop-management.spec.ts` | **Done (Automated)** |
 | **UJ-11** | **Offline Pontoon Resilience & Mutation Queue Replay** | `/technician` | `technician`, `admin` | **Critical (P0)** | `tests/offline-pontoon-resilience.spec.ts` | **Done (Automated)** |
-| **UJ-13** | **Hardware Store Checkout & Stripe Payment Settlement** | `/store`, `/portal` | `guest`, `client`, `admin` | **High (P0)** | `tests/stripe.spec.ts` | **Done (Automated)** |
-| **UJ-14** | **In-Browser Version Rollout & 1st-Refresh Deployment** | Global / Header | All 5 Roles | **High (P1)** | `tests/app-version-update.spec.ts` | **Done (Automated)** |
-| **UJ-15** | **Responsive Pill Navigation & 2-Row Viewport Containment** | Global Header | `guest`, `client`, `admin` | **Medium (P1)** | `tests/navigation-responsive-menu.spec.ts` | **Done (Automated)** |
-| **UJ-16** | **Lazy Code-Splitting Workspaces & PWA Asset Integrity** | All Routes | `guest`, `admin` | **Medium (P1)** | `tests/performance-architecture-optimization.spec.ts` | **Done (Automated)** |
+| **UJ-13** | **Hardware Store Checkout & Stripe Payment Settlement** | `/store`, `/portal` | `guest`, `client`, `admin`, `site` | **High (P0)** | `tests/stripe.spec.ts` | **Done (Automated)** |
+| **UJ-14** | **In-Browser Version Rollout & 1st-Refresh Deployment** | Global / Header | All 6 Roles | **High (P1)** | `tests/app-version-update.spec.ts` | **Done (Automated)** |
+| **UJ-15** | **Responsive Pill Navigation & 2-Row Viewport Containment** | Global Header | `guest`, `client`, `admin`, `site` | **Medium (P1)** | `tests/navigation-responsive-menu.spec.ts` | **Done (Automated)** |
+| **UJ-16** | **Lazy Code-Splitting Workspaces & PWA Asset Integrity** | All Routes | `guest`, `admin`, `site` | **Medium (P1)** | `tests/performance-architecture-optimization.spec.ts` | **Done (Automated)** |
+| **UJ-20** | **Site Admin Role & Platform Configuration Decoupling** | Global / `/admin` | `admin`, `site` | **Critical (P0)** | `tests/rbac-site-role.spec.ts` | **Done (Automated)** |
 | **UJ-12** | **Bi-Directional Job Discussion, Photo Proofs & Inbound Email** | `/portal` ↔ `/admin` | `client`, `admin`, `technician` | **High (P1)** | *Proposed:* `tests/job-discussion-thread.spec.ts` | **Recommended Next (Phase 4.1)** |
 | **UJ-17** | **Admin User Accounts Directory, Role Elevation & Isolation** | `/admin` (`accounts`) | `admin` | **High (P1)** | *Proposed:* `tests/admin-user-accounts.spec.ts` | **Recommended Next (Phase 4.2)** |
 | **UJ-18** | **Print & Laser Engraving Studio & Cloud Panel Archive** | `/admin` (`print`, `panels`) | `admin` | **Medium (P2)** | *Proposed:* `tests/print-laser-asset-studio.spec.ts` | **Recommended Next (Phase 4.3)** |
-| **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `admin`, `guest` (Dev) | **Medium (P2)** | *Proposed:* `tests/multi-environment-sandbox.spec.ts` | **Recommended Next (Phase 4.4)** |
+| **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `site` | **Medium (P2)** | *Proposed:* `tests/multi-environment-sandbox.spec.ts` | **Recommended Next (Phase 4.4)** |
 
 ---
 

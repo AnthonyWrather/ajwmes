@@ -26,6 +26,9 @@ export class NavigationPage {
   readonly userAccountButton: Locator;
   readonly userProfileName: Locator;
   readonly headerVersionBadge: Locator;
+  readonly mobileVersionSettingsButton: Locator;
+  readonly navSiteSettingsButton: Locator;
+  readonly footerHostingGuideButton: Locator;
   readonly pwaInstallButton: Locator;
   readonly pwaIosInstallButton: Locator;
 
@@ -55,6 +58,9 @@ export class NavigationPage {
     this.userAccountButton = page.getByTestId('user-account-button');
     this.userProfileName = page.getByTestId('user-profile-name');
     this.headerVersionBadge = page.getByTestId('header-version-badge');
+    this.mobileVersionSettingsButton = page.getByTestId('mobile-version-settings-button');
+    this.navSiteSettingsButton = page.getByTestId('nav-site-settings-button');
+    this.footerHostingGuideButton = page.getByTestId('footer-hosting-guide-button');
     this.pwaInstallButton = page.getByTestId('pwa-install-button');
     this.pwaIosInstallButton = page.getByTestId('pwa-ios-install-button');
   }

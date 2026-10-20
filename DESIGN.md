@@ -387,13 +387,14 @@ sequenceDiagram
 
 ## 7. Security Model, Authentication & Dual-Tier RBAC
 
-### 7.1 Five-Tier User Roles
+### 7.1 Six-Tier User Roles
 Defined in [`src/types/index.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/types/index.ts):
 1. **`guest`**: Public visitor; can browse parts catalog, build live switchboard quotes, and track orders via public order numbers.
 2. **`client`**: Registered vessel owner; access to private vessel electrical layouts, quote acceptance, deposit payments, and engineering messaging.
 3. **`technician`**: Field marine engineer; access to Solent job queue, diagnostic timers (£25/hr), material usage logs, and offline sign-offs.
 4. **`postal`**: Workshop fulfillment operator; access to packing queues, stock cutting, and carrier consignment generation.
-5. **`admin`**: Anthony Wrather (Master Workshop); unrestricted access to parts pricing, stock alerts, supplier purchase orders, and user role management.
+5. **`admin`**: Anthony Wrather (Master Workshop); operational access to workshop jobs, parts pricing, stock alerts, supplier purchase orders, and workshop user account management (excluding site role escalation). Strictly blocked from environment switching and platform API key configuration.
+6. **`site`**: Website & Platform Administrator (`site@ajwmes.co.uk`); exclusive access to platform environment configuration (`EnvironmentSettingsModal`), Firebase/Resend/ShipStation API keys, test data reset, in-browser hosting guides, and environment switching.
 
 ### 7.2 Access Control Matrix
 
@@ -405,6 +406,7 @@ graph LR
         R_Tech["technician"]
         R_Postal["postal"]
         R_Admin["admin"]
+        R_Site["site"]
     end
 
     subgraph Routes["Protected Route Domains"]
@@ -435,6 +437,9 @@ graph LR
     R_Admin ==> TechRoutes
     R_Admin ==> PostalRoutes
     R_Admin ==> AdminRoutes
+
+    R_Site --> PublicRoutes
+    R_Site --> DesignRoutes
 ```
 
 ### 7.3 Programmatic RBAC Enforcement
@@ -697,7 +702,7 @@ Before merging any feature into `main`:
 - [x] **Resend Transactional Email Gateway**: Validated server-side `sendEmail` 2nd Gen Cloud Function (`europe-west2`), Google Secret Manager key isolation, inbound webhook parsing (`incomingEmail.ts`), and simulated offline outbox fallback.
 - [x] **Stripe Payment Gateway**: Validated test/live key detection, UK domestic interchange calculations (1.5% + 20p), and simulated fallback.
 - [x] **Offline Resilience**: Field mutations gracefully store to IndexedDB when disconnected (`navigator.onLine = false`).
-- [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 5 roles (`guest`, `client`, `admin`, `technician`, `postal`).
+- [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 6 roles (`guest`, `client`, `admin`, `technician`, `postal`, `site`).
 - [x] **PWA Manifest & Assets**: Icons, theme colors (`#0A192F`), `/version.json` rollout manifest, and service worker registered without console warnings.
 - [x] **End-to-End Validation**: `npm run test:e2e` completes successfully across all 15 Playwright specification suites and 11 Page Object Models.
 

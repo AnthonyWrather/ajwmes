@@ -970,6 +970,25 @@ export const DEFAULT_TEST_ACCOUNTS: UserProfile[] = [
     lastLoginAt: '2026-10-10T16:00:00Z'
   },
   {
+    id: 'usr-site-0000-0000-0000-000000000006',
+    name: 'Anthony Wrather — Website Admin',
+    email: 'site@ajwmes.co.uk',
+    role: 'site',
+    phone: '07700 900551',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'AJW Solent Response',
+    vesselType: 'Workboat / Fast Tender',
+    marinaBerth: 'Gosport Marina (HQ Workshop)',
+    systemVoltage: '12V',
+    vesselIds: [],
+    notifyJobUpdates: false,
+    notifyDispatchSms: false,
+    createdAt: '2026-10-15T09:00:00Z',
+    lastLoginAt: '2026-10-20T16:00:00Z'
+  },
+  {
     id: 'usr-jenkins-0000-0000-0000-000000000006',
     name: 'Sarah Jenkins',
     email: 'sarah.jenkins@cowesyacht.com',

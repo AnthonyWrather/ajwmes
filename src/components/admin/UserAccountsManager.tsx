@@ -34,6 +34,7 @@ interface UserAccountsManagerProps {
   onUpdateUserRole: (userId: string, newRole: UserRole) => Promise<void> | void;
   onDeleteUser?: (userId: string) => Promise<void> | void;
   onRefreshUsers?: () => void;
+  currentUserRole?: UserRole;
 }
 
 export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
@@ -42,6 +43,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
   onUpdateUserRole,
   onDeleteUser,
   onRefreshUsers,
+  currentUserRole = 'admin'
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -177,6 +179,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
 
   // Stats calculation - strictly within current environment partition
   const adminCount = environmentUsers.filter((u) => u.role === 'admin').length;
+  const siteCount = environmentUsers.filter((u) => u.role === 'site').length;
   const clientCount = environmentUsers.filter((u) => u.role === 'client').length;
   const techCount = environmentUsers.filter((u) => u.role === 'technician').length;
   const postalCount = environmentUsers.filter((u) => u.role === 'postal').length;
@@ -238,7 +241,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
         </div>
 
         {/* Breakdown counters */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-5">
           <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase font-mono text-slate-400">Yacht Clients</span>
@@ -272,7 +275,16 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               <Shield className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-xl font-bold text-white mt-1">{adminCount}</div>
-            <p className="text-[10px] text-slate-500 mt-0.5">Anthony Wrather</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">Workshop Operations</p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-mono text-slate-400">Site Admin</span>
+              <Key className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div className="text-xl font-bold text-white mt-1">{siteCount}</div>
+            <p className="text-[10px] text-slate-500 mt-0.5">Website Infrastructure</p>
           </div>
         </div>
       </div>
@@ -295,9 +307,10 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
             <Filter className="w-3.5 h-3.5" />
             <span>Role:</span>
           </span>
-          {(['all', 'admin', 'technician', 'postal', 'client', 'guest'] as const).map((r) => (
+          {(['all', 'admin', 'site', 'technician', 'postal', 'client', 'guest'] as const).map((r) => (
             <button
               key={r}
+              data-testid={`user-role-filter-${r}`}
               onClick={() => setRoleFilter(r)}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize whitespace-nowrap transition-colors cursor-pointer ${
                 roleFilter === r
@@ -322,6 +335,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
         ) : (
           filteredUsers.map((user) => {
             const config = ROLE_CONFIGS[user.role] || ROLE_CONFIGS.client;
+            const isSiteLocked = user.role === 'site' && currentUserRole !== 'site';
             return (
               <div
                 key={user.id}
@@ -381,28 +395,42 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
 
                   {/* Actions & Role Selector */}
                   <div className="flex items-center gap-2 self-end sm:self-center">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
-                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-semibold cursor-pointer"
-                      title="Update role in Firestore database"
-                    >
-                      <option value="guest">Guest</option>
-                      <option value="client">Client (Vessel Owner)</option>
-                      <option value="technician">Technician</option>
-                      <option value="postal">Postal Fulfillment</option>
-                      <option value="admin">Administrator</option>
-                    </select>
+                    {isSiteLocked ? (
+                      <span
+                        data-testid="locked-site-role-badge"
+                        className="px-2.5 py-1.5 bg-slate-950 border border-cyan-500/40 rounded-xl text-xs text-cyan-300 font-mono font-semibold flex items-center gap-1.5 shadow-sm"
+                        title="Website Administrator accounts are protected against modification by workshop admins"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Site Admin (Protected)</span>
+                      </span>
+                    ) : (
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+                        className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-semibold cursor-pointer"
+                        title="Update role in Firestore database"
+                      >
+                        <option value="guest">Guest</option>
+                        <option value="client">Client (Vessel Owner)</option>
+                        <option value="technician">Technician</option>
+                        <option value="postal">Postal Fulfillment</option>
+                        <option value="admin">Administrator</option>
+                        {currentUserRole === 'site' && <option value="site">Website Administrator</option>}
+                      </select>
+                    )}
 
-                    <button
-                      onClick={() => setEditingUser(user)}
-                      className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Edit account in database"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
+                    {!isSiteLocked && (
+                      <button
+                        onClick={() => setEditingUser(user)}
+                        className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Edit account in database"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    )}
 
-                    {onDeleteUser && (
+                    {onDeleteUser && !isSiteLocked && (
                       <button
                         onClick={() => handleDeleteUser(user)}
                         className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-950/40 transition-colors cursor-pointer"
@@ -505,6 +533,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                     <option value="postal">Postal Fulfillment</option>
                     <option value="admin">Administrator</option>
                     <option value="guest">Guest</option>
+                    {currentUserRole === 'site' && <option value="site">Website Administrator</option>}
                   </select>
                 </div>
 
@@ -641,6 +670,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                     <option value="technician">Technician</option>
                     <option value="postal">Postal</option>
                     <option value="admin">Admin</option>
+                    {currentUserRole === 'site' && <option value="site">Website Administrator</option>}
                   </select>
                 </div>
 

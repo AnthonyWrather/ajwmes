@@ -63,6 +63,18 @@ describe('RBAC authorization engine (src/lib/rbac.ts)', () => {
       }
     });
 
+    it('grants site admin access to public storefront and custom panel routes, but denies operational stations', () => {
+      const publicRoutes: AppRoute[] = ['home', 'store', 'tracker', 'designer', 'replica'];
+      const operationalRoutes: AppRoute[] = ['portal', 'technician', 'postal', 'admin'];
+
+      for (const route of publicRoutes) {
+        assert.equal(canAccessRoute('site', route), true, `site should access ${route}`);
+      }
+      for (const route of operationalRoutes) {
+        assert.equal(canAccessRoute('site', route), false, `site must not access ${route}`);
+      }
+    });
+
     it('returns false for unknown or invalid routes safely', () => {
       assert.equal(canAccessRoute('admin', 'unknown_route' as any), false);
     });
@@ -71,6 +83,7 @@ describe('RBAC authorization engine (src/lib/rbac.ts)', () => {
   describe('Primary Default Landing Route (getDefaultRouteForRole)', () => {
     it('returns role-aligned operational entry points', () => {
       assert.equal(getDefaultRouteForRole('guest'), 'home');
+      assert.equal(getDefaultRouteForRole('site'), 'home');
       assert.equal(getDefaultRouteForRole('client'), 'portal');
       assert.equal(getDefaultRouteForRole('technician'), 'technician');
       assert.equal(getDefaultRouteForRole('postal'), 'postal');
@@ -86,6 +99,9 @@ describe('RBAC authorization engine (src/lib/rbac.ts)', () => {
     it('returns correct subset for each role', () => {
       const guestRoutes = getAccessibleRoutes('guest');
       assert.deepEqual(guestRoutes, ['home', 'store', 'tracker', 'designer', 'replica']);
+
+      const siteRoutes = getAccessibleRoutes('site');
+      assert.deepEqual(siteRoutes, ['home', 'store', 'tracker', 'designer', 'replica']);
 
       const adminRoutes = getAccessibleRoutes('admin');
       assert.equal(adminRoutes.length, 9);
@@ -133,6 +149,25 @@ describe('RBAC authorization engine (src/lib/rbac.ts)', () => {
 
       for (const action of adminActions) {
         assert.equal(canPerformAction('admin', action), true, `admin can ${action}`);
+        assert.equal(canPerformAction('site', action), false, `site cannot ${action}`);
+        assert.equal(canPerformAction('guest', action), false, `guest cannot ${action}`);
+        assert.equal(canPerformAction('client', action), false, `client cannot ${action}`);
+        assert.equal(canPerformAction('technician', action), false, `technician cannot ${action}`);
+        assert.equal(canPerformAction('postal', action), false, `postal cannot ${action}`);
+      }
+    });
+
+    it('governs website administration actions exclusively for site role', () => {
+      const siteActions: RbacAction[] = [
+        'manage_site_settings',
+        'manage_api_keys',
+        'switch_environments',
+        'manage_site_roles'
+      ];
+
+      for (const action of siteActions) {
+        assert.equal(canPerformAction('site', action), true, `site can ${action}`);
+        assert.equal(canPerformAction('admin', action), false, `admin cannot ${action}`);
         assert.equal(canPerformAction('guest', action), false, `guest cannot ${action}`);
         assert.equal(canPerformAction('client', action), false, `client cannot ${action}`);
         assert.equal(canPerformAction('technician', action), false, `technician cannot ${action}`);

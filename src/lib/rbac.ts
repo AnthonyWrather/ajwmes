@@ -50,7 +50,12 @@ export type RbacAction =
   | 'restock_catalog_inventory'
   | 'dismiss_stock_alert'
   | 'access_laser_print_studio'
-  | 'manage_user_roles';
+  | 'manage_user_roles'
+  // Website Platform Administration
+  | 'manage_site_settings'
+  | 'manage_api_keys'
+  | 'switch_environments'
+  | 'manage_site_roles';
 
 export interface RouteAccessRule {
   route: AppRoute;
@@ -64,7 +69,7 @@ export interface RouteAccessRule {
 export interface ActionAccessRule {
   action: RbacAction;
   name: string;
-  category: 'Store & Quotes' | 'Vessel Management' | 'Technician Diagnostics' | 'Postal Dispatch' | 'Master Administration';
+  category: 'Store & Quotes' | 'Vessel Management' | 'Technician Diagnostics' | 'Postal Dispatch' | 'Master Administration' | 'Website Administration';
   allowedRoles: UserRole[];
   description: string;
 }
@@ -78,7 +83,7 @@ export const ROUTE_ACCESS_MATRIX: Record<AppRoute, RouteAccessRule> = {
     route: 'home',
     name: 'Services & Solent Overview',
     category: 'Public Services',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Public landing page, service rate cards, and Solent coverage information.',
     defaultFallback: 'home'
   },
@@ -86,7 +91,7 @@ export const ROUTE_ACCESS_MATRIX: Record<AppRoute, RouteAccessRule> = {
     route: 'store',
     name: 'Marine Electrical Parts Store',
     category: 'Public Services',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Online store for tinned cables, Victron equipment, fuses, and postal ordering.',
     defaultFallback: 'home'
   },
@@ -94,7 +99,7 @@ export const ROUTE_ACCESS_MATRIX: Record<AppRoute, RouteAccessRule> = {
     route: 'tracker',
     name: 'Postal Order Consignment Tracker',
     category: 'Public Services',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Consignment tracker for checking packaging and Royal Mail/courier tracking numbers.',
     defaultFallback: 'home'
   },
@@ -102,7 +107,7 @@ export const ROUTE_ACCESS_MATRIX: Record<AppRoute, RouteAccessRule> = {
     route: 'designer',
     name: 'Custom Switch Panel Designer',
     category: 'Vessel Owner',
-    allowedRoles: ['guest', 'client', 'admin'],
+    allowedRoles: ['guest', 'client', 'admin', 'site'],
     description: 'Interactive visual switch panel CAD configurator and quote builder.',
     defaultFallback: 'home'
   },
@@ -110,7 +115,7 @@ export const ROUTE_ACCESS_MATRIX: Record<AppRoute, RouteAccessRule> = {
     route: 'replica',
     name: 'Replica Panel Photo Quote',
     category: 'Vessel Owner',
-    allowedRoles: ['guest', 'client', 'admin'],
+    allowedRoles: ['guest', 'client', 'admin', 'site'],
     description: 'Upload photos of weathered boat switchboards for exact CAD laser replica quotes.',
     defaultFallback: 'home'
   },
@@ -158,28 +163,28 @@ export const ACTION_ACCESS_MATRIX: Record<RbacAction, ActionAccessRule> = {
     action: 'browse_catalog',
     name: 'Browse Hardware Catalog',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Browse marine cables, fuses, busbars, and Victron components.'
   },
   add_to_cart: {
     action: 'add_to_cart',
     name: 'Add Items to Postal Basket',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Add marine components to cart for postal dispatch or marina collection.'
   },
   submit_postal_order: {
     action: 'submit_postal_order',
     name: 'Place Postal Order',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Submit an online store order and reserve warehouse stock.'
   },
   track_postal_order: {
     action: 'track_postal_order',
     name: 'Track Postal Consignment',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Look up live delivery status and carrier tracking numbers.'
   },
 
@@ -188,28 +193,28 @@ export const ACTION_ACCESS_MATRIX: Record<RbacAction, ActionAccessRule> = {
     action: 'use_panel_designer',
     name: 'Design Switch Panel',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'admin'],
+    allowedRoles: ['guest', 'client', 'admin', 'site'],
     description: 'Configure custom acrylic/teak panels and generate live quotes.'
   },
   request_custom_panel_quote: {
     action: 'request_custom_panel_quote',
     name: 'Order Custom Panel',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'admin'],
+    allowedRoles: ['guest', 'client', 'admin', 'site'],
     description: 'Submit custom panel configuration for fabrication.'
   },
   request_replica_quote: {
     action: 'request_replica_quote',
     name: 'Request Replica Panel Quote',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'admin'],
+    allowedRoles: ['guest', 'client', 'admin', 'site'],
     description: 'Upload photos of existing panels for identical replacement quotes.'
   },
   request_diagnostic_booking: {
     action: 'request_diagnostic_booking',
     name: 'Book Diagnostic Visit',
     category: 'Store & Quotes',
-    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin'],
+    allowedRoles: ['guest', 'client', 'technician', 'postal', 'admin', 'site'],
     description: 'Request a £25/hr on-vessel diagnostic booking in the Solent area.'
   },
 
@@ -394,6 +399,36 @@ export const ACTION_ACCESS_MATRIX: Record<RbacAction, ActionAccessRule> = {
     category: 'Master Administration',
     allowedRoles: ['admin'],
     description: 'Assign and modify user roles in Firebase Authentication and Firestore.'
+  },
+
+  // Website Platform Administration
+  manage_site_settings: {
+    action: 'manage_site_settings',
+    name: 'Manage Platform & Site Settings',
+    category: 'Website Administration',
+    allowedRoles: ['site'],
+    description: 'Inspect multi-environment configuration, rollout updates, and platform guides.'
+  },
+  manage_api_keys: {
+    action: 'manage_api_keys',
+    name: 'Manage Firebase & Stripe API Keys',
+    category: 'Website Administration',
+    allowedRoles: ['site'],
+    description: 'View, set, override, or reset Firebase Web API keys and Stripe publishable keys.'
+  },
+  switch_environments: {
+    action: 'switch_environments',
+    name: 'Switch Runtime Environments',
+    category: 'Website Administration',
+    allowedRoles: ['site'],
+    description: 'Switch between Dev, Preview, Staging, and Production deployment simulations.'
+  },
+  manage_site_roles: {
+    action: 'manage_site_roles',
+    name: 'Manage Website Administrator Accounts',
+    category: 'Website Administration',
+    allowedRoles: ['site'],
+    description: 'Assign, modify, or manage Website Administrator (site) user accounts.'
   }
 };
 
@@ -437,6 +472,7 @@ export function getDefaultRouteForRole(role: UserRole): AppRoute {
       return 'admin';
     case 'client':
       return 'portal';
+    case 'site':
     case 'guest':
     default:
       return 'home';

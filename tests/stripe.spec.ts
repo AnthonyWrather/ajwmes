@@ -15,12 +15,18 @@ test.describe('Stripe Payment Integration E2E Flows', () => {
   });
 
   test('should render the Stripe Payment Gateway card in Multi-Environment Manager modal', async ({ page }) => {
-    // 1. Navigate to application root
+    // 1. Navigate to application root and sign in as Website Administrator
     await page.goto('/');
+    const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
+    await nav.openSignInModal();
+    await auth.verifyModalVisible();
+    await auth.signIn('site@ajwmes.co.uk', 'ajwmes2026');
 
     // 2. Open Multi-Environment Settings Modal via the version badge in header
     const headerBadge = page.getByTestId('header-version-badge');
     await expect(headerBadge).toBeVisible();
+    await expect(headerBadge).toBeEnabled();
     await headerBadge.click();
 
     // 3. Locate Stripe Payment Gateway card
@@ -45,10 +51,16 @@ test.describe('Stripe Payment Integration E2E Flows', () => {
 
   test('should validate and reject invalid Stripe Publishable Key formats', async ({ page }) => {
     await page.goto('/');
+    const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
+    await nav.openSignInModal();
+    await auth.verifyModalVisible();
+    await auth.signIn('site@ajwmes.co.uk', 'ajwmes2026');
 
     // 1. Open Multi-Environment Settings Modal
     const headerBadge = page.getByTestId('header-version-badge');
     await expect(headerBadge).toBeVisible();
+    await expect(headerBadge).toBeEnabled();
     await headerBadge.click();
 
     const stripeCard = page.getByTestId('stripe-card');
@@ -73,10 +85,16 @@ test.describe('Stripe Payment Integration E2E Flows', () => {
 
   test('should allow saving valid Stripe test key and updating mode badge', async ({ page }) => {
     await page.goto('/');
+    const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
+    await nav.openSignInModal();
+    await auth.verifyModalVisible();
+    await auth.signIn('site@ajwmes.co.uk', 'ajwmes2026');
 
     // 1. Open Multi-Environment Settings Modal
     const headerBadge = page.getByTestId('header-version-badge');
     await expect(headerBadge).toBeVisible();
+    await expect(headerBadge).toBeEnabled();
     await headerBadge.click();
 
     const stripeCard = page.getByTestId('stripe-card');

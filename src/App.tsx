@@ -1391,6 +1391,7 @@ export default function App() {
         onRetry={handleRetryConnection}
         onToggleSimulatedOffline={handleToggleSimulatedOffline}
         onOpenEnvironmentSettings={() => setIsEnvironmentModalOpen(true)}
+        userRole={currentUserRole}
       />
 
       {/* Top Bar Navigation */}
@@ -1619,6 +1620,7 @@ export default function App() {
               onCreateExpense={handleCreateExpense}
               onUpdateExpense={handleUpdateExpense}
               onDeleteExpense={handleDeleteExpense}
+              currentUserRole={currentUserRole}
             />
           )}
 
@@ -1729,7 +1731,7 @@ export default function App() {
 
       {/* Free Hosting & GitHub Setup Modal */}
       <FreeHostingGuideModal
-        isOpen={isHostingGuideOpen}
+        isOpen={isHostingGuideOpen && currentUserRole === 'site'}
         onClose={() => setIsHostingGuideOpen(false)}
       />
 
@@ -1740,6 +1742,7 @@ export default function App() {
         connectionState={connectionState}
         onDataResetOrImported={handleEnvironmentDataReload}
         onRetryConnection={handleRetryConnection}
+        userRole={currentUserRole}
       />
 
       {/* Supplier Purchase Order Reorder Drafting Modal */}
@@ -1953,13 +1956,16 @@ export default function App() {
                 <MapPin className="w-3.5 h-3.5 text-sky-400" />
                 <span>Gosport, Hampshire (1-Hour Travel Zone)</span>
               </span>
-              <button
-                onClick={() => setIsHostingGuideOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 transition-colors"
-              >
-                <Github className="w-3.5 h-3.5" />
-                <span>Free Hosting &amp; GitHub Setup Guide</span>
-              </button>
+              {currentUserRole === 'site' && (
+                <button
+                  data-testid="footer-hosting-guide-button"
+                  onClick={() => setIsHostingGuideOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 transition-colors cursor-pointer"
+                >
+                  <Github className="w-3.5 h-3.5" />
+                  <span>Free Hosting &amp; GitHub Setup Guide</span>
+                </button>
+              )}
             </div>
           </div>
 
