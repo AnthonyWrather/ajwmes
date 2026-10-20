@@ -15,7 +15,7 @@ Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and p
 - **Frontend Core**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
 - **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions` v6 & `firebase-admin` v13 with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
 - **Reporting & Icons**: `jspdf` (marine certificate rendering), `lucide-react`
-- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (281 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests), Playwright (`@playwright/test` across 15 E2E browser specs & 11 Page Object Models)
+- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (287 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests), Playwright (`@playwright/test` across 15 E2E browser specs & 11 Page Object Models)
 
 ---
 
@@ -26,7 +26,7 @@ npm run build           # Production build (Vite + PWA service worker + /version
 npm run preview         # Preview production build locally
 npm run lint            # Typecheck frontend via `tsc --noEmit` (MUST pass with 0 errors)
 npm run lint:functions  # Typecheck Cloud Functions (`functions/`) via `tsc --noEmit`
-npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (281 tests)
+npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (287 tests)
 npm run test:functions  # Run Cloud Functions unit tests matching functions/src/**/*.test.ts (21 tests)
 npm run build:functions # Compile Cloud Functions TypeScript to functions/lib/
 npm run test            # Alias for test:unit
@@ -195,7 +195,7 @@ The app runs across 4 isolated hosting environments:
 ## Verification Checklist
 Before completing any coding task, verify the following:
 - [ ] `npm run lint` and `npm run lint:functions` pass with 0 errors.
-- [ ] `npm run test:unit` (281+ tests) and `npm run test:functions` (21+ tests) pass with all tests green.
+- [ ] `npm run test:unit` (287+ tests) and `npm run test:functions` (21+ tests) pass with all tests green.
 - [ ] `npm run validate` passes cleanly.
 - [ ] Any new utility or service logic includes companion `*.test.ts` tests.
 - [ ] Any new interactive UI components include `data-testid` attributes for Playwright.
