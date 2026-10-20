@@ -4,7 +4,7 @@
  */
 
 // Base Semantic Version from package.json or environment
-export const APP_VERSION = (import.meta.env?.VITE_APP_VERSION as string) || '1.2.0';
+export const APP_VERSION = (import.meta.env?.VITE_APP_VERSION as string) || '0.0.1';
 
 // Git Commit metadata injected at build time
 export const GIT_COMMIT_SHA = (
@@ -13,29 +13,29 @@ export const GIT_COMMIT_SHA = (
   '8ba2ee3'
 ).slice(0, 7);
 
-export const GIT_COMMIT_FULL_SHA = 
+export const GIT_COMMIT_FULL_SHA =
   (import.meta.env?.VITE_GIT_COMMIT_FULL_SHA as string) ||
   (import.meta.env?.VITE_GIT_COMMIT_SHA as string) ||
   GIT_COMMIT_SHA;
 
-export const GIT_COMMIT_MESSAGE = 
-  (import.meta.env?.VITE_GIT_COMMIT_MESSAGE as string) || 
+export const GIT_COMMIT_MESSAGE =
+  (import.meta.env?.VITE_GIT_COMMIT_MESSAGE as string) ||
   'feat: synchronize release versioning with github commits';
 
-export const GIT_BRANCH = 
-  (import.meta.env?.VITE_GIT_BRANCH as string) || 
+export const GIT_BRANCH =
+  (import.meta.env?.VITE_GIT_BRANCH as string) ||
   'main';
 
-export const GITHUB_REPO = 
-  (import.meta.env?.VITE_GITHUB_REPO as string) || 
+export const GITHUB_REPO =
+  (import.meta.env?.VITE_GITHUB_REPO as string) ||
   'anthonywrather/ajwmes';
 
-export const RELEASE_CHANNEL = 
-  (import.meta.env?.VITE_RELEASE_CHANNEL as string) || 
+export const RELEASE_CHANNEL =
+  (import.meta.env?.VITE_RELEASE_CHANNEL as string) ||
   'production';
 
-export const RELEASE_BUILD_DATE = 
-  (import.meta.env?.VITE_BUILD_DATE as string) || 
+export const RELEASE_BUILD_DATE =
+  (import.meta.env?.VITE_BUILD_DATE as string) ||
   '2026-10-15';
 
 // Format confirmed by user: SemVer with short commit hash (e.g. v1.2.0-8ba2ee3)
