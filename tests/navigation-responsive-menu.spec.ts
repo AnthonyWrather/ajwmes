@@ -229,30 +229,45 @@ test.describe('Navigation Main Menu Consistency & Responsive Resilience E2E Suit
 
     await nav.navigateToLanding();
 
-    // 1. By default on standard desktop browser sessions, the PWA install button must NOT be displayed
-    await expect(nav.pwaInstallButton).toBeHidden();
-    await expect(nav.pwaIosInstallButton).toBeHidden();
+    // The legacy unconditional fallback button with JavaScript alert() must NEVER be rendered
     await expect(page.getByRole('button', { name: /install pwa/i })).toHaveCount(0);
 
-    // 2. Dispatch simulated 'beforeinstallprompt' event on the window to test installable state
-    await page.evaluate(() => {
-      const event = new Event('beforeinstallprompt');
-      Object.assign(event, {
-        prompt: async () => {},
-        userChoice: Promise.resolve({ outcome: 'accepted', platform: 'web' }),
+    const isIOS = await page.evaluate(() => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()));
+
+    if (isIOS) {
+      // On iOS devices, the native beforeinstallprompt is not supported by WebKit.
+      // Instead, the iOS Add-to-Home-Screen guide button is presented when not in standalone mode.
+      await expect(nav.pwaInstallButton).toBeHidden();
+      await expect(nav.pwaIosInstallButton).toBeVisible();
+      await nav.pwaIosInstallButton.click();
+      await expect(page.getByTestId('pwa-ios-guide-modal')).toBeVisible();
+      await page.getByTestId('pwa-ios-guide-close').click();
+      await expect(page.getByTestId('pwa-ios-guide-modal')).toBeHidden();
+    } else {
+      // 1. By default on standard non-iOS browser sessions without beforeinstallprompt, button is strictly hidden
+      await expect(nav.pwaInstallButton).toBeHidden();
+      await expect(nav.pwaIosInstallButton).toBeHidden();
+
+      // 2. Dispatch simulated 'beforeinstallprompt' event on the window to test installable state
+      await page.evaluate(() => {
+        const event = new Event('beforeinstallprompt');
+        Object.assign(event, {
+          prompt: async () => {},
+          userChoice: Promise.resolve({ outcome: 'accepted', platform: 'web' }),
+        });
+        window.dispatchEvent(event);
       });
-      window.dispatchEvent(event);
-    });
 
-    // 3. Now the native install button must be visible
-    await expect(nav.pwaInstallButton).toBeVisible();
-    await expect(nav.pwaInstallButton).toHaveText(/Install App/);
+      // 3. Now the native install button must be visible
+      await expect(nav.pwaInstallButton).toBeVisible();
+      await expect(nav.pwaInstallButton).toHaveText(/Install App/);
 
-    // 4. Click the install button and verify prompt execution and button cleanup
-    await nav.pwaInstallButton.click();
+      // 4. Click the install button and verify prompt execution and button cleanup
+      await nav.pwaInstallButton.click();
 
-    // After accepting install, button should disappear
-    await expect(nav.pwaInstallButton).toBeHidden();
+      // After accepting install, button should disappear
+      await expect(nav.pwaInstallButton).toBeHidden();
+    }
   });
 
   test('should strictly hide PWA install button when running in standalone mode even if beforeinstallprompt fires (Issue #29)', async ({ page }) => {
