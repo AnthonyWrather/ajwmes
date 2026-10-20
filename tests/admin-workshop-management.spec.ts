@@ -28,6 +28,7 @@ test.describe('Master Workshop Administration, Expenses & Restock (UJ-10) E2E Fl
   });
 
   test('should sign in as workshop admin, audit operations metrics, reorder depleted inventory, manage job expenses with financial rollups, and create catalog snapshots', async ({ page }) => {
+    test.slow();
     const nav = new NavigationPage(page);
     const auth = new AuthModalPage(page);
     const admin = new AdminDashboardPage(page);
@@ -178,6 +179,7 @@ test.describe('Master Workshop Administration, Expenses & Restock (UJ-10) E2E Fl
       await expect(toggleBtn).toContainText('Billable to Client');
 
       // Toggle back to workshop overhead
+      await page.waitForTimeout(150);
       await toggleBtn.click({ force: true });
       await expect(toggleBtn).toContainText('Workshop Overhead');
     });

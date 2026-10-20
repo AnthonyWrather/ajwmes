@@ -588,7 +588,7 @@ export function subscribePostalOrders(onUpdate: (orders: PostalOrder[]) => void)
   }
   const colPath = getScopedCollection('postal_orders');
   return onSnapshot(
-    collection(db, colPath),
+    query(collection(db, colPath), limit(50)),
     (snapshot) => {
       if (!snapshot.empty) {
         const orders = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as PostalOrder));
