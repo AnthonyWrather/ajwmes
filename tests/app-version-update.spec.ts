@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { NavigationPage } from './pages/NavigationPage';
+import { AuthModalPage } from './pages/AuthModalPage';
 
 test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh Deployment', () => {
   test.beforeEach(async ({ page }) => {
@@ -78,9 +79,17 @@ test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh De
 
   test('should support 1-click Update & Refresh Now button and EnvironmentSettingsModal release controls including offline resilience', async ({ page }) => {
     const nav = new NavigationPage(page);
+    const auth = new AuthModalPage(page);
 
     await test.step('1. Open Multi-Environment & Release Manager modal and trigger simulated rollout', async () => {
       await nav.navigateToLanding();
+
+      // Sign in as Website Administrator (site) to access EnvironmentSettingsModal release controls
+      await nav.openSignInModal();
+      await auth.verifyModalVisible();
+      await auth.signIn('site@ajwmes.co.uk', 'ajwmes2026');
+
+      await expect(nav.headerVersionBadge).toBeEnabled();
       await nav.headerVersionBadge.click();
 
       const commitCard = page.getByTestId('github-commit-card');
@@ -105,6 +114,7 @@ test.describe('Issue #18: In-Browser Version Update Indicator & First-Refresh De
     });
 
     await test.step('3. Verify offline resilience when checking for updates without network', async () => {
+      await expect(nav.headerVersionBadge).toBeEnabled();
       await nav.headerVersionBadge.click();
       await expect(page.getByTestId('github-commit-card')).toBeVisible();
 
