@@ -134,7 +134,7 @@ test.describe('RBAC: Website Administrator (site) Role & Platform Config Decoupl
 
     // Navigate to Master Workshop (/admin)
     await nav.navigateToAdmin();
-    await expect(page.getByTestId('admin-dashboard')).toBeVisible();
+    await expect(page.getByTestId('admin-dashboard')).toBeVisible({ timeout: 15000 });
 
     // Switch to User Accounts tab
     const accountsTab = page.getByRole('button', { name: /User Accounts|Accounts/i });

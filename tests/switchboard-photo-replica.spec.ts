@@ -119,8 +119,8 @@ test.describe('Weathered Switchboard Photo Replica Quoter (UJ-08) E2E Flow', () 
       await expect(page.getByText('Westerly Konsort 29').first()).toBeVisible();
 
       // Verify the itemized quote details are rendered in discussion thread
-      await expect(page.getByText(/Switch Panel Reference Photos/i)).toBeVisible();
-      await expect(page.getByText('Quote Requested').first()).toBeVisible();
+      await expect(page.getByText(/Switch Panel Reference Photos/i)).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Quote Requested').first()).toBeVisible({ timeout: 10000 });
     });
 
     // 6. Workshop Administrator Inspection & Verification

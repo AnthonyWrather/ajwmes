@@ -172,6 +172,8 @@ graph TD
 6. **Pontoon Delivery Confirmation & Visual Progress Timelines View**:
    - Advance consignment to `Delivered to Vessel / Marina` (`FULFILLED`).
    - Switch to `Order Progress Timelines & Lifecycle History` view and verify all 4 visual stepper milestones (`timeline-step-received`, `timeline-step-packed`, `timeline-step-dispatched`, `timeline-step-delivered`).
+7. **Parallel Multi-Browser Worker Isolation**:
+   - Seeds dedicated per-worker test consignments (`ord-worker-${workerIndex}`) with scoped search filtering (`ordersSearchInput.fill(workerOrderNumber)`) to guarantee deterministic execution across Chromium, Firefox, WebKit, Mobile Chrome, and Mobile Safari without cross-worker mutation collisions on shared Firestore collections.
 
 ---
 

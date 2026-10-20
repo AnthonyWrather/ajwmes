@@ -403,8 +403,9 @@ export default function App() {
       if (remoteUsers && remoteUsers.length > 0) {
         setUsersList(remoteUsers);
         setCurrentUserProfile((prev) => {
-          const match = remoteUsers.find((u) => u.id === prev.id || u.email.toLowerCase() === prev.email.toLowerCase());
-          if (match) {
+          // Do not allow remote sync to demote an authenticated or newly converted client session to guest
+          const match = remoteUsers.find((u) => u.id === prev.id || (Boolean(u.email && prev.email) && u.email.toLowerCase() === prev.email.toLowerCase()));
+          if (match && match.role && (match.role !== 'guest' || prev.role === 'guest')) {
             const enriched = enrichUserProfile({ ...prev, ...match });
             if (enriched.role && enriched.role !== prev.role) {
               setCurrentUserRole(enriched.role);
@@ -537,7 +538,8 @@ export default function App() {
   }, [stockAlerts]);
 
   useEffect(() => {
-    setEnvStorageItem('postal_orders', postalOrders);
+    // Only store recent consignments in localStorage to maintain performance and stay within browser storage limits
+    setEnvStorageItem('postal_orders', postalOrders.slice(0, 50));
   }, [postalOrders]);
 
   useEffect(() => {
@@ -1107,10 +1109,12 @@ export default function App() {
     });
     if (currentUserRole === 'guest') {
       setCurrentUserRole('client');
+      saveCurrentRole('client');
       const enriched = enrichUserProfile({
         ...currentUserProfile,
+        id: `usr-client-${Date.now()}`,
         role: 'client',
-        name: currentUserProfile.name || 'Replica Inquirer'
+        name: currentUserProfile.name && currentUserProfile.name !== 'Guest Visitor' ? currentUserProfile.name : 'Replica Inquirer'
       });
       setCurrentUserProfile(enriched);
       saveUserProfile(enriched);

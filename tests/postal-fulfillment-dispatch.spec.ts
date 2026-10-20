@@ -4,13 +4,80 @@ import { AuthModalPage } from './pages/AuthModalPage';
 import { PostalWorkspacePage } from './pages/PostalWorkspacePage';
 
 test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', () => {
-  test.beforeEach(async ({ page }) => {
-    // Clear storage for a clean test baseline and mock window.print
-    await page.addInitScript(() => {
+  let workerOrderNumber: string;
+
+  test.beforeEach(async ({ page }, testInfo) => {
+    // Generate a unique consignment number and id per worker to prevent cross-worker mutation collisions
+    const workerIndex = testInfo.workerIndex;
+    const workerOrderId = `ord-worker-${workerIndex}-${Date.now()}`;
+    workerOrderNumber = `AJW-WORKER-${workerIndex}-2841`;
+
+    const isolatedTestOrder = {
+      id: workerOrderId,
+      orderNumber: workerOrderNumber,
+      userId: `usr-worker-${workerIndex}`,
+      customerName: `Sarah Miller (Worker ${workerIndex})`,
+      customerEmail: `sarah.worker${workerIndex}@ajwmes.co.uk`,
+      customerPhone: '02392 511 222',
+      shippingAddress: {
+        fullName: `Sarah Miller (Worker ${workerIndex})`,
+        email: `sarah.worker${workerIndex}@ajwmes.co.uk`,
+        phone: '02392 511 222',
+        addressLine1: 'Haslar Marina Pontoon B-14',
+        city: 'Gosport',
+        postcode: 'PO12 1NU',
+        isMarinaDelivery: true,
+        marinaName: 'Haslar Marina',
+        berthNumber: 'B-14'
+      },
+      items: [
+        {
+          itemId: 'cab-25',
+          name: 'Tinned Marine Cable 2.5mm² Twin Flat (10m)',
+          unit: 'each',
+          quantity: 1,
+          unitPrice: 34.50,
+          lineTotal: 34.50
+        }
+      ],
+      subtotal: 34.50,
+      shippingCost: 4.95,
+      shippingMethod: 'royal_mail_24',
+      total: 39.45,
+      orderStatus: 'received',
+      paymentStatus: 'paid',
+      paymentMethod: 'stripe',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      timeline: [
+        {
+          id: `tl-w${workerIndex}-1`,
+          status: 'received',
+          timestamp: new Date().toISOString(),
+          label: 'Order Placed & Payment Confirmed',
+          description: 'Online marine store checkout completed via Stripe.',
+          icon: 'check',
+          actor: 'system'
+        }
+      ]
+    };
+
+    // Clear storage for a clean test baseline, mock window.print, and inject isolated test order
+    await page.addInitScript((order) => {
       window.localStorage.clear();
       window.sessionStorage.clear();
       window.print = () => {};
-    });
+
+      // Seed order into dev and prod scoped storage keys
+      const scopedKeys = [
+        'ajwmes_aistudio_dev_postal_orders',
+        'ajwmes_github_live_postal_orders',
+        'ajwmes_postal_orders'
+      ];
+      for (const k of scopedKeys) {
+        window.localStorage.setItem(k, JSON.stringify([order]));
+      }
+    }, isolatedTestOrder);
   });
 
   test('should sign in as postal dispatcher, inspect order queue, generate packing slip, advance through bench pack, courier dispatch, and pontoon delivery', async ({ page }) => {
@@ -70,12 +137,15 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
       // Filter by 'To Pack' to deterministically target an order needing bench packaging
       await postal.filterOrdersReceived.click({ force: true });
       await page.waitForTimeout(200);
-      const packCard = postal.allOrderCards.filter({ hasText: 'Needs Packing' }).first();
-      await expect(packCard).toBeVisible({ timeout: 10000 });
+
+      // Search for the worker-isolated order to prevent cross-worker mutation collisions
+      await postal.ordersSearchInput.fill(workerOrderNumber);
+      const packCard = postal.allOrderCards.filter({ hasText: workerOrderNumber }).first();
+      await expect(packCard).toBeVisible({ timeout: 15000 });
       await packCard.click({ force: true });
 
       await expect(postal.selectedOrderDetails).toBeVisible();
-      await expect(postal.selectedOrderNumber).toBeVisible();
+      await expect(postal.selectedOrderNumber).toContainText(workerOrderNumber);
       await expect(postal.selectedOrderStatus).toContainText(/Needs Packing|received/i);
 
       // Verify Pick & Pack List is presented
@@ -89,7 +159,7 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
       // Verify packing slip letterhead and branding inside printable sheet
       await expect(postal.packingSlipSheet.getByRole('heading', { name: 'AJW MARINE ELECTRICAL' })).toBeVisible();
       await expect(postal.packingSlipSheet.getByText('Unit 4, Haslar Marina Trade Yard, Gosport, Hampshire PO12 1NU')).toBeVisible();
-      await expect(postal.packingSlipOrderNumber).toBeVisible();
+      await expect(postal.packingSlipOrderNumber).toContainText(workerOrderNumber);
 
       // Verify price toggle interaction
       await postal.toggleShowPrices.scrollIntoViewIfNeeded();
@@ -147,7 +217,10 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
     await test.step('8. Audit Visual Progress Timelines view and lifecycle milestones', async () => {
       await postal.switchToTimelinesView();
       await expect(page.getByText('Order Progress Timelines & Lifecycle History')).toBeVisible({ timeout: 10000 });
-      await expect(postal.timelineContainer.first()).toBeVisible();
+
+      // Narrow timeline view by our dedicated worker order
+      await postal.timelineSearchInput.fill(workerOrderNumber);
+      await expect(postal.timelineContainer.first()).toBeVisible({ timeout: 10000 });
 
       // Verify visual stepper cards
       await expect(page.locator('[data-testid="timeline-step-received"]').first()).toBeVisible();
