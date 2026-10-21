@@ -107,6 +107,15 @@ import {
   sendZeroStockEmail 
 } from './lib/emailService';
 import { calculateReplicaPanelQuote } from './utils/electricalCalculations';
+import {
+  subscribeIncomingEmails,
+  simulateIncomingEmail,
+  markIncomingEmailStatus
+} from './lib/incomingEmail';
+
+if (typeof window !== 'undefined') {
+  (window as unknown as { ajwSimulateIncomingEmail?: typeof simulateIncomingEmail }).ajwSimulateIncomingEmail = simulateIncomingEmail;
+}
 
 
 export default function App() {
@@ -357,7 +366,24 @@ export default function App() {
 
     const unsubJobs = subscribeJobs((remoteJobs) => {
       if (remoteJobs && remoteJobs.length > 0) {
-        setJobs(remoteJobs);
+        setJobs(() => {
+          const mergedRemote = remoteJobs.map(rJob => {
+            const seedJob = envSeed.jobs.find(s => s.id === rJob.id);
+            if (!seedJob) return rJob;
+            const existingIds = new Set((rJob.messages || []).map(m => m.id));
+            const missingSeedMessages = (seedJob.messages || []).filter(m => !existingIds.has(m.id));
+            if (missingSeedMessages.length > 0) {
+              return {
+                ...rJob,
+                messages: [...(rJob.messages || []), ...missingSeedMessages]
+              };
+            }
+            return rJob;
+          });
+          const remoteIds = new Set(remoteJobs.map(j => j.id));
+          const missingSeedJobs = envSeed.jobs.filter(j => !remoteIds.has(j.id));
+          return [...mergedRemote, ...missingSeedJobs];
+        });
       }
       setIsFirebaseConnected(true);
     });
@@ -604,6 +630,61 @@ export default function App() {
     };
     trackPageView(currentTab, tabTitles[currentTab] || `AJWMES - ${currentTab}`);
   }, [currentTab]);
+
+  // Subscribe to simulated or inbound customer emails and thread automatically into active jobs
+  useEffect(() => {
+    const unsubscribe = subscribeIncomingEmails((emails) => {
+      if (!emails || emails.length === 0) return;
+      const unreadEmails = emails.filter(e => e.status === 'unread');
+      if (unreadEmails.length === 0) return;
+
+      setJobs(prevJobs => {
+        let hasChanges = false;
+        let updatedJobs = [...prevJobs];
+
+        unreadEmails.forEach(email => {
+          const matchedJob = updatedJobs.find(j =>
+            (email.jobReference && j.reference.toUpperCase() === email.jobReference.toUpperCase()) ||
+            (j.clientEmail && email.from && j.clientEmail.toLowerCase() === email.from.toLowerCase())
+          );
+
+          if (matchedJob) {
+            const messageTextPrefix = `📩 [Inbound Email: "${email.subject}"]`;
+            const alreadyExists = matchedJob.messages.some(m => m.text.startsWith(messageTextPrefix));
+            if (!alreadyExists) {
+              const inboundMessage: MessageItem = {
+                id: `msg-inbound-${email.id}`,
+                sender: 'client',
+                senderName: matchedJob.clientName || email.from.split('@')[0],
+                text: `${messageTextPrefix}\n${email.text}`,
+                timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                attachments: email.attachments?.map(a => a.url || a.filename).filter(Boolean) as string[]
+              };
+
+              updatedJobs = updatedJobs.map(j => {
+                if (j.id === matchedJob.id) {
+                  const updated = {
+                    ...j,
+                    messages: [...j.messages, inboundMessage]
+                  };
+                  syncJobToFirestore(updated);
+                  return updated;
+                }
+                return j;
+              });
+
+              markIncomingEmailStatus(email.id, 'processed');
+              hasChanges = true;
+            }
+          }
+        });
+
+        return hasChanges ? updatedJobs : prevJobs;
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Automated Zero-Stock Alert Trigger (Fires when stockCount hits 0)
   const triggerZeroStockAlert = (item: CatalogItem, triggerSource: StockAlert['triggerSource'] = 'manual_adjustment') => {

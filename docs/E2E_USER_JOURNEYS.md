@@ -3,7 +3,7 @@
 > **Classification:** Engineering & QA Automation Architecture Document  
 > **Author:** Principal Full Stack Engineer, Cloud Infrastructure Platform Engineer & QA Automation Specialist  
 > **Application Version:** `v1.2.0` | **Target Runtime:** Node `>=24.12.0`  
-> **Test Framework:** Playwright (`@playwright/test`) with 16 E2E Spec Suites, 11 Page Object Models (POM) & 291 Unit Tests  
+> **Test Framework:** Playwright (`@playwright/test`) with 17 E2E Spec Suites, 12 Page Object Models (POM) & 291 Unit Tests  
 > **Date:** October 2026  
 
 ---
@@ -505,7 +505,7 @@ The following table tracks all 20 operational and architectural journeys across 
 | **UJ-15** | **Responsive Pill Navigation & 2-Row Viewport Containment** | Global Header | `guest`, `client`, `admin`, `site` | **Medium (P1)** | `tests/navigation-responsive-menu.spec.ts` | **Done (Automated)** |
 | **UJ-16** | **Lazy Code-Splitting Workspaces & PWA Asset Integrity** | All Routes | `guest`, `admin`, `site` | **Medium (P1)** | `tests/performance-architecture-optimization.spec.ts` | **Done (Automated)** |
 | **UJ-20** | **Site Admin Role & Platform Configuration Decoupling** | Global / `/admin` | `admin`, `site` | **Critical (P0)** | `tests/rbac-site-role.spec.ts` | **Done (Automated)** |
-| **UJ-12** | **Bi-Directional Job Discussion, Photo Proofs & Inbound Email** | `/portal` ↔ `/admin` | `client`, `admin`, `technician` | **High (P1)** | *Proposed:* `tests/job-discussion-thread.spec.ts` | **Recommended Next (Phase 4.1)** |
+| **UJ-12** | **Bi-Directional Job Discussion, Photo Proofs & Inbound Email** | `/portal` ↔ `/admin` | `client`, `admin`, `technician` | **High (P1)** | `tests/job-discussion-thread.spec.ts` | **Done (Automated)** |
 | **UJ-17** | **Admin User Accounts Directory, Role Elevation & Isolation** | `/admin` (`accounts`) | `admin` | **High (P1)** | *Proposed:* `tests/admin-user-accounts.spec.ts` | **Recommended Next (Phase 4.2)** |
 | **UJ-18** | **Print & Laser Engraving Studio & Cloud Panel Archive** | `/admin` (`print`, `panels`) | `admin` | **Medium (P2)** | *Proposed:* `tests/print-laser-asset-studio.spec.ts` | **Recommended Next (Phase 4.3)** |
 | **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `site` | **Medium (P2)** | *Proposed:* `tests/multi-environment-sandbox.spec.ts` | **Recommended Next (Phase 4.4)** |
@@ -543,9 +543,9 @@ flowchart LR
         U16["UJ-16: Lazy Chunks & PWA Icons"]
     end
 
-    subgraph P4["Phase 4: Next Recommendations (Planned)"]
+    subgraph P4["Phase 4: Operational Automation (In Progress)"]
         direction TB
-        U12["UJ-12: Job Discussion, Photo Proofs & Inbound Email (P1)"]
+        U12["UJ-12: Job Discussion, Photo Proofs & Inbound Email (Done)"]
         U17["UJ-17: Admin User Accounts & Role Elevation (P1)"]
         U18["UJ-18: Print & Laser Studio + Cloud Archive (P2)"]
         U19["UJ-19: Multi-Env JSON Portability & Seed Reset (P2)"]

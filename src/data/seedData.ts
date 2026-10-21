@@ -376,6 +376,13 @@ export const INITIAL_JOBS: JobRecord[] = [
         senderName: 'David Mercer',
         text: 'Sounds perfect, go ahead. The companionway hatch is on the pontoon key code.',
         timestamp: '06 Oct 12:40'
+      },
+      {
+        id: 'msg-4',
+        sender: 'ajw',
+        senderName: 'Anthony (Workshop Postal Dispatch)',
+        text: '📦 [POSTAL DISPATCH CONFIRMED]\nConsignment AJW-POST-2845 packed at Gosport workshop and routed for Haslar Marina collection.',
+        timestamp: '06 Oct 14:15'
       }
     ]
   },
@@ -459,6 +466,49 @@ export const INITIAL_JOBS: JobRecord[] = [
         senderName: 'Anthony (AJWMES)',
         text: 'Booked in for Thursday morning. I will bring the DC clamp meter and thermal imager to trace the leakage current wire by wire.',
         timestamp: '07 Oct 12:15'
+      }
+    ]
+  },
+  {
+    id: 'job-104',
+    reference: 'AJW-2026-091',
+    userId: 'usr-mercer-0000-0000-0000-000000000004',
+    vesselId: 'vessel-mercer-skiff',
+    clientName: 'David Mercer',
+    clientEmail: 'd.mercer@solent-sail.co.uk',
+    clientPhone: '07700 900114',
+    vesselName: 'Solent Skiff',
+    vesselType: 'Catamaran Tender',
+    berthLocation: 'Haslar Marina (Tender Rack B)',
+    serviceCategory: 'solar',
+    status: 'quote_sent',
+    hourlyRate: 25,
+    diagnosticHours: 2.0,
+    materialsUsed: [
+      { id: 'mat-solar-1', name: 'Victron SmartSolar MPPT 75/15', quantity: 1, unit: 'each', unitPrice: 65.00 },
+      { id: 'mat-solar-2', name: 'Flexible Solar Panel 50W Marine Walk-on', quantity: 1, unit: 'each', unitPrice: 110.00 }
+    ],
+    notes: 'Sizing solar trickle charging system for tender lithium battery bank to maintain GPS tracker on pontoon.',
+    totalLabor: 50.00,
+    totalMaterials: 175.00,
+    totalEstimated: 225.00,
+    depositPaid: false,
+    depositAmount: 50.00,
+    createdAt: '2026-10-08 10:00',
+    messages: [
+      {
+        id: 'msg-skiff-1',
+        sender: 'client',
+        senderName: 'David Mercer',
+        text: 'Hi Anthony, can you quote for adding a small solar panel to keep the Solent Skiff battery topped up?',
+        timestamp: '08 Oct 10:05'
+      },
+      {
+        id: 'msg-skiff-2',
+        sender: 'ajw',
+        senderName: 'Anthony (AJWMES)',
+        text: 'Quote sent for Victron MPPT 75/15 and 50W marine walk-on panel. Ready for your review.',
+        timestamp: '08 Oct 11:20'
       }
     ]
   }

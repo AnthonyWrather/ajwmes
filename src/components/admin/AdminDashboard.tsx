@@ -612,6 +612,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       accept="image/*"
                       disabled={isUploadingProof}
                       onChange={handleUploadWorkshopProof}
+                      data-testid="admin-upload-proof-input"
                       className="hidden"
                     />
                   </label>
