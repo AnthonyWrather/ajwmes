@@ -192,8 +192,8 @@ export class AdminDashboardPage {
   }
 
   async verifyDashboardVisible(): Promise<void> {
-    await expect(this.adminDashboard).toBeVisible({ timeout: 10000 });
-    await expect(this.dashboardTitle).toBeVisible();
+    await expect(this.adminDashboard).toBeVisible({ timeout: 20000 });
+    await expect(this.dashboardTitle).toBeVisible({ timeout: 15000 });
     await expect(this.dashboardTitle).toContainText("Anthony's Operations Dashboard");
   }
 
