@@ -153,7 +153,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
   const replicaImages = Array.isArray(job.replicaImages) ? job.replicaImages : [];
 
   return (
-    <div className="w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[650px] shadow-xl">
+    <div data-testid="job-discussion-thread" className="w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[650px] shadow-xl">
       {/* Lightbox Modal */}
       <ImageLightboxModal
         isOpen={!!lightboxUrl}
@@ -178,7 +178,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg bg-sky-950/80 border border-sky-500/30 text-sky-300 capitalize">
+          <span data-testid="job-thread-status-badge" className="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg bg-sky-950/80 border border-sky-500/30 text-sky-300 capitalize">
             {(job.status || 'quote_requested').replace('_', ' ')}
           </span>
           <span className="text-xs text-slate-400 hidden sm:inline">
@@ -190,7 +190,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Messages Feed */}
         <div className="flex-1 flex flex-col p-4 overflow-hidden">
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-none">
+          <div data-testid="chat-messages-feed" className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-none">
             {/* Initial Job Brief Banner */}
             <div className="bg-slate-950/80 border border-slate-800/80 p-3.5 rounded-xl text-xs space-y-2">
               <div className="flex items-center justify-between text-slate-400">
@@ -262,8 +262,8 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
 
               if (isDispatchNotification) {
                 return (
-                  <div key={msg.id} className="w-full my-2">
-                    <div className="bg-gradient-to-r from-sky-950/70 to-indigo-950/50 border border-sky-500/40 rounded-2xl p-4 shadow-lg space-y-2.5">
+                  <div key={msg.id} data-testid="chat-message-bubble" className="w-full my-2">
+                    <div data-testid="chat-postal-event-card" className="bg-gradient-to-r from-sky-950/70 to-indigo-950/50 border border-sky-500/40 rounded-2xl p-4 shadow-lg space-y-2.5">
                       <div className="flex items-center justify-between gap-2 border-b border-sky-500/20 pb-2">
                         <div className="flex items-center gap-2">
                           <span className="p-1.5 rounded-lg bg-sky-900/60 text-sky-400 border border-sky-500/30">
@@ -284,6 +284,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
                       {onNavigateToTracker && (
                         <div className="pt-1 flex items-center justify-end">
                           <button
+                            data-testid="chat-open-tracker-button"
                             onClick={() => onNavigateToTracker(extractedOrderNumber || undefined)}
                             className="text-[11px] font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-950/80 border border-sky-500/30 hover:border-sky-500/60 transition-all cursor-pointer"
                           >
@@ -300,6 +301,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
               return (
                 <div
                   key={msg.id}
+                  data-testid="chat-message-bubble"
                   className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                 >
                   <div className="flex items-center gap-2 text-[10px] text-slate-500 mb-1">
@@ -366,12 +368,14 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
                 accept="image/*"
                 disabled={isUploadingPhoto}
                 onChange={handleAttachPhoto}
+                data-testid="chat-attach-photo-input"
                 className="hidden"
               />
             </label>
 
             <input
               type="text"
+              data-testid="chat-message-input"
               placeholder={`Reply as ${currentUserRole === 'admin' ? 'Anthony (AJWMES)' : job.clientName}...`}
               value={inputText}
               onChange={e => setInputText(e.target.value)}
@@ -379,6 +383,7 @@ export const JobDiscussionThread: React.FC<JobDiscussionThreadProps> = ({
             />
             <button
               type="submit"
+              data-testid="chat-send-button"
               className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
