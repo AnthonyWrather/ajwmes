@@ -13,20 +13,20 @@
 AJW Marine Electrical Services (AJWMES) operates a mission-critical, offline-first Progressive Web App (PWA) servicing boat owners, pontoon field technicians, postal fulfillment staff, workshop administration, and platform infrastructure administrators across the Solent marine basin.
 
 To guarantee zero regression in critical business paths, high-stakes electrical calculations, server-side Cloud Function gateways, and resilient offline operations, this document:
-1. **Audits and details all 16 existing end-to-end (E2E) test suites** currently executed in `tests/` alongside the **11 Page Object Models** in `tests/pages/`.
+1. **Audits and details all 17 existing end-to-end (E2E) test suites** currently executed in `tests/` alongside the **12 Page Object Models** in `tests/pages/`.
 2. **Maps the complete user journey coverage matrix** across all 6 RBAC personas (`guest`, `client`, `technician`, `postal`, `admin`, `site`).
 3. **Presents a prioritized Phase 1–4 engineering and QA automation roadmap** with risk and complexity scoring.
-4. **Specifies the next set of recommended user journeys (`UJ-12`, `UJ-17`, `UJ-18`, `UJ-19`)**, complete with component trees, state matrices, `data-testid` locator contracts, and Page Object Model (POM) blueprints.
+4. **Specifies the next set of recommended user journeys (`UJ-18`, `UJ-19`)**, complete with component trees, state matrices, `data-testid` locator contracts, and Page Object Model (POM) blueprints.
 
 ---
 
-## 1. Existing Covered User Journeys (16 Automated Spec Suites)
+## 1. Existing Covered User Journeys (17 Automated Spec Suites)
 
-The Playwright E2E test suite covers **16 core operational and architectural journeys** utilizing **11 dedicated Page Object Models** (`tests/pages/`):
+The Playwright E2E test suite covers **17 core operational and architectural journeys** utilizing **12 dedicated Page Object Models** (`tests/pages/`):
 
 ```mermaid
 graph TD
-    subgraph ExistingJourneys["Covered E2E Journeys (16 Spec Suites)"]
+    subgraph ExistingJourneys["Covered E2E Journeys (17 Spec Suites)"]
         J1["1. Authentication & RBAC Navigation (UJ-01)\n(tests/authentication.spec.ts)"]
         J2["2. Hardware Catalog & Stock Sync (UJ-02)\n(tests/inventory-stock-sync.spec.ts)"]
         J3["3. Cloud Function Resend Email Gateway (UJ-03)\n(tests/resend.spec.ts)"]
@@ -43,6 +43,7 @@ graph TD
         J14["14. Responsive Pill Menu & 2-Row Containment (UJ-15)\n(tests/navigation-responsive-menu.spec.ts)"]
         J15["15. Lazy Code-Splitting & PWA Asset Integrity (UJ-16)\n(tests/performance-architecture-optimization.spec.ts)"]
         J16["16. Site Admin Role & Config Decoupling (UJ-20)\n(tests/rbac-site-role.spec.ts)"]
+        J17["17. Admin User Accounts & Role Elevation (UJ-17)\n(tests/admin-user-accounts.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -61,6 +62,7 @@ graph TD
     J14 -->|"2-Row Desktop Wrap & Compact Mobile Grid"| POM14["NavigationPage\nAuthModalPage"]
     J15 -->|"Dynamic Chunks & Raster/SVG Icons"| POM15["NavigationPage\nSwitchPanelCADPage\nReplicaPanelUploaderPage"]
     J16 -->|"Exclusive Platform Config & Role Isolation"| POM16["NavigationPage\nAdminDashboardPage\nAuthModalPage"]
+    J17 -->|"Role Elevation, Multi-Field Search & Deletion"| POM17["UserAccountsManagerPage\nAdminDashboardPage"]
 ```
 
 ---
@@ -483,6 +485,28 @@ graph TD
 
 ---
 
+### Journey 17: Admin User Accounts Directory, Role Elevation & Environment Isolation (UJ-17)
+- **Test File:** [`tests/admin-user-accounts.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/admin-user-accounts.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `AdminDashboardPage`, `UserAccountsManagerPage`
+- **Target Personas:** `admin` (`anthonywrather@gmail.com`)
+
+#### Scenarios Verified:
+1. **Accounts Tab Access & Environment Partition Audit**:
+   - Authenticate as Workshop Admin, switch to accounts tab, verify environment-scoped collection header (`/ais_dev_users/{userId}`), and audit role breakdown counters (Clients, Technicians, Dispatchers, Master Admin, Site Admin).
+2. **Real-Time Search & Role Pill Filtering**:
+   - Filter directory cards by role pills (`client`, `technician`, `all`), asserting card counts match corresponding role counters.
+   - Multi-field search asserting instant matching by vessel name (`Windbird III`), marina berth (`Haslar Marina`), and staff email (`jack.tech@ajwmes.co.uk`), plus empty state handling for unmatched queries.
+3. **New Boat Owner Account Provisioning**:
+   - Launch Add Account modal, configure full owner specs (`Capt. Eleanor Vance`, `e.vance@hamble-yachts.co.uk`, `023 9258 4411`, `client`, `Hamble Star`, `Sailing Yacht`, `Port Hamble Marina`, `24V`), submit and assert card prepends immediately to the directory.
+4. **Inline RBAC Role Elevation & Profile Editing**:
+   - Elevate test user role from `client` to `technician` via inline select dropdown, assert role badge updates to `Field Tech` / `Technician`, and edit profile details via modal (`Hamble Star II`, `023 9258 9900`).
+5. **Website Admin Protection Guardrail**:
+   - Search for Website Admin (`site@ajwmes.co.uk`), asserting `locked-site-role-badge` is visible, role select is absent, and account deletion is disabled for workshop admins.
+6. **Safe Account Deletion**:
+   - Trigger deletion for test user account, accept confirmation prompt, assert toast notification, and verify card is removed from directory.
+
+---
+
 ## 2. Comprehensive User Journey Coverage Matrix
 
 The following table tracks all 20 operational and architectural journeys across AJWMES:
@@ -506,7 +530,7 @@ The following table tracks all 20 operational and architectural journeys across 
 | **UJ-16** | **Lazy Code-Splitting Workspaces & PWA Asset Integrity** | All Routes | `guest`, `admin`, `site` | **Medium (P1)** | `tests/performance-architecture-optimization.spec.ts` | **Done (Automated)** |
 | **UJ-20** | **Site Admin Role & Platform Configuration Decoupling** | Global / `/admin` | `admin`, `site` | **Critical (P0)** | `tests/rbac-site-role.spec.ts` | **Done (Automated)** |
 | **UJ-12** | **Bi-Directional Job Discussion, Photo Proofs & Inbound Email** | `/portal` ↔ `/admin` | `client`, `admin`, `technician` | **High (P1)** | `tests/job-discussion-thread.spec.ts` | **Done (Automated)** |
-| **UJ-17** | **Admin User Accounts Directory, Role Elevation & Isolation** | `/admin` (`accounts`) | `admin` | **High (P1)** | *Proposed:* `tests/admin-user-accounts.spec.ts` | **Recommended Next (Phase 4.2)** |
+| **UJ-17** | **Admin User Accounts Directory, Role Elevation & Isolation** | `/admin` (`accounts`) | `admin` | **High (P1)** | `tests/admin-user-accounts.spec.ts` | **Done (Automated)** |
 | **UJ-18** | **Print & Laser Engraving Studio & Cloud Panel Archive** | `/admin` (`print`, `panels`) | `admin` | **Medium (P2)** | *Proposed:* `tests/print-laser-asset-studio.spec.ts` | **Recommended Next (Phase 4.3)** |
 | **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `site` | **Medium (P2)** | *Proposed:* `tests/multi-environment-sandbox.spec.ts` | **Recommended Next (Phase 4.4)** |
 
@@ -546,7 +570,7 @@ flowchart LR
     subgraph P4["Phase 4: Operational Automation (In Progress)"]
         direction TB
         U12["UJ-12: Job Discussion, Photo Proofs & Inbound Email (Done)"]
-        U17["UJ-17: Admin User Accounts & Role Elevation (P1)"]
+        U17["UJ-17: Admin User Accounts & Role Elevation (Done)"]
         U18["UJ-18: Print & Laser Studio + Cloud Archive (P2)"]
         U19["UJ-19: Multi-Env JSON Portability & Seed Reset (P2)"]
     end
@@ -558,7 +582,7 @@ flowchart LR
 
 ## 4. Next Set of Recommended User Journeys & Engineering Blueprints
 
-With all 15 Phase 1–3 user journeys fully automated, the following **four high-value user journeys (`UJ-12`, `UJ-17`, `UJ-18`, `UJ-19`)** represent the next recommended engineering and QA automation wave. Each targets live application capabilities in `src/components/` and `src/lib/` that currently lack dedicated end-to-end browser coverage.
+With 17 user journeys fully automated, the following remaining candidate journeys (`UJ-18`, `UJ-19`) represent the next recommended engineering and QA automation wave. Each targets live application capabilities in `src/components/` and `src/lib/` that currently lack dedicated end-to-end browser coverage.
 
 ---
 
@@ -612,11 +636,11 @@ The `JobDiscussionThread` bridges boat owners on the water with Anthony in the G
 
 ---
 
-### Recommendation 2 (Priority P1):
+### Recommendation 2 (Priority P1 — Done / Automated):
 ### **UJ-17: Admin User Accounts Directory, Role Elevation & Environment Isolation**
 
-- **Proposed Spec File:** `tests/admin-user-accounts.spec.ts`
-- **Proposed Page Object Model:** `tests/pages/UserAccountsManagerPage.ts`
+- **Spec File:** `tests/admin-user-accounts.spec.ts` (Automated)
+- **Page Object Model:** `tests/pages/UserAccountsManagerPage.ts` (Implemented)
 - **Target Components:**
   - [`src/components/admin/UserAccountsManager.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/UserAccountsManager.tsx)
   - [`src/components/admin/AdminDashboard.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/AdminDashboard.tsx) (`data-testid="admin-tab-accounts"`)

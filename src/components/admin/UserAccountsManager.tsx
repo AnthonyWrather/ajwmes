@@ -69,8 +69,15 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
     return !u.environment || u.environment === currentEnv.envCode;
   });
 
+  // Sort by createdAt desc so newly onboarded accounts appear first
+  const sortedUsers = [...environmentUsers].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
+
   // Filtered users within current environment partition
-  const filteredUsers = environmentUsers.filter((u) => {
+  const filteredUsers = sortedUsers.filter((u) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
       u.name.toLowerCase().includes(term) ||
@@ -155,9 +162,9 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
   };
 
   const handleRoleChange = async (userId: string, targetRole: UserRole) => {
+    showToast(`Role updated to ${targetRole.toUpperCase()} in Firestore database.`);
     try {
       await onUpdateUserRole(userId, targetRole);
-      showToast(`Role updated to ${targetRole.toUpperCase()} in Firestore database.`);
     } catch (err: any) {
       showToast(`Failed to update role: ${err?.message || 'Error'}`);
     }
@@ -168,9 +175,9 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       return;
     }
     if (onDeleteUser) {
+      showToast(`Account ${user.name} removed from database.`);
       try {
         await onDeleteUser(user.id);
-        showToast(`Account ${user.name} removed from database.`);
       } catch (err: any) {
         showToast(`Failed to delete account: ${err?.message || 'Error'}`);
       }
@@ -185,7 +192,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
   const postalCount = environmentUsers.filter((u) => u.role === 'postal').length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div data-testid="user-accounts-manager" className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="p-3 bg-emerald-950/90 border border-emerald-500/40 rounded-2xl text-xs text-emerald-200 flex items-center justify-between gap-3 shadow-lg">
@@ -232,6 +239,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
 
             <button
               onClick={() => setIsAddModalOpen(true)}
+              data-testid="open-add-user-modal-button"
               className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
@@ -247,7 +255,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               <span className="text-[10px] uppercase font-mono text-slate-400">Yacht Clients</span>
               <Ship className="w-4 h-4 text-sky-400" />
             </div>
-            <div className="text-xl font-bold text-white mt-1">{clientCount}</div>
+            <div data-testid="stat-count-clients" className="text-xl font-bold text-white mt-1">{clientCount}</div>
             <p className="text-[10px] text-slate-500 mt-0.5">Vessel owners with specs</p>
           </div>
 
@@ -256,7 +264,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               <span className="text-[10px] uppercase font-mono text-slate-400">Technicians</span>
               <Zap className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-xl font-bold text-white mt-1">{techCount}</div>
+            <div data-testid="stat-count-technicians" className="text-xl font-bold text-white mt-1">{techCount}</div>
             <p className="text-[10px] text-slate-500 mt-0.5">Solent field job sheets</p>
           </div>
 
@@ -265,7 +273,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               <span className="text-[10px] uppercase font-mono text-slate-400">Dispatchers</span>
               <Package className="w-4 h-4 text-purple-400" />
             </div>
-            <div className="text-xl font-bold text-white mt-1">{postalCount}</div>
+            <div data-testid="stat-count-dispatchers" className="text-xl font-bold text-white mt-1">{postalCount}</div>
             <p className="text-[10px] text-slate-500 mt-0.5">Postal packing team</p>
           </div>
 
@@ -274,7 +282,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               <span className="text-[10px] uppercase font-mono text-slate-400">Master Admin</span>
               <Shield className="w-4 h-4 text-emerald-400" />
             </div>
-            <div className="text-xl font-bold text-white mt-1">{adminCount}</div>
+            <div data-testid="stat-count-admin" className="text-xl font-bold text-white mt-1">{adminCount}</div>
             <p className="text-[10px] text-slate-500 mt-0.5">Workshop Operations</p>
           </div>
 
@@ -283,7 +291,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               <span className="text-[10px] uppercase font-mono text-slate-400">Site Admin</span>
               <Key className="w-4 h-4 text-cyan-400" />
             </div>
-            <div className="text-xl font-bold text-white mt-1">{siteCount}</div>
+            <div data-testid="stat-count-site" className="text-xl font-bold text-white mt-1">{siteCount}</div>
             <p className="text-[10px] text-slate-500 mt-0.5">Website Infrastructure</p>
           </div>
         </div>
@@ -295,6 +303,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
+            data-testid="user-accounts-search-input"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search database accounts..."
@@ -327,7 +336,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       {/* Users Accounts List */}
       <div className="space-y-3">
         {filteredUsers.length === 0 ? (
-          <div className="p-8 text-center bg-slate-900 border border-slate-800 rounded-3xl text-slate-400 space-y-2">
+          <div data-testid="user-accounts-empty-state" className="p-8 text-center bg-slate-900 border border-slate-800 rounded-3xl text-slate-400 space-y-2">
             <Database className="w-8 h-8 mx-auto text-slate-600" />
             <p className="font-semibold text-slate-300">No user accounts found matching your query.</p>
             <p className="text-xs text-slate-500">Try adjusting your search terms or add a new account to the database.</p>
@@ -339,6 +348,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
             return (
               <div
                 key={user.id}
+                data-testid="user-account-card"
                 className="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-4 transition-all space-y-3"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -407,6 +417,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                     ) : (
                       <select
                         value={user.role}
+                        data-testid="user-role-select"
                         onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                         className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-semibold cursor-pointer"
                         title="Update role in Firestore database"
@@ -423,6 +434,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                     {!isSiteLocked && (
                       <button
                         onClick={() => setEditingUser(user)}
+                        data-testid="edit-user-button"
                         className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
                         title="Edit account in database"
                       >
@@ -433,6 +445,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                     {onDeleteUser && !isSiteLocked && (
                       <button
                         onClick={() => handleDeleteUser(user)}
+                        data-testid="delete-user-button"
                         className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-950/40 transition-colors cursor-pointer"
                         title="Delete from Firestore database"
                       >
@@ -467,7 +480,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
 
       {/* Modal: Add New Account to Database */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+        <div data-testid="add-user-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -491,6 +504,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <input
                     type="text"
                     required
+                    data-testid="new-user-name-input"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="David Mercer"
@@ -503,6 +517,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <input
                     type="email"
                     required
+                    data-testid="new-user-email-input"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="d.mercer@solent-sail.co.uk"
@@ -514,6 +529,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Contact Phone / VHF</label>
                   <input
                     type="tel"
+                    data-testid="new-user-phone-input"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
                     placeholder="07700 900114"
@@ -525,6 +541,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Access Role *</label>
                   <select
                     value={newRole}
+                    data-testid="new-user-role-select"
                     onChange={(e) => setNewRole(e.target.value as UserRole)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
                   >
@@ -541,6 +558,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Vessel Name</label>
                   <input
                     type="text"
+                    data-testid="new-user-vessel-name-input"
                     value={newVesselName}
                     onChange={(e) => setNewVesselName(e.target.value)}
                     placeholder="Westerly Discus 33"
@@ -552,6 +570,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Vessel Type</label>
                   <input
                     type="text"
+                    data-testid="new-user-vessel-type-input"
                     value={newVesselType}
                     onChange={(e) => setNewVesselType(e.target.value)}
                     placeholder="Sailing Yacht"
@@ -563,6 +582,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Home Marina &amp; Berth</label>
                   <input
                     type="text"
+                    data-testid="new-user-marina-berth-input"
                     value={newMarinaBerth}
                     onChange={(e) => setNewMarinaBerth(e.target.value)}
                     placeholder="Haslar Marina, Berth E-14"
@@ -574,6 +594,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">DC System Voltage</label>
                   <select
                     value={newSystemVoltage}
+                    data-testid="new-user-system-voltage-select"
                     onChange={(e) => setNewSystemVoltage(e.target.value as '12V' | '24V')}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
                   >
@@ -594,6 +615,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                 <button
                   type="submit"
                   disabled={isSaving}
+                  data-testid="create-user-submit-button"
                   className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-sky-600/30 cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />
@@ -607,7 +629,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
 
       {/* Modal: Edit Existing Account */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+        <div data-testid="edit-user-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -631,6 +653,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <input
                     type="text"
                     required
+                    data-testid="edit-user-name-input"
                     value={editingUser.name}
                     onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
@@ -642,6 +665,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <input
                     type="email"
                     required
+                    data-testid="edit-user-email-input"
                     value={editingUser.email}
                     onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
@@ -652,6 +676,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Phone</label>
                   <input
                     type="tel"
+                    data-testid="edit-user-phone-input"
                     value={editingUser.phone || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
@@ -662,6 +687,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Assigned Role</label>
                   <select
                     value={editingUser.role}
+                    data-testid="edit-user-role-select"
                     onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
                   >
@@ -678,6 +704,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Vessel Name</label>
                   <input
                     type="text"
+                    data-testid="edit-user-vessel-name-input"
                     value={editingUser.vesselName || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, vesselName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
@@ -688,6 +715,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Vessel Type</label>
                   <input
                     type="text"
+                    data-testid="edit-user-vessel-type-input"
                     value={editingUser.vesselType || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, vesselType: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
@@ -698,6 +726,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                   <label className="font-semibold text-slate-300">Home Marina &amp; Berth</label>
                   <input
                     type="text"
+                    data-testid="edit-user-marina-berth-input"
                     value={editingUser.marinaBerth || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, marinaBerth: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-sky-500"
@@ -716,6 +745,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
                 <button
                   type="submit"
                   disabled={isSaving}
+                  data-testid="edit-user-submit-button"
                   className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-sky-600/30 cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />

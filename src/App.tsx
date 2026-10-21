@@ -516,7 +516,6 @@ export default function App() {
   }, [usersList]);
 
   const handleSaveUserToDatabase = async (user: UserProfile) => {
-    await syncUserToFirestore(user);
     setUsersList(prev => {
       const idx = prev.findIndex(u => u.id === user.id);
       if (idx >= 0) {
@@ -530,6 +529,7 @@ export default function App() {
       setCurrentUserProfile(user);
       setCurrentUserRole(user.role);
     }
+    await syncUserToFirestore(user);
   };
 
   const handleUpdateUserRoleInDatabase = async (userId: string, newRole: UserRole) => {
@@ -542,8 +542,8 @@ export default function App() {
   };
 
   const handleDeleteUserFromDatabase = async (userId: string) => {
-    await deleteUserFromFirestore(userId);
     setUsersList(prev => prev.filter(u => u.id !== userId));
+    await deleteUserFromFirestore(userId);
   };
 
   // Sync state to environment-scoped storage
