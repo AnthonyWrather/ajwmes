@@ -9,5 +9,8 @@ coverage/
 
 # Playwright test artifacts & reports
 playwright-report/
+playwright-report-training/
 test-results/
 blob-report/
+videos/raw/
+videos/
