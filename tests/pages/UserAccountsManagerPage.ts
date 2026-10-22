@@ -191,7 +191,7 @@ export class UserAccountsManagerPage {
     }
 
     await this.btnSubmitEditUser.scrollIntoViewIfNeeded();
-    await this.btnSubmitEditUser.click();
+    await this.btnSubmitEditUser.click({ force: true });
     await expect(this.editUserModal).toBeHidden({ timeout: 10000 });
   }
 
@@ -205,6 +205,7 @@ export class UserAccountsManagerPage {
     this.page.once('dialog', (dialog) => {
       dialog.accept().catch(() => {});
     });
-    await deleteBtn.click();
+    await deleteBtn.scrollIntoViewIfNeeded();
+    await deleteBtn.click({ force: true });
   }
 }

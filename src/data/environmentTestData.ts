@@ -679,6 +679,26 @@ export const AI_STUDIO_PREVIEW_USERS: UserProfile[] = [
 // 3. GITHUB LIVE PRODUCTION SEED ACCOUNTS (Only 4 staff accounts under ajwmes.co.uk domain)
 export const GITHUB_LIVE_PROD_USERS: UserProfile[] = [
   {
+    id: 'usr-admin-prod-000',
+    name: 'Anthony Wrather',
+    email: 'anthonywrather@gmail.com',
+    role: 'admin',
+    phone: '07700 900551',
+    password: 'ajwmes2026',
+    passwordHash: 'YWp3bWVzMjAyNg==',
+    avatarUrl: '/assets/images/avatar_designer_sarah_1791400201276.jpg',
+    vesselName: 'AJW Solent Response',
+    vesselType: 'Workboat / Fast Tender',
+    marinaBerth: 'Gosport Marina (HQ Workshop)',
+    systemVoltage: '12V',
+    vesselIds: [],
+    environment: 'github-deployed',
+    notifyJobUpdates: true,
+    notifyDispatchSms: true,
+    createdAt: '2026-10-14T10:00:00Z',
+    lastLoginAt: '2026-10-14T10:00:00Z'
+  },
+  {
     id: 'usr-admin-prod-001',
     name: 'Anthony Wrather',
     email: 'admin@ajwmes.co.uk',

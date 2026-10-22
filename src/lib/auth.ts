@@ -702,10 +702,13 @@ export async function syncUserRoleToFirestore(userId: string, newRole: UserRole)
   const colPath = getScopedCollection('users');
   const userDocRef = doc(db, colPath, userId);
   try {
-    await setDoc(userDocRef, { 
-      role: newRole, 
-      updatedAt: new Date().toISOString() 
-    }, { merge: true });
+    await Promise.race([
+      setDoc(userDocRef, { 
+        role: newRole, 
+        updatedAt: new Date().toISOString() 
+      }, { merge: true }),
+      new Promise<void>((_, reject) => setTimeout(() => reject(new Error('syncUserRoleToFirestore timeout')), 1500))
+    ]);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, `${colPath}/${userId}`);
   }

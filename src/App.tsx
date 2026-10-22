@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState, CustomerSignOffRecord, JobExpense } from './types';
 import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS, DEFAULT_VESSELS, INITIAL_EXPENSES } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
@@ -215,6 +215,7 @@ export default function App() {
   const [usersList, setUsersList] = useState<UserProfile[]>(() => {
     return getEnvStorageItem('users_list', envSeed.users);
   });
+  const deletedUserIds = useRef(new Set<string>());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [signInInitialTab, setSignInInitialTab] = useState<'signin' | 'register' | 'quick_personas'>('signin');
@@ -429,7 +430,39 @@ export default function App() {
 
     const unsubUsers = subscribeUsers((remoteUsers) => {
       if (remoteUsers && remoteUsers.length > 0) {
-        setUsersList(remoteUsers);
+        setUsersList((prev) => {
+          const map = new Map<string, UserProfile>();
+          for (const u of prev) {
+            if (!deletedUserIds.current.has(u.id) && (!u.email || !deletedUserIds.current.has(u.email.toLowerCase()))) {
+              map.set(u.id, u);
+            }
+          }
+          for (const u of remoteUsers) {
+            if (deletedUserIds.current.has(u.id) || (u.email && deletedUserIds.current.has(u.email.toLowerCase()))) {
+              continue;
+            }
+            const existing = map.get(u.id);
+            if (existing) {
+              const timeExisting = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+              const timeRemote = u.updatedAt ? new Date(u.updatedAt).getTime() : 0;
+              if (!isNaN(timeExisting) && (isNaN(timeRemote) || timeExisting >= timeRemote)) {
+                map.set(u.id, { ...u, ...existing });
+                continue;
+              }
+              map.set(u.id, {
+                ...existing,
+                ...u,
+                vesselName: u.vesselName || existing.vesselName,
+                phone: u.phone || existing.phone,
+                marinaBerth: u.marinaBerth || existing.marinaBerth,
+                vesselType: u.vesselType || existing.vesselType
+              });
+              continue;
+            }
+            map.set(u.id, u);
+          }
+          return Array.from(map.values());
+        });
         setCurrentUserProfile((prev) => {
           // Do not allow remote sync to demote an authenticated or newly converted client session to guest
           const match = remoteUsers.find((u) => u.id === prev.id || (Boolean(u.email && prev.email) && u.email.toLowerCase() === prev.email.toLowerCase()));
@@ -518,34 +551,47 @@ export default function App() {
   }, [usersList]);
 
   const handleSaveUserToDatabase = async (user: UserProfile) => {
+    const userWithTimestamp: UserProfile = {
+      ...user,
+      updatedAt: user.updatedAt || new Date().toISOString()
+    };
     setUsersList(prev => {
-      const idx = prev.findIndex(u => u.id === user.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = user;
-        return copy;
-      }
-      return [user, ...prev];
+      const filtered = prev.filter(u => u.id !== userWithTimestamp.id && (!userWithTimestamp.email || !u.email || u.email.toLowerCase() !== userWithTimestamp.email.toLowerCase()));
+      return [userWithTimestamp, ...filtered];
     });
     if (currentUserProfile.id === user.id || currentUserProfile.email.toLowerCase() === user.email.toLowerCase()) {
-      setCurrentUserProfile(user);
-      setCurrentUserRole(user.role);
+      setCurrentUserProfile(userWithTimestamp);
+      setCurrentUserRole(userWithTimestamp.role);
     }
-    await syncUserToFirestore(user);
+    syncUserToFirestore(userWithTimestamp).catch((err) => {
+      console.warn('Notice: Background syncUserToFirestore error:', err);
+    });
   };
 
   const handleUpdateUserRoleInDatabase = async (userId: string, newRole: UserRole) => {
-    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    const now = new Date().toISOString();
+    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: newRole, updatedAt: now } : u));
     if (currentUserProfile.id === userId) {
       setCurrentUserRole(newRole);
-      setCurrentUserProfile(prev => ({ ...prev, role: newRole }));
+      setCurrentUserProfile(prev => ({ ...prev, role: newRole, updatedAt: now }));
     }
-    await syncUserRoleToFirestore(userId, newRole);
+    syncUserRoleToFirestore(userId, newRole).catch((err) => {
+      console.warn('Notice: Background syncUserRoleToFirestore error:', err);
+    });
   };
 
   const handleDeleteUserFromDatabase = async (userId: string) => {
-    setUsersList(prev => prev.filter(u => u.id !== userId));
-    await deleteUserFromFirestore(userId);
+    deletedUserIds.current.add(userId);
+    setUsersList(prev => {
+      const target = prev.find(u => u.id === userId);
+      if (target && target.email) {
+        deletedUserIds.current.add(target.email.toLowerCase());
+      }
+      return prev.filter(u => u.id !== userId && (!target?.email || !u.email || u.email.toLowerCase() !== target.email.toLowerCase()));
+    });
+    deleteUserFromFirestore(userId).catch((err) => {
+      console.warn('Notice: Background deleteUserFromFirestore error:', err);
+    });
   };
 
   // Sync state to environment-scoped storage
