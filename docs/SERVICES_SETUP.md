@@ -428,7 +428,20 @@ gh secret list
 > [!TIP]
 > For cleaner separation, create GitHub **Environments** (`preview`, `production`) under *Settings → Environments* and store per-environment secrets there (e.g. `pk_test_…` for preview, `pk_live_…` for production). Reference them with `environment: production` in the job.
 
-### 8.4 Preview deployments (PR channels)
+### 8.4 Dependabot & GitHub Copilot
+
+- **Automated Dependency Updates (`.github/dependabot.yml`)**:
+  - Daily dependency checks scheduled across 3 ecosystems:
+    1. `npm` in `/` (Frontend dependencies, React 19, Vite 8, Tailwind v4, Playwright) at 05:00 UTC.
+    2. `npm` in `/functions` (Cloud Functions dependencies, Firebase Admin, Resend, ShipStation) at 05:15 UTC.
+    3. `github-actions` in `/` (GitHub Actions workflow versions) at 05:30 UTC.
+  - Automated security fixes and vulnerability alerts are enabled on GitHub repository settings (`security_and_analysis.dependabot_security_updates.status: enabled`).
+- **GitHub Copilot Integration**:
+  - **Repository Instructions (`.github/copilot-instructions.md`)**: Configures Copilot Chat, inline completions, and PR reviewers with marine domain rules (e.g. £25/hr diagnostics, Solent phone codes, custom switch panel math) and architectural safeguards (strict TypeScript, offline-first sync, scoped storage, 6 RBAC roles).
+  - **Pull Request Template (`.github/pull_request_template.md`)**: Standardized pull request format with automated Copilot summary anchors and pre-flight validation checklists.
+
+
+### 8.5 Preview deployments (PR channels)
 
 There is no automated PR-preview workflow yet. Options:
 
