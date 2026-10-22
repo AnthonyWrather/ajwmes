@@ -551,18 +551,18 @@ As Principal QA Automation Specialist, the quality engineering strategy implemen
 graph BT
     subgraph TestPyramid["Quality Assurance Test Pyramid"]
         direction BT
-        Unit["Level 1: Pure Unit & Cloud Function Tests\n(Node.js Built-in Runner via tsx --test)\n- src/utils/*.test.ts & src/lib/*.test.ts (281 tests)\n- functions/src/*.test.ts (21 tests)\n- electricalCalculations, expenseCalculations, formValidation\n- stripeCalculations, stripeConfig, shipstationCalculations, shipstationService\n- emailTemplates, emailService, resendConfig, resendValidation, incomingEmail\n- auth, rbac, offlineQueueCalculations, inventorySync, postalTimeline\n- generateVesselPdf, imageResize, imageUrl, version, versionCheck\nExecution: < 1.5s | 302 Passing Unit Tests"]
+        Unit["Level 1: Pure Unit & Cloud Function Tests\n(Node.js Built-in Runner via tsx --test)\n- src/utils/*.test.ts, src/lib/*.test.ts & src/data/*.test.ts (296 tests)\n- functions/src/*.test.ts (21 tests)\n- electricalCalculations, expenseCalculations, formValidation\n- stripeCalculations, stripeConfig, shipstationCalculations, shipstationService\n- emailTemplates, emailService, resendConfig, resendValidation, incomingEmail\n- auth, rbac, offlineQueueCalculations, inventorySync, postalTimeline\n- generateVesselPdf, imageResize, imageUrl, version, versionCheck, manualData\nExecution: < 1.5s | 317 Passing Unit Tests"]
         
         Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix & Cloud Function Auth Middleware\n- Environment Partition Prefix Routing"]
         
-        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test - 15 Spec Suites & 11 POMs)\n- authentication.spec.ts\n- inventory-stock-sync.spec.ts\n- resend.spec.ts\n- technician-diagnostic-flow.spec.ts\n- postal-fulfillment-dispatch.spec.ts\n- consignment-tracker.spec.ts\n- admin-workshop-management.spec.ts\n- offline-pontoon-resilience.spec.ts\n- switch-panel-cad.spec.ts\n- switchboard-photo-replica.spec.ts\n- vessel-portal-pdf.spec.ts\n- stripe.spec.ts\n- app-version-update.spec.ts\n- navigation-responsive-menu.spec.ts\n- performance-architecture-optimization.spec.ts"]
+        E2E["Level 3: Cross-Browser & Mobile E2E Tests\n(@playwright/test - 21 Spec Suites, 1 Video Suite & 16 POMs)\n- authentication.spec.ts\n- inventory-stock-sync.spec.ts\n- resend.spec.ts\n- technician-diagnostic-flow.spec.ts\n- postal-fulfillment-dispatch.spec.ts\n- consignment-tracker.spec.ts\n- admin-workshop-management.spec.ts\n- offline-pontoon-resilience.spec.ts\n- switch-panel-cad.spec.ts\n- switchboard-photo-replica.spec.ts\n- vessel-portal-pdf.spec.ts\n- stripe.spec.ts\n- app-version-update.spec.ts\n- navigation-responsive-menu.spec.ts\n- performance-architecture-optimization.spec.ts\n- rbac-site-role.spec.ts\n- job-discussion-thread.spec.ts\n- admin-user-accounts.spec.ts\n- print-laser-asset-studio.spec.ts\n- multi-environment-sandbox.spec.ts\n- help-center-manual.spec.ts\n- training/role-training-videos.spec.ts"]
     end
 ```
 
 ### 10.1 Level 1: Fast Pure Logic & Cloud Function Unit Tests (`tsx --test`)
 Executed directly on Node.js using `npm run test:unit` and `npm run test:functions`:
-- **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts` (20 files, 281 tests), and `functions/src/*.test.ts` (2 files, 21 tests).
-- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (**302 passing unit tests**).
+- **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts`, `src/data/*.test.ts` (21 files, 296 tests), and `functions/src/*.test.ts` (2 files, 21 tests).
+- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (**317 passing unit tests**).
 - **Verification Matrix**:
   - `stripeCalculations.test.ts` & `stripeConfig.test.ts`: Verifies IEEE-754 pound/pence conversions, UK card fee estimation (1.5% + 20p), key validator (`pk_test_` / `pk_live_`), hosted payment link construction, and scoped storage overrides.
   - `shipstationCalculations.test.ts`, `shipstationService.test.ts`, & `functions/src/shipstationClient.test.ts`: Verifies marine conductor weight heuristics, parcel dimensioning, 4x6" SVG thermal label generation, Basic Auth encoding, and ShipStation Cloud Function API mapping.
@@ -570,13 +570,14 @@ Executed directly on Node.js using `npm run test:unit` and `npm run test:functio
   - `electricalCalculations.test.ts`: Verifies stopwatch conversions, fractional decimal hours, zero-second edge cases, CAD switch panel pricing tiers, and weathered replica quotes.
   - `expenseCalculations.test.ts`: Validates financial rollups, NaN handling, and billable vs overhead categorization.
   - `formValidation.test.ts`: Tests Solent landlines, UK mobile normalizations, breaker amp limits, and email formats.
-  - `auth.test.ts` & `rbac.test.ts`: Tests profile enrichment, dual-tier access control matrix, route guarding, and action middleware enforcement across all 5 user roles.
+  - `auth.test.ts` & `rbac.test.ts`: Tests profile enrichment, dual-tier access control matrix, route guarding, and action middleware enforcement across all 6 user roles (`guest`, `client`, `technician`, `postal`, `admin`, `site`).
   - `inventorySync.test.ts`: Tests JSON catalog import/export parsing, duplicate item reconciliation, and envelope deserialization.
   - `offlineQueueCalculations.test.ts`: Tests IndexedDB mutation prioritization, queue progression clamp, and connection state resolvers.
   - `postalTimeline.test.ts`: Verifies Royal Mail/DPD tracking milestones, progress calculation, and delivery status tiers.
   - `generateVesselPdf.test.ts`: Tests jsPDF certificate rendering, ink-saver mono themes, and single vs multi-page specs.
   - `imageUrl.test.ts` & `imageResize.test.ts`: Tests image asset path normalizations and client-side photo compression.
   - `version.test.ts` & `versionCheck.test.ts`: Verifies SemVer string format, environment release badge tags, `/version.json` manifest parsing, and single-refresh update comparison logic.
+  - `manualData.test.ts`: Verifies role manual chapter structuring, step-by-step procedures, search indexing, and deep-link routing.
 
 ### 10.2 Level 2: End-to-End Test Suite (`@playwright/test`)
 Configured in [`playwright.config.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/playwright.config.ts) and executed via `npm run test:e2e`.
@@ -612,7 +613,7 @@ flowchart TD
     subgraph CI["Continuous Integration (playwright.yml)"]
         direction TB
         Lint["npm run lint\n(TypeScript Strict Compilation)"]
-        Unit["npm run test:unit\n(210+ Unit Tests via tsx)"]
+        Unit["npm run test:unit\n(296 Unit Tests via tsx)"]
         CachePW["Restore Playwright Browser Cache"]
         E2E["npm run test:e2e\n(Multi-browser Playwright Suite)"]
         Artifacts["Upload Test Failure Reports (if failed)"]
