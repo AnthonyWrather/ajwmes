@@ -85,6 +85,7 @@ interface EnvironmentSettingsModalProps {
   onDataResetOrImported?: () => void;
   onRetryConnection?: () => Promise<boolean | void>;
   userRole?: UserRole;
+  onOpenHostingGuide?: () => void;
 }
 
 export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> = ({
@@ -93,7 +94,8 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   connectionState,
   onDataResetOrImported,
   onRetryConnection,
-  userRole
+  userRole,
+  onOpenHostingGuide
 }) => {
   const [envInfo, setEnvInfo] = useState<EnvironmentInfo>(() => detectEnvironment());
   const [activeTab, setActiveTab] = useState<'overview' | 'testdata' | 'guide'>('overview');
@@ -240,9 +242,25 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
   const handleExportJson = () => {
     const data = exportEnvironmentData(envInfo.envCode);
     const jsonStr = JSON.stringify(data, null, 2);
-    navigator.clipboard.writeText(jsonStr);
+    navigator.clipboard?.writeText(jsonStr).catch((err) => {
+      console.warn('Clipboard write deferred:', err);
+    });
     setCopiedJson(true);
     setTimeout(() => setCopiedJson(false), 3000);
+  };
+
+  const handleDownloadJson = () => {
+    const data = exportEnvironmentData(envInfo.envCode);
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ajwmes-environment-${envInfo.envCode}-data.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
   const handleCopySha = () => {
@@ -314,6 +332,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
         {/* Tab Navigation */}
         <div className="flex flex-wrap border-b border-slate-800 bg-slate-950/50 px-4 sm:px-6 pt-2 gap-3 sm:gap-4 min-w-0">
           <button
+            data-testid="env-tab-overview"
             onClick={() => setActiveTab('overview')}
             className={`pb-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
               activeTab === 'overview'
@@ -324,6 +343,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
             Active Environment &amp; Storage
           </button>
           <button
+            data-testid="env-tab-testdata"
             onClick={() => setActiveTab('testdata')}
             className={`pb-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
               activeTab === 'testdata'
@@ -334,6 +354,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
             Test Data &amp; Export/Import
           </button>
           <button
+            data-testid="env-tab-guide"
             onClick={() => setActiveTab('guide')}
             className={`pb-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
               activeTab === 'guide'
@@ -347,7 +368,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
 
         {/* Banner Alert if Action Succeeded */}
         {actionSuccessNotice && (
-          <div className="bg-emerald-950/90 border-b border-emerald-500/40 text-emerald-200 px-6 py-2 text-xs flex items-center gap-2">
+          <div data-testid="env-action-success-notice" className="bg-emerald-950/90 border-b border-emerald-500/40 text-emerald-200 px-6 py-2 text-xs flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{actionSuccessNotice}</span>
           </div>
@@ -363,7 +384,9 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                 <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-mono uppercase text-slate-400">Environment</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+                    <span 
+                      data-testid="env-active-badge"
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
                       envInfo.envCode === 'aistudio-dev'
                         ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
                         : envInfo.envCode === 'aistudio-preview'
@@ -403,10 +426,10 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                       {connectionState.isConnected ? 'Live Bidirectional Sync' : 'Independent Local Storage'}
                     </div>
                     <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
-                      Storage Prefix: <span className="text-sky-300">{envInfo.storageNamespace}</span>
+                      Storage Prefix: <span data-testid="env-storage-prefix" className="text-sky-300">{envInfo.storageNamespace}</span>
                     </div>
                     <div className="text-[11px] text-slate-400 font-mono truncate">
-                      Firestore Scope: <span className="text-amber-300">{envInfo.firestoreCollectionPrefix || 'root (production)'}</span>
+                      Firestore Scope: <span data-testid="env-firestore-scope" className="text-amber-300">{envInfo.firestoreCollectionPrefix || 'root (production)'}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-1">
@@ -574,6 +597,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1">
                   <button
+                    data-testid="env-switch-aistudio-dev"
                     onClick={() => handleSwitchEnvironment('aistudio-dev')}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       envInfo.envCode === 'aistudio-dev'
@@ -589,6 +613,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </button>
 
                   <button
+                    data-testid="env-switch-aistudio-preview"
                     onClick={() => handleSwitchEnvironment('aistudio-preview')}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       envInfo.envCode === 'aistudio-preview'
@@ -604,6 +629,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </button>
 
                   <button
+                    data-testid="env-switch-github-preview"
                     onClick={() => handleSwitchEnvironment('github-preview')}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       envInfo.envCode === 'github-preview'
@@ -638,6 +664,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                 {envInfo.isSimulatedOverride && (
                   <div className="pt-2 text-right">
                     <button
+                      data-testid="env-reset-auto-button"
                       onClick={() => handleSwitchEnvironment('auto')}
                       className="text-xs text-sky-400 hover:text-sky-300 font-semibold underline cursor-pointer"
                     >
@@ -927,6 +954,7 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                     </div>
                   </div>
                   <button
+                    data-testid="seed-clean-test-data-button"
                     onClick={handleResetData}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 font-bold transition-all cursor-pointer"
                   >
@@ -942,24 +970,37 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                       <span>Export Environment Data</span>
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      Export all jobs, catalog specs, postal orders, and vessel specs as JSON to clipboard or backup.
+                      Export all jobs, catalog specs, postal orders, and vessel specs as JSON to file or clipboard.
                     </p>
-                    <button
-                      onClick={handleExportJson}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold transition-all cursor-pointer"
-                    >
-                      {copiedJson ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Copied to Clipboard!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy Dataset JSON</span>
-                        </>
-                      )}
-                    </button>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                      <button
+                        type="button"
+                        data-testid="download-environment-data-button"
+                        onClick={handleDownloadJson}
+                        className="flex-1 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-sky-900/40 hover:bg-sky-850 text-sky-200 border border-sky-600/40 font-semibold transition-all cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download JSON</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="copy-environment-data-button"
+                        onClick={handleExportJson}
+                        className="flex-1 w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold transition-all cursor-pointer"
+                      >
+                        {copiedJson ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy JSON</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
@@ -971,6 +1012,8 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                       Clear corrupted local drafts and reload fresh Solent marine electrical baseline specs.
                     </p>
                     <button
+                      type="button"
+                      data-testid="reset-storage-cache-button"
                       onClick={handleResetData}
                       className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-rose-950/40 hover:bg-rose-900/40 text-rose-300 border border-rose-800/40 font-semibold transition-all cursor-pointer"
                     >
@@ -991,26 +1034,38 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   Paste JSON exported from another environment (e.g., from AI Studio to GitHub or vice-versa) to clone records into {envInfo.envName}:
                 </p>
                 <textarea
+                  data-testid="import-test-data-input"
                   value={importText}
-                  onChange={(e) => setImportText(e.target.value)}
+                  onChange={(e) => {
+                    setImportText(e.target.value);
+                    if (importStatus) setImportStatus(null);
+                  }}
                   placeholder='{"version": "1.0.0", "jobs": [...], "catalog": [...]}'
                   rows={4}
                   className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 font-mono text-[11px] focus:outline-none focus:border-sky-500"
                 />
                 {importStatus === 'invalid_json' && (
-                  <p className="text-[11px] text-rose-400 flex items-center gap-1">
+                  <p data-testid="import-status-invalid" className="text-[11px] text-rose-400 flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>Invalid JSON format. Please paste a valid export object.</span>
                   </p>
                 )}
                 {importStatus === 'error' && (
-                  <p className="text-[11px] text-rose-400 flex items-center gap-1">
+                  <p data-testid="import-status-error" className="text-[11px] text-rose-400 flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>Import failed. Ensure the JSON structure contains valid records.</span>
                   </p>
                 )}
+                {importStatus === 'success' && (
+                  <p data-testid="import-status-success" className="text-[11px] text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Test dataset successfully imported!</span>
+                  </p>
+                )}
                 <div className="flex justify-end">
                   <button
+                    type="button"
+                    data-testid="import-dataset-button"
                     onClick={handleImportJson}
                     disabled={!importText.trim()}
                     className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-bold transition-all cursor-pointer"
@@ -1068,6 +1123,29 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
                   </ul>
                 </div>
               </div>
+
+              {onOpenHostingGuide && (
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-white text-xs">Free Hosting &amp; GitHub Setup Guide</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Interactive deployment walkthrough, Firebase CLI commands, and GitHub Actions continuous deployment setup.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    data-testid="open-hosting-guide-modal-button"
+                    onClick={() => {
+                      onClose();
+                      onOpenHostingGuide();
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs cursor-pointer transition-colors shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open Guide</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1078,6 +1156,8 @@ export const EnvironmentSettingsModal: React.FC<EnvironmentSettingsModalProps> =
             Current Environment: <span className="font-semibold text-white">{envInfo.envName}</span>
           </span>
           <button
+            type="button"
+            data-testid="env-modal-done-button"
             onClick={onClose}
             className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition-all cursor-pointer"
           >

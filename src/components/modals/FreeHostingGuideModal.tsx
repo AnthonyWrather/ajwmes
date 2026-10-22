@@ -13,7 +13,9 @@ export const FreeHostingGuideModal: React.FC<FreeHostingGuideModalProps> = ({ is
   if (!isOpen) return null;
 
   const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard?.writeText(text).catch((err) => {
+      console.warn('Clipboard write deferred:', err);
+    });
     setCopiedText(label);
     setTimeout(() => setCopiedText(''), 2000);
   };
@@ -64,8 +66,8 @@ Add your custom or preview domain:
 - ajwmes.co.uk`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-3xl p-6 text-slate-100 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+    <div data-testid="free-hosting-guide-modal" className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-3xl p-4 sm:p-6 text-slate-100 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
             <span className="text-[10px] font-mono font-bold text-sky-400 uppercase tracking-wider">
@@ -75,7 +77,12 @@ Add your custom or preview domain:
               How to Host AJWMES Free Forever
             </h3>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-white rounded-lg">
+          <button
+            type="button"
+            data-testid="close-hosting-guide-modal"
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-white rounded-lg cursor-pointer"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -83,8 +90,10 @@ Add your custom or preview domain:
         {/* Option Tabs */}
         <div className="flex items-center gap-1.5 p-1 bg-slate-950 border border-slate-800 rounded-xl">
           <button
+            type="button"
+            data-testid="hosting-tab-firebase"
             onClick={() => setActiveTab('firebase')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'firebase' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -92,8 +101,10 @@ Add your custom or preview domain:
             <span>1. CLI Deploy (Fastest)</span>
           </button>
           <button
+            type="button"
+            data-testid="hosting-tab-github"
             onClick={() => setActiveTab('github_actions')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'github_actions' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -101,8 +112,10 @@ Add your custom or preview domain:
             <span>2. GitHub Auto-Deploy</span>
           </button>
           <button
+            type="button"
+            data-testid="hosting-tab-custom-domain"
             onClick={() => setActiveTab('custom_domain')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'custom_domain' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -110,8 +123,10 @@ Add your custom or preview domain:
             <span>3. Custom Domain</span>
           </button>
           <button
+            type="button"
+            data-testid="hosting-tab-auth"
             onClick={() => setActiveTab('auth_troubleshoot')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'auth_troubleshoot' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -129,8 +144,10 @@ Add your custom or preview domain:
             <div className="relative bg-slate-950 rounded-xl p-3.5 border border-slate-800 font-mono text-[11px] text-sky-300">
               <pre className="overflow-x-auto whitespace-pre-wrap">{firebaseCommands}</pre>
               <button
+                type="button"
+                data-testid="copy-cli-commands-button"
                 onClick={() => copyToClipboard(firebaseCommands, 'fb_cmds')}
-                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1"
+                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1 cursor-pointer"
               >
                 {copiedText === 'fb_cmds' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                 <span>{copiedText === 'fb_cmds' ? 'Copied' : 'Copy'}</span>
@@ -150,8 +167,10 @@ Add your custom or preview domain:
             <div className="relative bg-slate-950 rounded-xl p-3.5 border border-slate-800 font-mono text-[11px] text-sky-300">
               <pre className="overflow-x-auto whitespace-pre-wrap">{githubActionsSteps}</pre>
               <button
+                type="button"
+                data-testid="copy-github-steps-button"
                 onClick={() => copyToClipboard(githubActionsSteps, 'gh_steps')}
-                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1"
+                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1 cursor-pointer"
               >
                 {copiedText === 'gh_steps' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                 <span>{copiedText === 'gh_steps' ? 'Copied' : 'Copy'}</span>
@@ -171,8 +190,10 @@ Add your custom or preview domain:
             <div className="relative bg-slate-950 rounded-xl p-3.5 border border-slate-800 font-mono text-[11px] text-sky-300">
               <pre className="overflow-x-auto whitespace-pre-wrap">{domainSteps}</pre>
               <button
+                type="button"
+                data-testid="copy-domain-steps-button"
                 onClick={() => copyToClipboard(domainSteps, 'domain_steps')}
-                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1"
+                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1 cursor-pointer"
               >
                 {copiedText === 'domain_steps' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                 <span>{copiedText === 'domain_steps' ? 'Copied' : 'Copy'}</span>
@@ -202,6 +223,8 @@ Add your custom or preview domain:
                 <div className="mt-1 flex items-center justify-between p-2 rounded bg-slate-900 border border-slate-800 font-mono text-sky-300 text-[11px]">
                   <span>AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg</span>
                   <button
+                    type="button"
+                    data-testid="copy-auth-key-button"
                     onClick={() => copyToClipboard('AIzaSyCeLVmFhxzY8Ojh2NFUvuyGax-LVDk5tIg', 'api_key_val')}
                     className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] flex items-center gap-1 font-sans cursor-pointer"
                   >
@@ -215,8 +238,10 @@ Add your custom or preview domain:
             <div className="relative bg-slate-950 rounded-xl p-3.5 border border-slate-800 font-mono text-[11px] text-sky-300">
               <pre className="overflow-x-auto whitespace-pre-wrap">{authSecretSteps}</pre>
               <button
+                type="button"
+                data-testid="copy-auth-steps-button"
                 onClick={() => copyToClipboard(authSecretSteps, 'auth_steps')}
-                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1"
+                className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-[10px] font-sans flex items-center gap-1 cursor-pointer"
               >
                 {copiedText === 'auth_steps' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                 <span>{copiedText === 'auth_steps' ? 'Copied' : 'Copy'}</span>
@@ -227,8 +252,10 @@ Add your custom or preview domain:
 
         <div className="pt-2 flex justify-end">
           <button
+            type="button"
+            data-testid="hosting-guide-close-button"
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold"
+            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold cursor-pointer"
           >
             Close Guide
           </button>
