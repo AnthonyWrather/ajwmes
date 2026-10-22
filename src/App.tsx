@@ -1831,6 +1831,7 @@ export default function App() {
         onDataResetOrImported={handleEnvironmentDataReload}
         onRetryConnection={handleRetryConnection}
         userRole={currentUserRole}
+        onOpenHostingGuide={() => setIsHostingGuideOpen(true)}
       />
 
       {/* Role-Based User Manual & Video Guides Modal */}

@@ -3,7 +3,7 @@
 > **Classification:** Engineering & QA Automation Architecture Document  
 > **Author:** Principal Full Stack Engineer, Cloud Infrastructure Platform Engineer & QA Automation Specialist  
 > **Application Version:** `v1.2.0` | **Target Runtime:** Node `>=24.12.0`  
-> **Test Framework:** Playwright (`@playwright/test`) with 18 E2E Spec Suites, 14 Page Object Models (POM) & 296 Unit Tests  
+> **Test Framework:** Playwright (`@playwright/test`) with 19 E2E Spec Suites, 15 Page Object Models (POM) & 296 Unit Tests  
 > **Date:** October 2026  
 
 ---
@@ -13,20 +13,20 @@
 AJW Marine Electrical Services (AJWMES) operates a mission-critical, offline-first Progressive Web App (PWA) servicing boat owners, pontoon field technicians, postal fulfillment staff, workshop administration, and platform infrastructure administrators across the Solent marine basin.
 
 To guarantee zero regression in critical business paths, high-stakes electrical calculations, server-side Cloud Function gateways, and resilient offline operations, this document:
-1. **Audits and details all 17 existing end-to-end (E2E) test suites** currently executed in `tests/` alongside the **12 Page Object Models** in `tests/pages/`.
+1. **Audits and details all 19 existing end-to-end (E2E) test suites** currently executed in `tests/` alongside the **15 Page Object Models** in `tests/pages/`.
 2. **Maps the complete user journey coverage matrix** across all 6 RBAC personas (`guest`, `client`, `technician`, `postal`, `admin`, `site`).
 3. **Presents a prioritized Phase 1–4 engineering and QA automation roadmap** with risk and complexity scoring.
-4. **Specifies the next set of recommended user journeys (`UJ-18`, `UJ-19`)**, complete with component trees, state matrices, `data-testid` locator contracts, and Page Object Model (POM) blueprints.
+4. **Specifies the operational and architectural user journeys (`UJ-01` through `UJ-20`)**, complete with component trees, state matrices, `data-testid` locator contracts, and Page Object Model (POM) blueprints.
 
 ---
 
-## 1. Existing Covered User Journeys (19 Automated Spec Suites)
+## 1. Existing Covered User Journeys (20 Automated Spec Suites)
 
-The Playwright E2E test suite covers **19 core operational and architectural journeys** utilizing **14 dedicated Page Object Models** (`tests/pages/`):
+The Playwright E2E test suite covers **20 core operational and architectural journeys** utilizing **15 dedicated Page Object Models** (`tests/pages/`):
 
 ```mermaid
 graph TD
-    subgraph ExistingJourneys["Covered E2E Journeys (19 Spec Suites)"]
+    subgraph ExistingJourneys["Covered E2E Journeys (20 Spec Suites)"]
         J1["1. Authentication & RBAC Navigation (UJ-01)\n(tests/authentication.spec.ts)"]
         J2["2. Hardware Catalog & Stock Sync (UJ-02)\n(tests/inventory-stock-sync.spec.ts)"]
         J3["3. Cloud Function Resend Email Gateway (UJ-03)\n(tests/resend.spec.ts)"]
@@ -46,6 +46,7 @@ graph TD
         J17["17. Admin User Accounts & Role Elevation (UJ-17)\n(tests/admin-user-accounts.spec.ts)"]
         J18["18. Role Manual, Interactive Help Center & Training Videos (UJ-Help)\n(tests/help-center-manual.spec.ts)"]
         J19["19. Print & Laser Studio & Cloud Archive (UJ-18)\n(tests/print-laser-asset-studio.spec.ts)"]
+        J20["20. Multi-Environment Sandbox & JSON Portability (UJ-19)\n(tests/multi-environment-sandbox.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -67,6 +68,7 @@ graph TD
     J17 -->|"RBAC Elevation & User Administration"| POM17["UserAccountsManagerPage"]
     J18 -->|"Role Manual, Video Guides & Deep-Jumps"| POM18["HelpCenterModalPage\nNavigationPage"]
     J19 -->|"LightBurn Dual-Layer SVG & Cloud Panels"| POM19["PrintLaserStudioPage\nAdminDashboardPage"]
+    J20 -->|"Dev/Preview Partitioning & Clean Seed"| POM20["EnvironmentSettingsModalPage"]
 ```
 
 ---
@@ -558,7 +560,7 @@ The following table tracks all 20 operational and architectural journeys across 
 | **UJ-12** | **Bi-Directional Job Discussion, Photo Proofs & Inbound Email** | `/portal` ↔ `/admin` | `client`, `admin`, `technician` | **High (P1)** | `tests/job-discussion-thread.spec.ts` | **Done (Automated)** |
 | **UJ-17** | **Admin User Accounts Directory, Role Elevation & Isolation** | `/admin` (`accounts`) | `admin` | **High (P1)** | `tests/admin-user-accounts.spec.ts` | **Done (Automated)** |
 | **UJ-18** | **Print & Laser Engraving Studio & Cloud Panel Archive** | `/admin` (`print`, `panels`) | `admin` | **Medium (P2)** | `tests/print-laser-asset-studio.spec.ts` | **Done (Automated)** |
-| **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `site` | **Medium (P2)** | *Proposed:* `tests/multi-environment-sandbox.spec.ts` | **Recommended Next (Phase 4.4)** |
+| **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `site` | **Medium (P2)** | `tests/multi-environment-sandbox.spec.ts` | **Done (Automated)** |
 
 ---
 
@@ -593,12 +595,12 @@ flowchart LR
         U16["UJ-16: Lazy Chunks & PWA Icons"]
     end
 
-    subgraph P4["Phase 4: Operational Automation (In Progress)"]
+    subgraph P4["Phase 4: Operational Automation (Done)"]
         direction TB
         U12["UJ-12: Job Discussion, Photo Proofs & Inbound Email (Done)"]
         U17["UJ-17: Admin User Accounts & Role Elevation (Done)"]
         U18["UJ-18: Print & Laser Studio + Cloud Archive (Done)"]
-        U19["UJ-19: Multi-Env JSON Portability & Seed Reset (P2)"]
+        U19["UJ-19: Multi-Env JSON Portability & Seed Reset (Done)"]
     end
 
     P1 --> P2 --> P3 --> P4
@@ -731,25 +733,24 @@ The Gosport workshop uses `PrintLaserAssetStudio` to generate both 300DPI print-
 
 ---
 
-### Recommendation 4 (Priority P2):
-### **UJ-19: Multi-Environment Sandbox Manager, JSON Dataset Portability & Clean Seed Reset**
-
-- **Proposed Spec File:** `tests/multi-environment-sandbox.spec.ts`
-- **Proposed Page Object Model:** `tests/pages/EnvironmentSettingsModalPage.ts`
+### Journey 20: Multi-Environment Sandbox Manager, JSON Dataset Portability & Clean Seed Reset (UJ-19)
+- **Test File:** [`tests/multi-environment-sandbox.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/multi-environment-sandbox.spec.ts) (Done / Automated)
+- **Page Object Model:** [`tests/pages/EnvironmentSettingsModalPage.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/pages/EnvironmentSettingsModalPage.ts) (Implemented)
 - **Target Components:**
   - [`src/components/modals/EnvironmentSettingsModal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/modals/EnvironmentSettingsModal.tsx)
   - [`src/components/modals/FreeHostingGuideModal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/modals/FreeHostingGuideModal.tsx)
-- **Target Personas:** `admin`, `guest` (in Dev/Preview environments)
+- **Target Persona:** `site` (`site@ajwmes.co.uk`)
 
 #### Business Value & Risk Justification:
-Developers and QA engineers rely on `EnvironmentSettingsModal` to inspect active storage namespaces (`ajwmes_aistudio_dev_*` vs `ajwmes_github_pre_*`), reset deterministic workshop seed data (`Seed Clean Test Data`), and export/import full JSON environment snapshots between AI Studio and GitHub PR previews.
+Developers, QA automation engineers, and platform administrators rely on `EnvironmentSettingsModal` to inspect active storage namespaces (`ajwmes_aistudio_dev_*` vs `ajwmes_github_pre_*`), reset deterministic workshop seed data (`Seed Clean Test Data`), and export/import full JSON environment snapshots between AI Studio and GitHub PR previews.
 
-#### State Matrix & E2E Scenarios to Verify:
-1. **Environment Detection & Namespace Audit**:
-   - Open `EnvironmentSettingsModal` via `header-version-badge`, assert environment badge (`Dev Sandbox`), LocalStorage prefix (`ajwmes_aistudio_dev_*`), and Firestore collection prefix (`ais_dev_*`).
-2. **Clean Test Data Seeding & State Reset**:
-   - Mutate local state (e.g., delete or alter a job/item), trigger **Seed Clean Test Data**, and verify all baseline Solent vessels, jobs, and catalog items are deterministically restored.
-3. **Full Environment JSON Export & Import Portability**:
-   - Trigger JSON dataset export download, verify valid JSON schema envelope, and test importing a modified dataset snapshot into the active environment partition.
-4. **Firebase & GitHub Free Hosting Guide Modal**:
-   - Open `FreeHostingGuideModal` and verify interactive deployment documentation tabs and copyable CLI snippets.
+#### State Matrix & E2E Scenarios Verified:
+1. **Environment Detection & Namespace Partitioning Audit**:
+   - Authenticate as Website Administrator (`site@ajwmes.co.uk`), open `EnvironmentSettingsModal` via `header-version-badge`, assert version tag, environment badge (`aistudio-dev`), LocalStorage prefix (`ajwmes_aistudio_dev_*`), and Firestore collection prefix (`ais_dev_*`).
+   - Switch simulation mode across `github-preview` and `github-deployed`, asserting instant dynamic prefix updates and clean reset back to auto-detection.
+2. **Deterministic Clean Test Data Seeding & State Reset**:
+   - Mutate active local storage partition with tampered job records, trigger `Seed Clean Test Data` with confirmation prompt handling, assert green success banner, and verify baseline Solent vessels, jobs, and catalog items are deterministically restored.
+3. **Full Environment JSON Snapshot Export, Envelope Validation & Import Portability**:
+   - Trigger JSON dataset export download, verify valid schema envelope (`version: "1.0.0"`, `environment`, `jobs`, `catalog`, `postalOrders`, `vesselSpec`), mutate snapshot with portable test job, import into active partition, and assert successful persistence and malformed JSON validation resilience.
+4. **Firebase & GitHub Free Hosting Guide Modal Verification**:
+   - Open `FreeHostingGuideModal` via Guide tab CTA and footer button, verify interactive deployment documentation tabs (`CLI Deploy`, `GitHub Auto-Deploy`, `Custom Domain`, `Auth & API Key`), test copyable CLI snippets, and close cleanly.
