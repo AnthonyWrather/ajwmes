@@ -535,12 +535,12 @@ export default function App() {
   };
 
   const handleUpdateUserRoleInDatabase = async (userId: string, newRole: UserRole) => {
-    await syncUserRoleToFirestore(userId, newRole);
     setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
     if (currentUserProfile.id === userId) {
       setCurrentUserRole(newRole);
       setCurrentUserProfile(prev => ({ ...prev, role: newRole }));
     }
+    await syncUserRoleToFirestore(userId, newRole);
   };
 
   const handleDeleteUserFromDatabase = async (userId: string) => {

@@ -73,6 +73,7 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
       // Filter by technician
       await accounts.filterByRole('technician');
       const techCards = accounts.userCards;
+      await expect(techCards.first()).toContainText(/TECHNICIAN|Field/i, { timeout: 10000 });
       const techCount = await techCards.count();
       expect(techCount).toBeGreaterThan(0);
       for (let i = 0; i < techCount; i++) {
