@@ -17,7 +17,8 @@ import {
   LogOut,
   ChevronDown,
   Ship,
-  Camera
+  Camera,
+  HelpCircle
 } from 'lucide-react';
 import { ROLE_CONFIGS } from '../lib/auth';
 import { canAccessRoute } from '../lib/rbac';
@@ -47,6 +48,7 @@ interface NavigationProps {
   appUpdateTargetTag?: string;
   onApplyAppUpdate?: () => void;
   activeVersionTag?: string;
+  onOpenHelpCenter?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -71,7 +73,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   appUpdateAvailable = false,
   appUpdateTargetTag,
   onApplyAppUpdate,
-  activeVersionTag
+  activeVersionTag,
+  onOpenHelpCenter
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -282,6 +285,17 @@ export const Navigation: React.FC<NavigationProps> = ({
 
         {/* Zone 3: User Authentication & Role Controls */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-0">
+            {/* User Manual & Video Guides Modal Trigger */}
+            <button
+              data-testid="nav-help-button"
+              onClick={onOpenHelpCenter}
+              className="relative p-1.5 sm:p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-800 transition-colors cursor-pointer shrink-0"
+              title="Role-Based User Manual & Video Guides"
+              aria-label="Open User Manual and Training Guides"
+            >
+              <HelpCircle className="w-4 h-4 text-amber-400" />
+            </button>
+
             {/* Cart Icon & Badge Trigger */}
             <button
               data-testid="nav-cart-button"
@@ -401,6 +415,18 @@ export const Navigation: React.FC<NavigationProps> = ({
                         <span>Vessel Portal &amp; Electrical Log</span>
                       </button>
                     )}
+
+                    <button
+                      data-testid="nav-user-dropdown-help-button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onOpenHelpCenter?.();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-amber-300 hover:text-amber-200 flex items-center gap-2 cursor-pointer font-medium"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+                      <span>User Manual &amp; Guides</span>
+                    </button>
 
                     <div className="h-px bg-slate-800 my-1" />
 
@@ -547,6 +573,24 @@ export const Navigation: React.FC<NavigationProps> = ({
               {envBadge.shortLabel} Settings
             </button>
           </div>
+
+          {/* Mobile User Manual & Video Guides Trigger */}
+          <button
+            data-testid="mobile-nav-help-button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onOpenHelpCenter?.();
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 bg-amber-950/20 hover:bg-amber-950/30 border border-amber-500/30 rounded-xl text-xs font-semibold text-amber-300 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>User Manual &amp; Video Guides</span>
+            </div>
+            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-300">
+              {ROLE_CONFIGS[currentUserRole].label}
+            </span>
+          </button>
 
           {/* Compact Multi-Item Mobile Navigation Pills (Matches Main Menu Button Size) */}
           <div

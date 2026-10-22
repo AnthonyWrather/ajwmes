@@ -31,6 +31,9 @@ export class NavigationPage {
   readonly footerHostingGuideButton: Locator;
   readonly pwaInstallButton: Locator;
   readonly pwaIosInstallButton: Locator;
+  readonly helpButton: Locator;
+  readonly mobileHelpButton: Locator;
+  readonly userDropdownHelpButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -63,6 +66,9 @@ export class NavigationPage {
     this.footerHostingGuideButton = page.getByTestId('footer-hosting-guide-button');
     this.pwaInstallButton = page.getByTestId('pwa-install-button');
     this.pwaIosInstallButton = page.getByTestId('pwa-ios-install-button');
+    this.helpButton = page.getByTestId('nav-help-button');
+    this.mobileHelpButton = page.getByTestId('mobile-nav-help-button');
+    this.userDropdownHelpButton = page.getByTestId('nav-user-dropdown-help-button');
   }
 
   async navigateToLanding(): Promise<void> {

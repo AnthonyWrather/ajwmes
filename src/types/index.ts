@@ -612,4 +612,27 @@ export interface StripePaymentResult {
   redirectUrl?: string;
 }
 
+export interface ManualStep {
+  id: string;
+  title: string;
+  description: string;
+  timestampSeconds?: number;
+  shortcut?: string;
+  safetyTip?: string;
+}
+
+export interface ManualChapter {
+  id: string;
+  title: string;
+  summary: string;
+  role: UserRole;
+  durationMinutes: number;
+  videoUrl?: string;
+  vttUrl?: string;
+  posterUrl?: string;
+  jumpTab?: string;
+  steps: ManualStep[];
+}
+
+
 

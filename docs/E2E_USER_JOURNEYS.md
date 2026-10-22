@@ -20,13 +20,13 @@ To guarantee zero regression in critical business paths, high-stakes electrical 
 
 ---
 
-## 1. Existing Covered User Journeys (17 Automated Spec Suites)
+## 1. Existing Covered User Journeys (18 Automated Spec Suites)
 
-The Playwright E2E test suite covers **17 core operational and architectural journeys** utilizing **12 dedicated Page Object Models** (`tests/pages/`):
+The Playwright E2E test suite covers **18 core operational and architectural journeys** utilizing **13 dedicated Page Object Models** (`tests/pages/`):
 
 ```mermaid
 graph TD
-    subgraph ExistingJourneys["Covered E2E Journeys (17 Spec Suites)"]
+    subgraph ExistingJourneys["Covered E2E Journeys (18 Spec Suites)"]
         J1["1. Authentication & RBAC Navigation (UJ-01)\n(tests/authentication.spec.ts)"]
         J2["2. Hardware Catalog & Stock Sync (UJ-02)\n(tests/inventory-stock-sync.spec.ts)"]
         J3["3. Cloud Function Resend Email Gateway (UJ-03)\n(tests/resend.spec.ts)"]
@@ -44,6 +44,7 @@ graph TD
         J15["15. Lazy Code-Splitting & PWA Asset Integrity (UJ-16)\n(tests/performance-architecture-optimization.spec.ts)"]
         J16["16. Site Admin Role & Config Decoupling (UJ-20)\n(tests/rbac-site-role.spec.ts)"]
         J17["17. Admin User Accounts & Role Elevation (UJ-17)\n(tests/admin-user-accounts.spec.ts)"]
+        J18["18. Role Manual, Interactive Help Center & Training Videos (UJ-Help)\n(tests/help-center-manual.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -58,6 +59,13 @@ graph TD
     J10 -->|"Presets, Live Surcharges & Lightbox"| POM10["ReplicaPanelUploaderPage\nAdminDashboardPage"]
     J11 -->|"Multi-Vessel Specs, History & jsPDF"| POM11["VesselPortalPage\nStorePage"]
     J12 -->|"pk_test Override, Card Checkout & Deposit"| POM12["StorePage\nCartDrawerPage\nVesselPortalPage"]
+    J13 -->|"version.json Poll, Banner & 1-Click Reload"| POM13["NavigationPage\nAppUpdateBanner"]
+    J14 -->|"2-Row Menu & Responsive Containment"| POM14["NavigationPage"]
+    J15 -->|"Performance & Lazy Split Assertions"| POM15["NavigationPage\nStorePage"]
+    J16 -->|"Site Role Config Decoupling"| POM16["EnvironmentSettingsModal"]
+    J17 -->|"RBAC Elevation & User Administration"| POM17["UserAccountsManagerPage"]
+    J18 -->|"Role Manual, Video Guides & Deep-Jumps"| POM18["HelpCenterModalPage\nNavigationPage"]
+```
     J13 -->|"version.json Poll, Banner & 1-Click Reload"| POM13["NavigationPage\nAppUpdateBanner"]
     J14 -->|"2-Row Desktop Wrap & Compact Mobile Grid"| POM14["NavigationPage\nAuthModalPage"]
     J15 -->|"Dynamic Chunks & Raster/SVG Icons"| POM15["NavigationPage\nSwitchPanelCADPage\nReplicaPanelUploaderPage"]

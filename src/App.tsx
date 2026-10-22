@@ -46,6 +46,7 @@ import { SupplierReorderModal } from './components/admin/SupplierReorderModal';
 import { StockAlertEmailModal } from './components/admin/StockAlertEmailModal';
 import { BookingQuoteModal } from './components/forms/BookingQuoteModal';
 import { FreeHostingGuideModal } from './components/modals/FreeHostingGuideModal';
+import { HelpCenterModal } from './components/common/HelpCenterModal';
 import { Logo } from './components/brand/Logo';
 import { ShieldCheck, MapPin, Clock, Github, HelpCircle, Phone, Mail, Bell, Truck, CheckCircle2, ArrowRight, X, AlertTriangle } from 'lucide-react';
 import { 
@@ -222,6 +223,7 @@ export default function App() {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [authToast, setAuthToast] = useState<{ title: string; message: string; type: 'success' | 'info' } | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isHelpCenterOpen, setIsHelpCenterOpen] = useState(false);
   const [isHostingGuideOpen, setIsHostingGuideOpen] = useState(false);
   const [selectedInitialService, setSelectedInitialService] = useState<ServiceType>('diagnostic');
   const [pendingPanelConfig, setPendingPanelConfig] = useState<SwitchPanelConfig | undefined>(undefined);
@@ -1515,6 +1517,7 @@ export default function App() {
             setIsEnvironmentModalOpen(true);
           }
         }}
+        onOpenHelpCenter={() => setIsHelpCenterOpen(true)}
         appUpdateAvailable={appUpdateState.isUpdateAvailable}
         appUpdateTargetTag={appUpdateState.remoteManifest?.fullTag}
         onApplyAppUpdate={() => void applyAppUpdate()}
@@ -1828,6 +1831,14 @@ export default function App() {
         onDataResetOrImported={handleEnvironmentDataReload}
         onRetryConnection={handleRetryConnection}
         userRole={currentUserRole}
+      />
+
+      {/* Role-Based User Manual & Video Guides Modal */}
+      <HelpCenterModal
+        isOpen={isHelpCenterOpen}
+        onClose={() => setIsHelpCenterOpen(false)}
+        currentUserRole={currentUserRole}
+        onNavigateTab={(tab) => setCurrentTab(tab)}
       />
 
       {/* Supplier Purchase Order Reorder Drafting Modal */}
