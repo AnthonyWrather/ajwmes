@@ -12,5 +12,7 @@ playwright-report/
 playwright-report-training/
 test-results/
 blob-report/
-videos/raw/
-videos/
+
+# Training video raw recording cache (root-scoped so /public/videos/ is tracked)
+/videos/
+!public/videos/
