@@ -1,0 +1,18 @@
+WEBVTT - postal-fulfillment-dispatch
+
+1
+00:00:00.000 --> 00:00:44.000
+Step 1: Scan or select inbound consignment at workshop bench.
+
+2
+00:00:45.000 --> 00:01:49.000
+Step 2: Enter parcel weight and dimensions to fetch ShipStation rates.
+
+3
+00:01:50.000 --> 00:02:49.000
+Step 3: Generate 4x6" SVG thermal shipping label and packing slip.
+
+4
+00:02:50.000 --> 00:04:00.000
+Step 4: Mark dispatched to trigger automated tracking email.
+
