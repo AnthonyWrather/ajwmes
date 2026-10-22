@@ -306,7 +306,10 @@ This codebase is specifically optimized for pair programming with autonomous AI 
 - [`AGENTS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/AGENTS.md): Master pair-programming guide, directory map, and architectural constraints.
 - [`GEMINI.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/GEMINI.md): Antigravity, Google AI Studio, and Gemini CLI prompt instructions.
 - [`.cursorrules`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/.cursorrules): Cursor & Windsurf IDE coding rules and style constraints.
-- [`.github/copilot-instructions.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/.github/copilot-instructions.md): GitHub Copilot rules for Pull Requests and inline suggestions.
+- [`.github/copilot-instructions.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/.github/copilot-instructions.md): GitHub Copilot rules for Pull Requests, inline suggestions, and code review agents.
+- [`.github/dependabot.yml`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/.github/dependabot.yml): Automated daily Dependabot updates across frontend npm, Cloud Functions npm, and GitHub Actions.
+- [`.github/pull_request_template.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/.github/pull_request_template.md): Standardized pull request template with Copilot automated summary tags and quality checklists.
+
 - [`.agents/rules/`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/.agents/rules): Modular Antigravity rules for QA automation, marine electrical formulas, and offline resilience.
 
 ---
