@@ -26,11 +26,68 @@ All demonstration clips are programmatically produced using Playwright in high-d
 2. **Lower-Third HUD Banners**: Real-time chapter titles, step numbering, and instructions.
 3. **Synchronized WebVTT Captions**: Standard `.vtt` subtitles for noise-tolerant marina environments.
 
-### Generating / Updating Training Videos
+### Generating, Processing & Publishing Training Videos
+
+Producing and publishing training videos is a **3-step workflow**:
+
 ```bash
-# Record all training videos sequentially in 1080p
+# Step 1: Record all training videos sequentially in 1080p
 npm run record:manuals
 
-# Post-process recordings, copy to /public/videos/ and generate caption tracks
+# Step 2: Post-process recordings, copy to /public/videos/, and generate WebVTT captions
 npm run process:videos
+
+# Step 3: Stage and commit the web-ready assets to Git for CI/CD deployment
+git add public/videos/ .gitignore
+git commit -m "feat(manuals): update 1080p role training video captures and captions"
+git push origin <branch>
 ```
+
+---
+
+### CI/CD Deployment & Why Videos Must Be Committed to Git
+
+1. **Automated Firebase Hosting Pipeline**:
+   - The production site is deployed automatically by GitHub Actions ([`.github/workflows/firebase-hosting-merge.yml`](../../.github/workflows/firebase-hosting-merge.yml)) when changes are pushed or merged to `main`.
+2. **Recording is Excluded from CI**:
+   - Automated 1080p browser recording (`npm run record:manuals`) is computationally intensive and is deliberately **not** executed inside GitHub Actions runners.
+3. **Vite Serves Production Assets from `/public/`**:
+   - During `npm run build`, Vite copies everything inside `public/` into the production `dist/` directory deployed to Firebase Hosting.
+   - For the training videos to be accessible to boat owners, technicians, and workshop staff on the live domain, the processed files in `public/videos/` must be committed and pushed to GitHub.
+
+---
+
+### Directory & Asset Structure
+
+| Directory | Purpose | Git Status |
+| :--- | :--- | :--- |
+| `tests/training/` | Playwright test specs (`role-training-videos.spec.ts`) | Tracked in Git |
+| `test-results/` | Temporary Playwright raw browser screen recordings | Ignored (`.gitignore`) |
+| `/videos/raw/` | Local backup of raw uncompressed `.webm` files | Ignored (`.gitignore`) |
+| `public/videos/` | Final optimized `.webm` clips and `.vtt` caption tracks | **Tracked in Git** |
+
+> [!IMPORTANT]
+> The root `.gitignore` file explicitly tracks `!public/videos/` while ignoring local staging directories (`/videos/` and `test-results/`). If new video assets do not appear in `git status`, verify that `.gitignore` maintains the root slash prefix `/videos/` rather than a blanket `videos/`.
+
+---
+
+### Graceful Fallback State: "Playwright Training Vignette"
+
+When accessing the Help Center modal ([`HelpCenterModal.tsx`](../../src/components/common/HelpCenterModal.tsx)), the HTML5 `<video>` element monitors asset availability via `onError`:
+
+- **Active State**: If the corresponding video exists in `/public/videos/`, it automatically plays in high-contrast marine slate with full media controls and synchronized WebVTT captions.
+- **Fallback Card (`data-testid="video-fallback-banner"`)**: If a chapter's video is offline, pending generation, or hasn't yet been copied to `public/videos/`, the UI renders a graceful fallback placeholder:
+  > **Playwright Training Vignette**  
+  > *Full 1080p demonstration video is queued for background streaming or will generate upon running `npm run record:manuals`.*
+
+Running `npm run record:manuals` followed by `npm run process:videos` immediately replaces the fallback with the live interactive video player.
+
+---
+
+### Troubleshooting
+
+- **Playwright Browser Missing**: If `npm run record:manuals` reports missing browser executables, install the Chromium binary with:
+  ```bash
+  npx playwright install chromium
+  ```
+- **Port Contention**: The recording config (`playwright.training.config.ts`) expects the local dev server on port `5173`. Playwright will launch Vite automatically if nothing is running on that port.
