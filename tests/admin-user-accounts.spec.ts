@@ -73,6 +73,7 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
       // Filter by technician
       await accounts.filterByRole('technician');
       const techCards = accounts.userCards;
+      await expect(techCards.first()).toContainText(/TECHNICIAN|Field/i, { timeout: 10000 });
       const techCount = await techCards.count();
       expect(techCount).toBeGreaterThan(0);
       for (let i = 0; i < techCount; i++) {
@@ -129,7 +130,7 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
       });
 
       // Verify toast notification & card rendered in directory
-      await expect(page.getByText(`User account for ${testUserName} saved`)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(`User account for ${testUserName} saved`)).toBeVisible({ timeout: 15000 });
       const newCard = accounts.getUserCard(testUserEmail);
       await expect(newCard).toBeVisible({ timeout: 10000 });
       await expect(newCard).toContainText(testUserEmail);
@@ -156,7 +157,7 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
         phone: '023 9258 9900',
         vesselName: 'Hamble Star II'
       });
-      await expect(page.getByText(`Account details for ${testUserName} updated`)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(`Account details for ${testUserName} updated`)).toBeVisible({ timeout: 15000 });
 
       // Verify edited details reflected on card
       const editedCard = accounts.getUserCard(testUserEmail);

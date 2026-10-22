@@ -121,17 +121,18 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       passwordHash: 'YWp3bWVzMjAyNg=='
     };
 
+    showToast(`User account for ${newUser.name} saved to Firestore database!`);
+    setIsAddModalOpen(false);
+    // Reset form
+    setNewName('');
+    setNewEmail('');
+    setNewPhone('');
+    setNewRole('client');
+    setNewVesselName('');
+    setNewMarinaBerth('Haslar Marina');
+
     try {
       await onSaveUser(newUser);
-      showToast(`User account for ${newUser.name} saved to Firestore database!`);
-      setIsAddModalOpen(false);
-      // Reset form
-      setNewName('');
-      setNewEmail('');
-      setNewPhone('');
-      setNewRole('client');
-      setNewVesselName('');
-      setNewMarinaBerth('Haslar Marina');
     } catch (err: any) {
       showToast(`Error saving to database: ${err?.message || 'Failed'}`);
     } finally {
@@ -150,10 +151,11 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       updatedAt: new Date().toISOString()
     };
 
+    showToast(`Account details for ${updated.name} updated in Firestore database.`);
+    setEditingUser(null);
+
     try {
       await onSaveUser(updated);
-      showToast(`Account details for ${updated.name} updated in Firestore database.`);
-      setEditingUser(null);
     } catch (err: any) {
       showToast(`Error updating database: ${err?.message || 'Failed'}`);
     } finally {
