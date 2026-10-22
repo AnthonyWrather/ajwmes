@@ -15,7 +15,7 @@ Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and p
 - **Frontend Core**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
 - **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions` v6 & `firebase-admin` v13 with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
 - **Reporting & Icons**: `jspdf` (marine certificate rendering), `lucide-react`
-- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (291 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests), Playwright (`@playwright/test` across 17 E2E browser specs & 12 Page Object Models)
+- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (296 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests), Playwright (`@playwright/test` across 18 E2E browser specs & 14 Page Object Models)
 
 ---
 
@@ -119,18 +119,21 @@ ajwmes/
 │   ├── App.tsx             # Root application orchestrator
 │   ├── index.css           # Tailwind CSS v4 directives & theme definitions
 │   └── main.tsx            # React 19 application mount point
-└── tests/                  # Playwright E2E browser specifications (17 spec files + 12 Page Object Models in tests/pages/):
-    ├── pages/              # Page Object Models (AdminDashboardPage, AuthModalPage, CartDrawerPage, ConsignmentTrackerPage, NavigationPage, PostalWorkspacePage, ReplicaPanelUploaderPage, StorePage, SwitchPanelCADPage, TechnicianWorkspacePage, UserAccountsManagerPage, VesselPortalPage)
+└── tests/                  # Playwright E2E browser specifications (18 spec files + 14 Page Object Models in tests/pages/):
+    ├── pages/              # Page Object Models (AdminDashboardPage, AuthModalPage, CartDrawerPage, ConsignmentTrackerPage, HelpCenterModalPage, JobDiscussionThreadPage, NavigationPage, PostalWorkspacePage, PrintLaserStudioPage, ReplicaPanelUploaderPage, StorePage, SwitchPanelCADPage, TechnicianWorkspacePage, UserAccountsManagerPage, VesselPortalPage)
     ├── admin-user-accounts.spec.ts
     ├── admin-workshop-management.spec.ts
     ├── app-version-update.spec.ts
     ├── authentication.spec.ts
     ├── consignment-tracker.spec.ts
+    ├── help-center-manual.spec.ts
     ├── inventory-stock-sync.spec.ts
+    ├── job-discussion-thread.spec.ts
     ├── navigation-responsive-menu.spec.ts
     ├── offline-pontoon-resilience.spec.ts
     ├── performance-architecture-optimization.spec.ts
     ├── postal-fulfillment-dispatch.spec.ts
+    ├── print-laser-asset-studio.spec.ts
     ├── rbac-site-role.spec.ts
     ├── resend.spec.ts
     ├── stripe.spec.ts

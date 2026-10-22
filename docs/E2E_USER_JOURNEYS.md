@@ -3,7 +3,7 @@
 > **Classification:** Engineering & QA Automation Architecture Document  
 > **Author:** Principal Full Stack Engineer, Cloud Infrastructure Platform Engineer & QA Automation Specialist  
 > **Application Version:** `v1.2.0` | **Target Runtime:** Node `>=24.12.0`  
-> **Test Framework:** Playwright (`@playwright/test`) with 17 E2E Spec Suites, 12 Page Object Models (POM) & 291 Unit Tests  
+> **Test Framework:** Playwright (`@playwright/test`) with 18 E2E Spec Suites, 14 Page Object Models (POM) & 296 Unit Tests  
 > **Date:** October 2026  
 
 ---
@@ -20,13 +20,13 @@ To guarantee zero regression in critical business paths, high-stakes electrical 
 
 ---
 
-## 1. Existing Covered User Journeys (18 Automated Spec Suites)
+## 1. Existing Covered User Journeys (19 Automated Spec Suites)
 
-The Playwright E2E test suite covers **18 core operational and architectural journeys** utilizing **13 dedicated Page Object Models** (`tests/pages/`):
+The Playwright E2E test suite covers **19 core operational and architectural journeys** utilizing **14 dedicated Page Object Models** (`tests/pages/`):
 
 ```mermaid
 graph TD
-    subgraph ExistingJourneys["Covered E2E Journeys (18 Spec Suites)"]
+    subgraph ExistingJourneys["Covered E2E Journeys (19 Spec Suites)"]
         J1["1. Authentication & RBAC Navigation (UJ-01)\n(tests/authentication.spec.ts)"]
         J2["2. Hardware Catalog & Stock Sync (UJ-02)\n(tests/inventory-stock-sync.spec.ts)"]
         J3["3. Cloud Function Resend Email Gateway (UJ-03)\n(tests/resend.spec.ts)"]
@@ -45,6 +45,7 @@ graph TD
         J16["16. Site Admin Role & Config Decoupling (UJ-20)\n(tests/rbac-site-role.spec.ts)"]
         J17["17. Admin User Accounts & Role Elevation (UJ-17)\n(tests/admin-user-accounts.spec.ts)"]
         J18["18. Role Manual, Interactive Help Center & Training Videos (UJ-Help)\n(tests/help-center-manual.spec.ts)"]
+        J19["19. Print & Laser Studio & Cloud Archive (UJ-18)\n(tests/print-laser-asset-studio.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
@@ -65,12 +66,7 @@ graph TD
     J16 -->|"Site Role Config Decoupling"| POM16["EnvironmentSettingsModal"]
     J17 -->|"RBAC Elevation & User Administration"| POM17["UserAccountsManagerPage"]
     J18 -->|"Role Manual, Video Guides & Deep-Jumps"| POM18["HelpCenterModalPage\nNavigationPage"]
-```
-    J13 -->|"version.json Poll, Banner & 1-Click Reload"| POM13["NavigationPage\nAppUpdateBanner"]
-    J14 -->|"2-Row Desktop Wrap & Compact Mobile Grid"| POM14["NavigationPage\nAuthModalPage"]
-    J15 -->|"Dynamic Chunks & Raster/SVG Icons"| POM15["NavigationPage\nSwitchPanelCADPage\nReplicaPanelUploaderPage"]
-    J16 -->|"Exclusive Platform Config & Role Isolation"| POM16["NavigationPage\nAdminDashboardPage\nAuthModalPage"]
-    J17 -->|"Role Elevation, Multi-Field Search & Deletion"| POM17["UserAccountsManagerPage\nAdminDashboardPage"]
+    J19 -->|"LightBurn Dual-Layer SVG & Cloud Panels"| POM19["PrintLaserStudioPage\nAdminDashboardPage"]
 ```
 
 ---
@@ -515,6 +511,28 @@ graph TD
 
 ---
 
+### Journey 18: Print & Laser Engraving Marketing Asset Studio & Cloud Panel Archive (UJ-18)
+- **Test File:** [`tests/print-laser-asset-studio.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/print-laser-asset-studio.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `AdminDashboardPage`, `PrintLaserStudioPage`
+- **Target Personas:** `admin` (`anthonywrather@gmail.com`)
+
+#### Scenarios Verified:
+1. **Admin Authentication & Print Studio Navigation**:
+   - Authenticate with administrator credentials (`anthonywrather@gmail.com`), switch to `admin-tab-print`, and verify marketing studio header.
+2. **Business Card (85×55mm) & A5 Marina Flyer (148×210mm) Switching**:
+   - Verify Business Card preview front side flat rate (`£25 / HOUR FLAT RATE`), Solent badge, and Gosport travel radius.
+   - Flip card preview to back side, asserting Anthony Wrather contact details, QR code, and Solent marina coverage (`Haslar · Gosport · Port Solent · Hamble`).
+   - Switch to A5 Marina Flyer preview, asserting noticeboard dimensions, flat rate (`FLAT RATE: £25 PER HOUR + MATERIALS`), and 3 core columns.
+3. **Material Substrate Simulation Modes**:
+   - Toggle substrate render modes across Full Color Paper (gradient styling), Laser Matte Black Acrylic (`bg-[#0B0F17]` and red vector cut line outline), and Solid Teak / Birch (`bg-[#92400E]`).
+4. **LightBurn Dual-Layer SVG Vector Export Verification**:
+   - Trigger LightBurn SVG vector downloads for both Business Card (`ajwmes-card-laser-lightburn.svg`) and A5 Flyer (`ajwmes-flyer-laser-lightburn.svg`).
+   - Parse downloaded SVG payloads asserting `#FF0000` hairline vector cut line `<rect>` (`stroke="#FF0000"`, `stroke-width="0.1"`) and `#000000` raster engrave layer `<g fill="#000000" stroke="none">` with pricing and branding.
+5. **Panel Cloud Images Archive Inspection (`admin-tab-panels`)**:
+   - Switch to `admin-tab-panels`, inspect aggregated switchboard reference photos across customer jobs, open asset in `ImageLightboxModal`, dismiss lightbox, and jump directly to active job sheet.
+
+---
+
 ## 2. Comprehensive User Journey Coverage Matrix
 
 The following table tracks all 20 operational and architectural journeys across AJWMES:
@@ -539,7 +557,7 @@ The following table tracks all 20 operational and architectural journeys across 
 | **UJ-20** | **Site Admin Role & Platform Configuration Decoupling** | Global / `/admin` | `admin`, `site` | **Critical (P0)** | `tests/rbac-site-role.spec.ts` | **Done (Automated)** |
 | **UJ-12** | **Bi-Directional Job Discussion, Photo Proofs & Inbound Email** | `/portal` ↔ `/admin` | `client`, `admin`, `technician` | **High (P1)** | `tests/job-discussion-thread.spec.ts` | **Done (Automated)** |
 | **UJ-17** | **Admin User Accounts Directory, Role Elevation & Isolation** | `/admin` (`accounts`) | `admin` | **High (P1)** | `tests/admin-user-accounts.spec.ts` | **Done (Automated)** |
-| **UJ-18** | **Print & Laser Engraving Studio & Cloud Panel Archive** | `/admin` (`print`, `panels`) | `admin` | **Medium (P2)** | *Proposed:* `tests/print-laser-asset-studio.spec.ts` | **Recommended Next (Phase 4.3)** |
+| **UJ-18** | **Print & Laser Engraving Studio & Cloud Panel Archive** | `/admin` (`print`, `panels`) | `admin` | **Medium (P2)** | `tests/print-laser-asset-studio.spec.ts` | **Done (Automated)** |
 | **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `site` | **Medium (P2)** | *Proposed:* `tests/multi-environment-sandbox.spec.ts` | **Recommended Next (Phase 4.4)** |
 
 ---
@@ -579,7 +597,7 @@ flowchart LR
         direction TB
         U12["UJ-12: Job Discussion, Photo Proofs & Inbound Email (Done)"]
         U17["UJ-17: Admin User Accounts & Role Elevation (Done)"]
-        U18["UJ-18: Print & Laser Studio + Cloud Archive (P2)"]
+        U18["UJ-18: Print & Laser Studio + Cloud Archive (Done)"]
         U19["UJ-19: Multi-Env JSON Portability & Seed Reset (P2)"]
     end
 
@@ -686,11 +704,11 @@ The `JobDiscussionThread` bridges boat owners on the water with Anthony in the G
 
 ---
 
-### Recommendation 3 (Priority P2):
+### Recommendation 3 (Priority P2 — Completed):
 ### **UJ-18: Print & Laser Engraving Marketing Asset Studio & Cloud Panel Archive**
 
-- **Proposed Spec File:** `tests/print-laser-asset-studio.spec.ts`
-- **Proposed Page Object Model:** `tests/pages/PrintLaserStudioPage.ts`
+- **Spec File:** [`tests/print-laser-asset-studio.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/print-laser-asset-studio.spec.ts) (Done / Automated)
+- **Page Object Model:** [`tests/pages/PrintLaserStudioPage.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/pages/PrintLaserStudioPage.ts)
 - **Target Components:**
   - [`src/components/admin/PrintLaserAssetStudio.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/PrintLaserAssetStudio.tsx)
   - [`src/components/admin/AdminDashboard.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/AdminDashboard.tsx) (`data-testid="admin-tab-print"` and `data-testid="admin-tab-panels"`)
