@@ -393,7 +393,7 @@ The CLI creates a service account with the *Firebase Hosting Admin* role and sto
 **Option B — manual:**
 
 1. Google Cloud Console → **IAM & Admin → Service Accounts → Create**: `github-deployer`.
-2. Roles: **Firebase Hosting Admin**, **API Keys Viewer**, **Service Account User** (add **Firebase Rules Admin** if CI will deploy rules).
+2. Roles: **Firebase Hosting Admin**, **Service Usage Viewer** (required for `firebase-tools >= 15.34.1` pre-flight check), **API Keys Viewer**, **Service Account User** (add **Firebase Rules Admin** if CI will deploy rules).
 3. **Keys → Add key → JSON** → download.
 4. Save it:
 
@@ -518,7 +518,7 @@ There is no automated PR-preview workflow yet. Options:
 | `Missing or insufficient permissions` | Rules not deployed or wrong database ID | `firebase deploy --only firestore:rules`; check `VITE_FIREBASE_FIRESTORE_DATABASE_ID` |
 | Stripe badge stuck on *Simulated Dev Mode* | Key missing / not `pk_` / not passed to the CI build | Check secret name and workflow `env:` block |
 | Resend `403` / CORS error | Browser call blocked or domain unverified | Use simulated mode; see [#20](https://github.com/AnthonyWrather/ajwmes/issues/20) |
-| Deploy step fails with `HTTP 403` | Service account lacks *Firebase Hosting Admin* | Grant the role or regenerate via `firebase init hosting:github` |
+| Deploy step fails with `HTTP 403` | Service account lacks *Firebase Hosting Admin* or `serviceusage.services.get` (introduced in `firebase-tools@15.34.1`) | Grant *Firebase Hosting Admin* and *Service Usage Viewer* (`roles/serviceusage.serviceUsageViewer`), or pin `firebaseToolsVersion: '15.34.0'` in `firebase-hosting-merge.yml` |
 
 See also [`FIREBASE_GITHUB_DEPLOYMENT_GUIDE.md`](../FIREBASE_GITHUB_DEPLOYMENT_GUIDE.md#resolving-authentication--api-key-errors).
 
