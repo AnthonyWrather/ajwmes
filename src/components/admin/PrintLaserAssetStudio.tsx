@@ -82,7 +82,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-6 text-slate-100">
+    <div data-testid="print-laser-asset-studio" className="w-full space-y-6 text-slate-100">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
@@ -99,6 +99,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
         <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl">
           <button
             onClick={() => setActiveAsset('card')}
+            data-testid="asset-selector-card"
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAsset === 'card' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -107,6 +108,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveAsset('flyer')}
+            data-testid="asset-selector-flyer"
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
               activeAsset === 'flyer' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
@@ -123,6 +125,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
             <button
               onClick={() => setRenderMode('print_paper')}
+              data-testid="render-mode-paper"
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 renderMode === 'print_paper' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
@@ -132,6 +135,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
             </button>
             <button
               onClick={() => setRenderMode('laser_acrylic')}
+              data-testid="render-mode-acrylic"
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 renderMode === 'laser_acrylic' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
@@ -141,6 +145,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
             </button>
             <button
               onClick={() => setRenderMode('laser_wood')}
+              data-testid="render-mode-wood"
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 renderMode === 'laser_wood' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
@@ -155,6 +160,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleDownloadPrintPDF(activeAsset)}
+            data-testid="download-print-pdf-btn"
             className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors border border-slate-700"
           >
             <Download className="w-3.5 h-3.5 text-sky-400" />
@@ -162,6 +168,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
           </button>
           <button
             onClick={() => handleDownloadLaserSVG(activeAsset)}
+            data-testid="download-laser-svg-btn"
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg shadow-sm shadow-sky-600/30 transition-all"
           >
             <Scissors className="w-3.5 h-3.5" />
@@ -179,12 +186,14 @@ export const PrintLaserAssetStudio: React.FC = () => {
             <div className="flex items-center gap-2 text-xs">
               <button
                 onClick={() => setCardSide('front')}
+                data-testid="card-side-front-btn"
                 className={`px-3 py-1 rounded-md font-semibold ${cardSide === 'front' ? 'bg-sky-600 text-white' : 'bg-slate-900 text-slate-400'}`}
               >
                 Front Side
               </button>
               <button
                 onClick={() => setCardSide('back')}
+                data-testid="card-side-back-btn"
                 className={`px-3 py-1 rounded-md font-semibold ${cardSide === 'back' ? 'bg-sky-600 text-white' : 'bg-slate-900 text-slate-400'}`}
               >
                 Back Side
@@ -193,6 +202,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
 
             {/* Scaled Card Mockup (85mm x 55mm ratio = 1.545) */}
             <div
+              data-testid="business-card-preview"
               className={`w-[360px] h-[230px] rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative select-none transition-all duration-300 border ${
                 renderMode === 'print_paper'
                   ? 'bg-gradient-to-br from-[#0A192F] to-[#050C1A] border-sky-500/40 text-white'
@@ -263,6 +273,7 @@ export const PrintLaserAssetStudio: React.FC = () => {
           <div className="space-y-4 flex flex-col items-center">
             {/* Scaled A5 Mockup (148mm x 210mm ratio = 0.704) */}
             <div
+              data-testid="a5-flyer-preview"
               className={`w-[340px] sm:w-[420px] rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-2xl relative select-none transition-all duration-300 border ${
                 renderMode === 'print_paper'
                   ? 'bg-gradient-to-br from-[#0A192F] via-[#0D2137] to-[#050C1A] border-sky-500/40 text-white'

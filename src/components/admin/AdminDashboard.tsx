@@ -657,16 +657,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               No switch panel images uploaded yet. When users submit replica quotes or design panels, their photos will appear here.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div data-testid="panel-cloud-archive" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {allPanelAssets.map((asset, idx) => (
                 <div
                   key={`panel-${asset.jobId}-${asset.index}-${idx}`}
+                  data-testid="panel-asset-card"
                   className="bg-slate-900 border border-slate-800 hover:border-sky-500/60 rounded-2xl overflow-hidden shadow-lg transition-all group flex flex-col justify-between"
                 >
                   <div 
+                    data-testid="panel-asset-image-trigger"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setLightboxUrl(asset.url);
                       setLightboxTitle(`${asset.vesselName} - Photo ${asset.index + 1}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setLightboxUrl(asset.url);
+                        setLightboxTitle(`${asset.vesselName} - Photo ${asset.index + 1}`);
+                      }
                     }}
                     className="relative aspect-16/10 bg-slate-950 overflow-hidden cursor-pointer"
                   >
@@ -704,6 +714,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setSelectedJobId(asset.jobId);
                           setActiveAdminTab('jobs');
                         }}
+                        data-testid="panel-asset-open-job-btn"
                         className="text-[11px] text-sky-400 hover:underline flex items-center gap-1"
                       >
                         <span>Open Job Thread</span>
@@ -714,6 +725,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         href={asset.url}
                         target="_blank"
                         rel="noreferrer"
+                        data-testid="panel-asset-cad-link"
                         className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors"
                         title="Download for LightBurn CAD"
                       >
