@@ -92,7 +92,7 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+    setTimeout(() => setToastMessage(null), 10000);
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {

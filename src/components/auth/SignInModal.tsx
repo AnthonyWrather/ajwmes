@@ -117,10 +117,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({
       const res = await signInWithEmailOrAccount(email, password);
       if (res.success && res.profile) {
         setSuccessMessage(`Welcome back, ${res.profile.name}! Signed in as ${res.profile.role.toUpperCase()}.`);
-        setTimeout(() => {
-          onSuccessSignIn(res.profile!);
-          onClose();
-        }, 500);
+        onSuccessSignIn(res.profile);
+        onClose();
       } else if (res.notFound) {
         // Refuse login, transfer email and redirect to account registration
         const cleanEnteredEmail = email.trim().toLowerCase();

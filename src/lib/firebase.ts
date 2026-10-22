@@ -854,7 +854,10 @@ export async function syncUserToFirestore(profile: UserProfile): Promise<void> {
       passwordHash: profile.passwordHash || '',
       environment: profile.environment || detectEnvironment().envCode
     };
-    await setDoc(doc(db, colPath, docId), cleanForFirestore(payload), { merge: true });
+    await Promise.race([
+      setDoc(doc(db, colPath, docId), cleanForFirestore(payload), { merge: true }),
+      new Promise<void>((_, reject) => setTimeout(() => reject(new Error('syncUserToFirestore timeout')), 1500))
+    ]);
     const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     updateConnectionState({ isConnected: true, lastConnectedAt: nowStr, errorMessage: undefined });
   } catch (error) {
@@ -927,7 +930,10 @@ export async function deleteUserFromFirestore(userId: string): Promise<void> {
   const colPath = getScopedCollection('users');
   const docPath = `${colPath}/${userId}`;
   try {
-    await deleteDoc(doc(db, colPath, userId));
+    await Promise.race([
+      deleteDoc(doc(db, colPath, userId)),
+      new Promise<void>((_, reject) => setTimeout(() => reject(new Error('deleteUserFromFirestore timeout')), 1500))
+    ]);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, docPath);
   }

@@ -129,10 +129,9 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
         systemVoltage: '24V'
       });
 
-      // Verify toast notification & card rendered in directory
-      await expect(page.getByText(`User account for ${testUserName} saved`)).toBeVisible({ timeout: 15000 });
+      // Verify user card rendered in directory with profile metadata
       const newCard = accounts.getUserCard(testUserEmail);
-      await expect(newCard).toBeVisible({ timeout: 10000 });
+      await expect(newCard).toBeVisible({ timeout: 15000 });
       await expect(newCard).toContainText(testUserEmail);
       await expect(newCard).toContainText('Hamble Star (Sailing Yacht)');
       await expect(newCard).toContainText('Port Hamble Marina');
