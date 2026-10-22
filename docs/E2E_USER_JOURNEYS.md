@@ -2,8 +2,8 @@
 
 > **Classification:** Engineering & QA Automation Architecture Document  
 > **Author:** Principal Full Stack Engineer, Cloud Infrastructure Platform Engineer & QA Automation Specialist  
-> **Application Version:** `v1.2.0` | **Target Runtime:** Node `>=24.12.0`  
-> **Test Framework:** Playwright (`@playwright/test`) with 19 E2E Spec Suites, 15 Page Object Models (POM) & 296 Unit Tests  
+> **Application Version:** `0.0.1` (PoC Baseline) | **Target Runtime:** Node `>=24.12.0`  
+> **Test Framework:** Playwright (`@playwright/test`) with 21 E2E Spec Suites, 1 Video Training Suite, 16 Page Object Models (POM) & 317 Unit Tests (296 Frontend + 21 Cloud Functions)  
 > **Date:** October 2026  
 
 ---
@@ -13,20 +13,20 @@
 AJW Marine Electrical Services (AJWMES) operates a mission-critical, offline-first Progressive Web App (PWA) servicing boat owners, pontoon field technicians, postal fulfillment staff, workshop administration, and platform infrastructure administrators across the Solent marine basin.
 
 To guarantee zero regression in critical business paths, high-stakes electrical calculations, server-side Cloud Function gateways, and resilient offline operations, this document:
-1. **Audits and details all 19 existing end-to-end (E2E) test suites** currently executed in `tests/` alongside the **15 Page Object Models** in `tests/pages/`.
+1. **Audits and details all 21 existing end-to-end (E2E) test suites** currently executed in `tests/` and 1 training video suite in `tests/training/` alongside the **16 Page Object Models** in `tests/pages/`.
 2. **Maps the complete user journey coverage matrix** across all 6 RBAC personas (`guest`, `client`, `technician`, `postal`, `admin`, `site`).
 3. **Presents a prioritized Phase 1–4 engineering and QA automation roadmap** with risk and complexity scoring.
-4. **Specifies the operational and architectural user journeys (`UJ-01` through `UJ-20`)**, complete with component trees, state matrices, `data-testid` locator contracts, and Page Object Model (POM) blueprints.
+4. **Specifies the operational and architectural user journeys (`UJ-01` through `UJ-21`)**, complete with component trees, state matrices, `data-testid` locator contracts, and Page Object Model (POM) blueprints.
 
 ---
 
-## 1. Existing Covered User Journeys (20 Automated Spec Suites)
+## 1. Existing Covered User Journeys (21 Automated Spec Suites + 1 Video Suite)
 
-The Playwright E2E test suite covers **20 core operational and architectural journeys** utilizing **15 dedicated Page Object Models** (`tests/pages/`):
+The Playwright E2E test suite covers **21 core operational and architectural journeys** utilizing **16 dedicated Page Object Models** (`tests/pages/`):
 
 ```mermaid
 graph TD
-    subgraph ExistingJourneys["Covered E2E Journeys (20 Spec Suites)"]
+    subgraph ExistingJourneys["Covered E2E Journeys (21 Spec Suites + 1 Video Suite)"]
         J1["1. Authentication & RBAC Navigation (UJ-01)\n(tests/authentication.spec.ts)"]
         J2["2. Hardware Catalog & Stock Sync (UJ-02)\n(tests/inventory-stock-sync.spec.ts)"]
         J3["3. Cloud Function Resend Email Gateway (UJ-03)\n(tests/resend.spec.ts)"]
@@ -43,15 +43,16 @@ graph TD
         J14["14. Responsive Pill Menu & 2-Row Containment (UJ-15)\n(tests/navigation-responsive-menu.spec.ts)"]
         J15["15. Lazy Code-Splitting & PWA Asset Integrity (UJ-16)\n(tests/performance-architecture-optimization.spec.ts)"]
         J16["16. Site Admin Role & Config Decoupling (UJ-20)\n(tests/rbac-site-role.spec.ts)"]
-        J17["17. Admin User Accounts & Role Elevation (UJ-17)\n(tests/admin-user-accounts.spec.ts)"]
-        J18["18. Role Manual, Interactive Help Center & Training Videos (UJ-Help)\n(tests/help-center-manual.spec.ts)"]
+        J17["17. Bi-Directional Job Discussion & Inbound Email (UJ-12)\n(tests/job-discussion-thread.spec.ts)"]
+        J18["18. Admin User Accounts & Role Elevation (UJ-17)\n(tests/admin-user-accounts.spec.ts)"]
         J19["19. Print & Laser Studio & Cloud Archive (UJ-18)\n(tests/print-laser-asset-studio.spec.ts)"]
         J20["20. Multi-Environment Sandbox & JSON Portability (UJ-19)\n(tests/multi-environment-sandbox.spec.ts)"]
+        J21["21. Role Manual & Interactive Help Center (UJ-21)\n(tests/help-center-manual.spec.ts)"]
     end
 
     J1 -->|"Session Rehydration & Profiles"| POM1["AuthModalPage\nNavigationPage\nVesselPortalPage"]
     J2 -->|"Stock Sync & Cart Interactions"| POM2["StorePage\nCartDrawerPage"]
-    J3 -->|"Server-Side sendEmail Gateway"| POM3["EnvironmentSettingsModal\nAuthModalPage"]
+    J3 -->|"Server-Side sendEmail Gateway"| POM3["EnvironmentSettingsModalPage\nAuthModalPage"]
     J4 -->|"Stopwatch, Materials & Canvas Signature"| POM4["TechnicianWorkspacePage"]
     J5 -->|"ShipStation Rates, 4x6 Label & Slip"| POM5["PostalWorkspacePage"]
     J6 -->|"Milestones, Checkpoints & Status Simulator"| POM6["ConsignmentTrackerPage"]
@@ -64,11 +65,12 @@ graph TD
     J13 -->|"version.json Poll, Banner & 1-Click Reload"| POM13["NavigationPage\nAppUpdateBanner"]
     J14 -->|"2-Row Menu & Responsive Containment"| POM14["NavigationPage"]
     J15 -->|"Performance & Lazy Split Assertions"| POM15["NavigationPage\nStorePage"]
-    J16 -->|"Site Role Config Decoupling"| POM16["EnvironmentSettingsModal"]
-    J17 -->|"RBAC Elevation & User Administration"| POM17["UserAccountsManagerPage"]
-    J18 -->|"Role Manual, Video Guides & Deep-Jumps"| POM18["HelpCenterModalPage\nNavigationPage"]
+    J16 -->|"Site Role Config Decoupling"| POM16["EnvironmentSettingsModalPage"]
+    J17 -->|"Pontoon Chat & Cloud Proofs"| POM17["JobDiscussionThreadPage"]
+    J18 -->|"RBAC Elevation & User Administration"| POM18["UserAccountsManagerPage"]
     J19 -->|"LightBurn Dual-Layer SVG & Cloud Panels"| POM19["PrintLaserStudioPage\nAdminDashboardPage"]
     J20 -->|"Dev/Preview Partitioning & Clean Seed"| POM20["EnvironmentSettingsModalPage"]
+    J21 -->|"Role Manuals, Video Guides & Help Hub"| POM21["HelpCenterModalPage"]
 ```
 
 ---
@@ -535,9 +537,70 @@ graph TD
 
 ---
 
+### Journey 19: Bi-Directional Pontoon Job Discussion, Cloud Photo Proofs & Inbound Email Webhook (UJ-12)
+- **Test File:** [`tests/job-discussion-thread.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/job-discussion-thread.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `JobDiscussionThreadPage`, `AdminDashboardPage`, `VesselPortalPage`
+- **Target Personas:** `client` (`d.mercer@solent-sail.co.uk`), `admin` (`anthonywrather@gmail.com`)
+
+#### Scenarios Verified:
+1. **Client Job Thread Inspection & Message Dispatch (`/portal`)**:
+   - Sign in as Boat Owner (`d.mercer@solent-sail.co.uk`), navigate to `/portal` $\rightarrow$ `Jobs & Activity`, and inspect the active job thread header (`job.reference`, vessel name, berth location, flat rate `£25/hr`) and `Job Billing Sheet` sidebar.
+   - Send client question and assert immediate right-aligned sky-blue message bubble rendering (`bg-sky-600`).
+2. **Client Switch Panel Photo Attachment & Lightbox Zoom**:
+   - Attach simulated photo via paperclip uploader; verify progress bar, `📷 [Attached Switch Panel Image: ...]` message bubble, and click-to-zoom inspection in `ImageLightboxModal`.
+3. **Quote Approval Action (`quote_sent` $\rightarrow$ `quote_accepted`)**:
+   - For a job in `quote_sent` state, click `Approve Quote` and verify status badge updates cleanly.
+4. **Admin Reply & Workshop Laser Proof Photo Upload (`/admin`)**:
+   - Switch session to Admin (`anthonywrather@gmail.com`), select vessel job in `/admin`, verify client message and photo appear in feed, and upload a Laser Cut Proof photo.
+   - Verify `🔬 [Laser Cut Proof & Test Fitting Photo]` message is appended to the thread and toast confirmation appears.
+5. **Live Postal Fulfillment Event Card & Deep-Link to Visual Tracker**:
+   - Verify postal dispatch notification messages (`Live Postal Fulfillment Event` card with `AJW-POST-*` reference) render with truck badge and click `Open in Visual Order Tracker` to confirm navigation to `/tracker` focused on that consignment.
+6. **Inbound Email Webhook Bridge Simulation**:
+   - Trigger simulated inbound customer email (`simulateIncomingEmail` matching `jobReference`) and verify `📩 [Inbound Email: ...]` is automatically threaded into the vessel's job discussion.
+
+---
+
+### Journey 20: Multi-Environment Sandbox Manager, JSON Dataset Portability & Clean Seed Reset (UJ-19)
+- **Test File:** [`tests/multi-environment-sandbox.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/multi-environment-sandbox.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `EnvironmentSettingsModalPage`
+- **Target Personas:** `site` (`site@ajwmes.co.uk`)
+
+#### Scenarios Verified:
+1. **Environment Detection & Namespace Partitioning Audit**:
+   - Authenticate as Website Administrator (`site@ajwmes.co.uk`), open `EnvironmentSettingsModal` via `header-version-badge`, assert version tag, environment badge (`aistudio-dev`), LocalStorage prefix (`ajwmes_aistudio_dev_*`), and Firestore collection prefix (`ais_dev_*`).
+   - Switch simulation mode across `github-preview` and `github-deployed`, asserting instant dynamic prefix updates and clean reset back to auto-detection.
+2. **Deterministic Clean Test Data Seeding & State Reset**:
+   - Mutate active local storage partition with tampered job records, trigger `Seed Clean Test Data` with confirmation prompt handling, assert green success banner, and verify baseline Solent vessels, jobs, and catalog items are deterministically restored.
+3. **Full Environment JSON Snapshot Export, Envelope Validation & Import Portability**:
+   - Trigger JSON dataset export download, verify valid schema envelope (`version: "1.0.0"`, `environment`, `jobs`, `catalog`, `postalOrders`, `vesselSpec`), mutate snapshot with portable test job, import into active partition, and assert successful persistence and malformed JSON validation resilience.
+4. **Firebase & GitHub Free Hosting Guide Modal Verification**:
+   - Open `FreeHostingGuideModal` via Guide tab CTA and footer button, verify interactive deployment documentation tabs (`CLI Deploy`, `GitHub Auto-Deploy`, `Custom Domain`, `Auth & API Key`), test copyable CLI snippets, and close cleanly.
+
+---
+
+### Journey 21: Role Manual, Interactive Help Center & Training Video Suite (UJ-21)
+- **Test File:** [`tests/help-center-manual.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/help-center-manual.spec.ts)
+- **Page Objects Used:** `NavigationPage`, `AuthModalPage`, `HelpCenterModalPage`
+- **Target Personas:** `guest`, `client`, `technician`, `postal`, `admin`, `site`
+
+#### Scenarios Verified:
+1. **Help Center Modal Launching**:
+   - Open modal via header help icon button (`header-help-button`), footer link (`footer-role-manual-link`), or user profile dropdown (`user-menu-help-center-button`).
+   - Assert modal title `Marine Operations Manual & Video Guides` and active role auto-scoping.
+2. **Role Scope Switching & Chapter Browsing**:
+   - Switch role selector across all 6 roles (`guest`, `client`, `technician`, `postal`, `admin`, `site`), verifying chapter count, role summary badge, and instructional cards.
+3. **Interactive Step Procedures & Video Demonstration**:
+   - Select chapter, expand numbered procedural steps, and verify synchronized HTML5 `<video controls>` element with video source and track subtitles.
+4. **Keyword Search & Instant Filtering**:
+   - Search manual chapters by terms like `"solar"`, `"stopwatch"`, `"thermal label"`, `"lightburn"`, asserting dynamic result filtering and clear search action.
+5. **Deep Navigation Jumping**:
+   - Click chapter action deep-link CTA (e.g. `Jump to Custom Switch Panel Studio`), confirming instant navigation to target application route and modal closure.
+
+---
+
 ## 2. Comprehensive User Journey Coverage Matrix
 
-The following table tracks all 20 operational and architectural journeys across AJWMES:
+The following table tracks all 21 operational and architectural journeys across AJWMES:
 
 | Journey ID | Journey Title | Target Route(s) | Primary Persona(s) | Business Impact | Test Spec File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -561,6 +624,7 @@ The following table tracks all 20 operational and architectural journeys across 
 | **UJ-17** | **Admin User Accounts Directory, Role Elevation & Isolation** | `/admin` (`accounts`) | `admin` | **High (P1)** | `tests/admin-user-accounts.spec.ts` | **Done (Automated)** |
 | **UJ-18** | **Print & Laser Engraving Studio & Cloud Panel Archive** | `/admin` (`print`, `panels`) | `admin` | **Medium (P2)** | `tests/print-laser-asset-studio.spec.ts` | **Done (Automated)** |
 | **UJ-19** | **Multi-Environment Sandbox Manager & JSON Data Portability** | Global Env Modal | `site` | **Medium (P2)** | `tests/multi-environment-sandbox.spec.ts` | **Done (Automated)** |
+| **UJ-21** | **Role Manual, Interactive Help Center & Training Video Suite** | Global Header / Modal | All 6 Roles | **High (P1)** | `tests/help-center-manual.spec.ts` | **Done (Automated)** |
 
 ---
 
@@ -597,10 +661,12 @@ flowchart LR
 
     subgraph P4["Phase 4: Operational Automation (Done)"]
         direction TB
-        U12["UJ-12: Job Discussion, Photo Proofs & Inbound Email (Done)"]
-        U17["UJ-17: Admin User Accounts & Role Elevation (Done)"]
-        U18["UJ-18: Print & Laser Studio + Cloud Archive (Done)"]
-        U19["UJ-19: Multi-Env JSON Portability & Seed Reset (Done)"]
+        U12["UJ-12: Job Discussion & Photo Proofs (Done)"]
+        U17["UJ-17: Admin User Accounts & Elevation (Done)"]
+        U18["UJ-18: Print & Laser Studio + Panels (Done)"]
+        U19["UJ-19: Multi-Env JSON Portability (Done)"]
+        U20["UJ-20: Site Admin Role Decoupling (Done)"]
+        U21["UJ-21: Role Manuals & Help Center (Done)"]
     end
 
     P1 --> P2 --> P3 --> P4
@@ -610,147 +676,97 @@ flowchart LR
 
 ## 4. Next Set of Recommended User Journeys & Engineering Blueprints
 
-With 17 user journeys fully automated, the following remaining candidate journeys (`UJ-18`, `UJ-19`) represent the next recommended engineering and QA automation wave. Each targets live application capabilities in `src/components/` and `src/lib/` that currently lack dedicated end-to-end browser coverage.
+With all 21 initial user journeys fully automated across 16 Page Object Models, the following candidate journeys (`UJ-22`, `UJ-23`, `UJ-24`) represent the next recommended engineering and QA automation wave. Each targets real-world marine operational capabilities and advanced field-service workflows.
 
 ---
 
 ### Recommendation 1 (Priority P1 — Immediate Next Candidate):
-### **UJ-12: Bi-Directional Pontoon Job Discussion, Cloud Photo Proofs & Inbound Email Webhook Simulation**
+### **UJ-22: Automated Supplier Restock Purchase Order Dispatch & EDI/Email PO Transmission**
 
-- **Proposed Spec File:** `tests/job-discussion-thread.spec.ts`
-- **Proposed Page Object Model:** `tests/pages/JobDiscussionThreadPage.ts`
+- **Proposed Spec File:** `tests/supplier-restock-po.spec.ts`
+- **Proposed Page Object Model:** `tests/pages/SupplierRestockPage.ts`
 - **Target Components:**
-  - [`src/components/chat/JobDiscussionThread.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/chat/JobDiscussionThread.tsx)
-  - [`src/components/client/ClientVesselPortal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/client/ClientVesselPortal.tsx) (`Jobs & Activity` sub-tab)
-  - [`src/components/admin/AdminDashboard.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/AdminDashboard.tsx) (`Jobs` tab & `handleUploadWorkshopProof`)
-  - [`src/lib/incomingEmail.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/incomingEmail.ts) (`simulateIncomingEmail`, `parseResendInboundWebhook`)
-- **Target Personas:** `client` (`d.mercer@solent-sail.co.uk`) $\leftrightarrow$ `admin` (`anthonywrather@gmail.com`)
+  - [`src/components/admin/InventoryManager.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/InventoryManager.tsx) (`restock` / inventory views)
+  - [`src/components/admin/SupplierReorderModal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/SupplierReorderModal.tsx)
+  - [`src/data/supplierData.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/data/supplierData.ts) (MakeFast, Solent Marine, Victron Energy UK)
+  - [`src/lib/emailService.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/emailService.ts) (`sendSupplierPurchaseOrderEmail`)
+- **Target Personas:** `admin` (`anthonywrather@gmail.com`)
 
 #### Business Value & Risk Justification:
-The `JobDiscussionThread` bridges boat owners on the water with Anthony in the Gosport workshop. It coordinates quote approvals, £50 diagnostic deposit collection, laser-cut test fitment photo proofs, live postal fulfillment notifications inside the job chat, and inbound customer email replies. Automating this bi-directional flow guarantees zero communication drop-offs between `/portal` and `/admin`.
+The Gosport workshop depends on timely restocking of critical tinned copper cables, ANL/MIDI fuses, and Victron MPPT solar chargers. When workshop inventory drops below minimum safe stock thresholds, administrators need an automated pipeline to draft supplier purchase orders, apply supplier trade account discounts, send standardized procurement emails via Resend, and seamlessly receive inventory batches into Firestore without manual recalculation.
 
 #### State Matrix & E2E Scenarios to Verify:
-1. **Client Job Thread Inspection & Message Dispatch (`/portal`)**:
-   - Sign in as Boat Owner (`d.mercer@solent-sail.co.uk`), navigate to `/portal` $\rightarrow$ `Jobs & Activity`, and inspect the active job thread header (`job.reference`, vessel name, berth location, flat rate `£25/hr`) and `Job Billing Sheet` sidebar (`Labor Hours`, `Labor Subtotal`, `Materials Used`, `Total Amount`, `Deposit Status`).
-   - Send a client question (`"Can we fit the Victron SmartShunt behind the chart table bulkhead?"`) and assert immediate right-aligned sky-blue message bubble rendering (`bg-sky-600`).
-2. **Client Switch Panel Photo Attachment & Lightbox Zoom**:
-   - Attach a simulated PNG photo via the paperclip uploader (`handleAttachPhoto`); verify upload progress bar, `📷 [Attached Switch Panel Image: ...]` message bubble, and click-to-zoom inspection in `ImageLightboxModal`.
-3. **Quote Approval Action (`quote_sent` $\rightarrow$ `quote_accepted`)**:
-   - For a job in `quote_sent` state, verify `data-testid="approve-quote-button"` is visible to `client`, click `Approve Quote`, and verify status badge updates cleanly.
-4. **Admin Reply & Workshop Laser Proof Photo Upload (`/admin`)**:
-   - Switch session to Admin (`anthonywrather@gmail.com`), select the vessel job in `/admin`, verify the client's message and photo appear in the feed, and upload a **Laser Cut Proof & Test Fitting Photo** (`handleUploadWorkshopProof`).
-   - Verify `🔬 [Laser Cut Proof & Test Fitting Photo]` message is appended to the thread and toast confirmation appears.
-5. **Live Postal Fulfillment Event Card & Deep-Link to Visual Tracker**:
-   - Verify postal dispatch notification messages (`Live Postal Fulfillment Event` card with `AJW-POST-*` reference) render with truck badge and click `Open in Visual Order Tracker` to confirm navigation to `/tracker` focused on that consignment.
-6. **Inbound Email Webhook Bridge Simulation**:
-   - Trigger simulated inbound customer email (`simulateIncomingEmail` matching `jobReference`) and verify `📩 [Inbound Email: ...]` is automatically threaded into the vessel's job discussion.
+1. **Zero-Stock & Low-Stock Inventory Triggering**:
+   - Filter workshop inventory by zero-stock and low-stock warning chips.
+   - Assert visual red/amber alert banners with restock quantity recommendations calculated from `minStock` and `targetStock`.
+2. **Multi-Supplier Purchase Order Drafting**:
+   - Launch `SupplierReorderModal` for an item; switch suppliers (e.g. Victron Energy UK vs Solent Marine Wholesale) and assert trade account terms, minimum order value, and expected lead times.
+3. **Automated Purchase Order Transmission via Resend**:
+   - Dispatch PO email with structured line items and delivery instructions to Gosport Marina Workshop Bay 4.
+   - Assert simulated outbox dispatch in dev/preview or Cloud Function call in staging.
+4. **Delivery Batch Receiving & Automated Stock Increment**:
+   - Record delivery arrival against active PO; verify quantity increment in Firestore catalog and automatic dismissal of the zero-stock alert.
 
 #### Required `data-testid` Locator Contract:
 | Element | `data-testid` Attribute | Component |
 | :--- | :--- | :--- |
-| Discussion Thread Container | `job-discussion-thread` | `JobDiscussionThread.tsx` |
-| Thread Status Badge | `job-thread-status-badge` | `JobDiscussionThread.tsx` |
-| Message Feed Scroll Container | `chat-messages-feed` | `JobDiscussionThread.tsx` |
-| Individual Message Bubble | `chat-message-bubble` | `JobDiscussionThread.tsx` |
-| Postal Fulfillment Event Card | `chat-postal-event-card` | `JobDiscussionThread.tsx` |
-| Open in Visual Order Tracker CTA | `chat-open-tracker-button` | `JobDiscussionThread.tsx` |
-| Photo Attachment File Input | `chat-attach-photo-input` | `JobDiscussionThread.tsx` |
-| Message Text Input | `chat-message-input` | `JobDiscussionThread.tsx` |
-| Send Message Submit Button | `chat-send-button` | `JobDiscussionThread.tsx` |
-| Approve Quote Button | `approve-quote-button` *(existing)* | `JobDiscussionThread.tsx` |
-| Pay Deposit via Stripe Button | `stripe-pay-deposit-button` *(existing)* | `JobDiscussionThread.tsx` |
-| Deposit Secured Badge | `stripe-deposit-secured-badge` *(existing)* | `JobDiscussionThread.tsx` |
-| Admin Upload Workshop Proof Input | `admin-upload-proof-input` | `AdminDashboard.tsx` |
+| Supplier Reorder Modal | `supplier-reorder-modal` | `SupplierReorderModal.tsx` |
+| Supplier Select Dropdown | `supplier-select-input` | `SupplierReorderModal.tsx` |
+| Restock Quantity Input | `restock-quantity-input` | `SupplierReorderModal.tsx` |
+| PO Line Items Table | `po-items-table` | `SupplierReorderModal.tsx` |
+| Dispatch PO Button | `dispatch-po-button` | `SupplierReorderModal.tsx` |
+| PO Confirmation Toast | `po-dispatch-toast` | `InventoryManager.tsx` |
 
 ---
 
-### Recommendation 2 (Priority P1 — Done / Automated):
-### **UJ-17: Admin User Accounts Directory, Role Elevation & Environment Isolation**
+### Recommendation 2 (Priority P1 — High Domain Value):
+### **UJ-23: Marine Lithium (LiFePO4) & Solar Power Energy Audit & ABYC/ISO Cable Sizing Wizard**
 
-- **Spec File:** `tests/admin-user-accounts.spec.ts` (Automated)
-- **Page Object Model:** `tests/pages/UserAccountsManagerPage.ts` (Implemented)
+- **Proposed Spec File:** `tests/marine-energy-audit.spec.ts`
+- **Proposed Page Object Model:** `tests/pages/EnergyAuditWizardPage.ts`
 - **Target Components:**
-  - [`src/components/admin/UserAccountsManager.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/UserAccountsManager.tsx)
-  - [`src/components/admin/AdminDashboard.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/AdminDashboard.tsx) (`data-testid="admin-tab-accounts"`)
-- **Target Persona:** `admin` (`anthonywrather@gmail.com`)
+  - [`src/utils/electricalCalculations.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/utils/electricalCalculations.ts)
+  - [`src/components/client/ClientVesselPortal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/client/ClientVesselPortal.tsx)
+  - [`src/components/client/VesselSpecManager.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/client/VesselSpecManager.tsx)
+- **Target Personas:** `client` (`d.mercer@solent-sail.co.uk`), `technician` (`jack.tech@ajwmes.co.uk`), `admin`
 
 #### Business Value & Risk Justification:
-`UserAccountsManager.tsx` (701 lines) governs RBAC role assignment (`client`, `technician`, `postal`, `admin`), boat owner vessel metadata, and strict environment-scoped account partitioning (`u.environment === currentEnv.envCode`). An E2E suite ensures administrators can onboard customers/staff, elevate permissions safely, and never leak user records across environments.
+Boat owners converting from Lead-Acid/AGM to Lithium Iron Phosphate (LiFePO4) need accurate energy consumption auditing and strict ABYC E-11 / ISO 10133 compliance. Providing an automated audit wizard directly on the vessel portal eliminates undersized battery banks and hazardous cable overheating.
 
 #### State Matrix & E2E Scenarios to Verify:
-1. **Accounts Tab Access & Environment Partition Audit**:
-   - Authenticate as Admin (`anthonywrather@gmail.com`), click `data-testid="admin-tab-accounts"`, and verify environment-scoped user count and role summary KPIs.
-2. **Real-Time Search & Role Pill Filtering**:
-   - Filter directory by role pills (`All`, `Client`, `Technician`, `Postal`, `Admin`).
-   - Search by vessel name (`Windbird III`), marina berth (`Haslar Marina`), and email (`jack.tech@ajwmes.co.uk`), plus empty-state handling for unmatched queries.
-3. **New Boat Owner / Staff Account Provisioning Modal**:
-   - Open `Add User Account` modal, input full name (`Captain Eleanor Vance`), email (`e.vance@hamble-yachts.co.uk`), UK Solent phone (`023 9258 4411`), role (`client`), vessel name (`Hamble Star`), vessel type (`Sailing Yacht`), marina berth (`Port Hamble Marina`), and DC voltage (`24V`).
-   - Submit and verify the new account card renders immediately in the directory.
-4. **Inline RBAC Role Elevation & Profile Editing**:
-   - Elevate the newly created user's role from `client` to `technician` (or edit via the Edit User modal) and verify role badge and permissions update immediately.
-5. **Safe Account Deletion**:
-   - Trigger account deletion for the test user and verify removal from the directory list.
-
-#### Required `data-testid` Locator Contract:
-| Element | `data-testid` Attribute | Component |
-| :--- | :--- | :--- |
-| User Accounts Admin Tab | `admin-tab-accounts` *(existing)* | `AdminDashboard.tsx` |
-| User Accounts Manager Root | `user-accounts-manager` | `UserAccountsManager.tsx` |
-| Search Accounts Input | `user-accounts-search-input` | `UserAccountsManager.tsx` |
-| Role Filter Pills | `user-role-filter-{all\|client\|technician\|postal\|admin}` | `UserAccountsManager.tsx` |
-| Open Add User Modal Button | `open-add-user-modal-button` | `UserAccountsManager.tsx` |
-| Add User Form Inputs | `new-user-{name\|email\|phone\|role\|vessel}-input` | `UserAccountsManager.tsx` |
-| Submit New User Button | `create-user-submit-button` | `UserAccountsManager.tsx` |
-| User Account Row / Card | `user-account-card` | `UserAccountsManager.tsx` |
-| Inline Role Select / Edit / Delete | `user-role-select`, `edit-user-button`, `delete-user-button` | `UserAccountsManager.tsx` |
+1. **Onboard Load Audit Calculation**:
+   - Input daily duty cycles for navigation electronics (B&G chartplotter, VHF), refrigeration, domestic lighting, and anchor windlass.
+   - Assert daily consumption totals in Amp-hours (Ah) and Watt-hours (Wh) at 12V and 24V nominal potentials.
+2. **LiFePO4 Battery Bank & Solar Array Sizing**:
+   - Model 80% maximum Depth of Discharge (DoD) for LiFePO4 chemistry.
+   - Calculate minimum solar wattage and Victron SmartSolar MPPT sizing based on seasonal Solent solar irradiance.
+3. **ABYC/ISO Conductor Cross-Section (mm²) & Fuse Rating Recommendation**:
+   - Input run length (one-way meters) and circuit criticality.
+   - Assert conductor sizing conforming to 3% critical circuit voltage drop limits with recommended MIDI/Mega fuse ratings.
+4. **Export to Vessel Electrical Certificate**:
+   - Save calculation results directly to vessel logbook and generate updated jsPDF electrical specification document.
 
 ---
 
-### Recommendation 3 (Priority P2 — Completed):
-### **UJ-18: Print & Laser Engraving Marketing Asset Studio & Cloud Panel Archive**
+### Recommendation 3 (Priority P2 — Advanced Resilience):
+### **UJ-24: Offline Field Mutation Conflict Resolution & Multi-Device Sync Engine**
 
-- **Spec File:** [`tests/print-laser-asset-studio.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/print-laser-asset-studio.spec.ts) (Done / Automated)
-- **Page Object Model:** [`tests/pages/PrintLaserStudioPage.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/pages/PrintLaserStudioPage.ts)
+- **Proposed Spec File:** `tests/offline-sync-conflicts.spec.ts`
+- **Proposed Page Object Model:** `tests/pages/OfflineSyncConflictPage.ts`
 - **Target Components:**
-  - [`src/components/admin/PrintLaserAssetStudio.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/PrintLaserAssetStudio.tsx)
-  - [`src/components/admin/AdminDashboard.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/admin/AdminDashboard.tsx) (`data-testid="admin-tab-print"` and `data-testid="admin-tab-panels"`)
-- **Target Persona:** `admin` (`anthonywrather@gmail.com`)
+  - [`src/lib/offlineSync.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/offlineSync.ts)
+  - [`src/lib/firebase.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/firebase.ts)
+  - [`src/components/technician/TechnicianWorkspace.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/technician/TechnicianWorkspace.tsx)
+  - [`src/components/common/FirestoreSyncBanner.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/common/FirestoreSyncBanner.tsx)
+- **Target Personas:** `technician`, `client`, `admin`
 
 #### Business Value & Risk Justification:
-The Gosport workshop uses `PrintLaserAssetStudio` to generate both 300DPI print-ready marina handouts and dual-layer LightBurn laser engraving SVG files (`#FF0000` vector cut line + `#000000` raster engrave) on acrylic and teak, while `Panel Cloud Images` aggregates customer switchboard photos across all jobs.
+Technicians frequently log diagnostic hours and photos offline inside steel hulls while customers simultaneously review or approve quotes online. Testing deterministic 3-way reconciliation ensures customer signatures and diagnostic timestamps are never overwritten by concurrent mutations.
 
 #### State Matrix & E2E Scenarios to Verify:
-1. **Business Card (`85mm × 55mm`) & A5 Marina Flyer (`148mm × 210mm`) Switching**:
-   - Navigate to `/admin` $\rightarrow$ `data-testid="admin-tab-print"`.
-   - Switch between Business Card (Front/Back flip) and A5 Marina Flyer previews, asserting flat rate (`£25 / HOUR + MATERIALS`) and Solent marina coverage text.
-2. **Material Substrate Simulation Modes**:
-   - Toggle render modes across `Print on Paper (PDF)`, `Laser Matte Black Acrylic`, and `Laser Solid Teak / Birch`, verifying preview surface styling updates.
-3. **LightBurn Dual-Layer SVG Vector Export Verification**:
-   - Trigger SVG download for both Business Card (`ajwmes-card-laser-lightburn.svg`) and A5 Flyer (`ajwmes-flyer-laser-lightburn.svg`).
-   - Parse downloaded SVG payload and assert presence of `#FF0000` hairline vector cut `<rect>` (`stroke="#FF0000"`) and `#000000` raster engrave `<g>` layers.
-4. **Panel Cloud Images Archive Inspection (`admin-tab-panels`)**:
-   - Switch to `data-testid="admin-tab-panels"`, inspect aggregated switch panel reference photos across vessel jobs, open an asset in `ImageLightboxModal`, and jump directly to its parent job sheet.
-
----
-
-### Journey 20: Multi-Environment Sandbox Manager, JSON Dataset Portability & Clean Seed Reset (UJ-19)
-- **Test File:** [`tests/multi-environment-sandbox.spec.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/multi-environment-sandbox.spec.ts) (Done / Automated)
-- **Page Object Model:** [`tests/pages/EnvironmentSettingsModalPage.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/tests/pages/EnvironmentSettingsModalPage.ts) (Implemented)
-- **Target Components:**
-  - [`src/components/modals/EnvironmentSettingsModal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/modals/EnvironmentSettingsModal.tsx)
-  - [`src/components/modals/FreeHostingGuideModal.tsx`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/components/modals/FreeHostingGuideModal.tsx)
-- **Target Persona:** `site` (`site@ajwmes.co.uk`)
-
-#### Business Value & Risk Justification:
-Developers, QA automation engineers, and platform administrators rely on `EnvironmentSettingsModal` to inspect active storage namespaces (`ajwmes_aistudio_dev_*` vs `ajwmes_github_pre_*`), reset deterministic workshop seed data (`Seed Clean Test Data`), and export/import full JSON environment snapshots between AI Studio and GitHub PR previews.
-
-#### State Matrix & E2E Scenarios Verified:
-1. **Environment Detection & Namespace Partitioning Audit**:
-   - Authenticate as Website Administrator (`site@ajwmes.co.uk`), open `EnvironmentSettingsModal` via `header-version-badge`, assert version tag, environment badge (`aistudio-dev`), LocalStorage prefix (`ajwmes_aistudio_dev_*`), and Firestore collection prefix (`ais_dev_*`).
-   - Switch simulation mode across `github-preview` and `github-deployed`, asserting instant dynamic prefix updates and clean reset back to auto-detection.
-2. **Deterministic Clean Test Data Seeding & State Reset**:
-   - Mutate active local storage partition with tampered job records, trigger `Seed Clean Test Data` with confirmation prompt handling, assert green success banner, and verify baseline Solent vessels, jobs, and catalog items are deterministically restored.
-3. **Full Environment JSON Snapshot Export, Envelope Validation & Import Portability**:
-   - Trigger JSON dataset export download, verify valid schema envelope (`version: "1.0.0"`, `environment`, `jobs`, `catalog`, `postalOrders`, `vesselSpec`), mutate snapshot with portable test job, import into active partition, and assert successful persistence and malformed JSON validation resilience.
-4. **Firebase & GitHub Free Hosting Guide Modal Verification**:
-   - Open `FreeHostingGuideModal` via Guide tab CTA and footer button, verify interactive deployment documentation tabs (`CLI Deploy`, `GitHub Auto-Deploy`, `Custom Domain`, `Auth & API Key`), test copyable CLI snippets, and close cleanly.
+1. **Concurrent Mutation Simulation**:
+   - Client approves quote on desktop while technician logs diagnostic labor offline on a mobile device.
+2. **Reconnection & 3-Way Merge Resolution**:
+   - Reconnect technician device; verify IndexedDB replay detects concurrent modifications and merges fields using timestamp priority.
+3. **Conflict Notification Toast & Audit Trail**:
+   - Assert visual banner in `FirestoreSyncBanner` indicating clean merge with zero data loss.

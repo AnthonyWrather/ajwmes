@@ -15,7 +15,7 @@ Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and p
 - **Frontend Core**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
 - **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions` v6 & `firebase-admin` v13 with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
 - **Reporting & Icons**: `jspdf` (marine certificate rendering), `lucide-react`
-- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (296 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests), Playwright (`@playwright/test` across 19 E2E browser specs & 15 Page Object Models)
+- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (296 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests — 317 unit tests total), Playwright (`@playwright/test` across 21 E2E browser specs + 1 video training spec & 16 Page Object Models)
 
 ---
 
@@ -26,12 +26,14 @@ npm run build           # Production build (Vite + PWA service worker + /version
 npm run preview         # Preview production build locally
 npm run lint            # Typecheck frontend via `tsc --noEmit` (MUST pass with 0 errors)
 npm run lint:functions  # Typecheck Cloud Functions (`functions/`) via `tsc --noEmit`
-npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (291 tests)
+npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (296 tests)
 npm run test:functions  # Run Cloud Functions unit tests matching functions/src/**/*.test.ts (21 tests)
 npm run build:functions # Compile Cloud Functions TypeScript to functions/lib/
 npm run test            # Alias for test:unit
 npm run test:e2e        # Playwright end-to-end tests (Desktop Chrome & Mobile Chrome on port 5173)
 npm run test:e2e:all    # Playwright full 5-browser matrix (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari)
+npm run record:manuals  # Programmatically record all 6 role training videos via Playwright
+npm run process:videos  # Optimize training video captures, generate WebVTT subtitles & copy to /public/videos/
 npm run validate        # Full pre-flight check: lint + test:unit + build + test:functions + build:functions
 npm run clean           # Remove dist/ and build artifacts
 ```
@@ -42,10 +44,11 @@ npm run clean           # Remove dist/ and build artifacts
 
 ```
 ajwmes/
-├── public/                 # Static assets, PWA icons (192px, 512px, SVG), manifest
+├── public/                 # Static assets, PWA icons (192px, 512px, SVG), manifest, videos
 ├── docs/                   # Engineering & operational documentation:
 │   ├── E2E_USER_JOURNEYS.md  # E2E user journey catalog, POM architecture & QA roadmap
-│   └── SERVICES_SETUP.md     # End-to-end cloud services & secrets provisioning guide
+│   ├── SERVICES_SETUP.md     # End-to-end cloud services & secrets provisioning guide
+│   └── manual/               # 6 Role Operations Manuals (01-guest through 06-platform-site-admin)
 ├── functions/              # 2nd Gen Firebase Cloud Functions (`europe-west2`):
 │   ├── src/
 │   │   ├── authMiddleware.ts         # RBAC & caller verification for callable functions
@@ -57,10 +60,12 @@ ajwmes/
 │   │   └── types.ts                  # Shared Cloud Function request/response contracts
 │   ├── package.json
 │   └── tsconfig.json
+├── scripts/                # Build and media processing scripts:
+│   └── process-training-videos.js # WebM video compressor & WebVTT caption generator
 ├── src/
 │   ├── assets/             # Bundled images & marine photos
 │   ├── components/         # Feature-grouped UI components:
-│   │   ├── admin/          # Workshop admin, inventory, zero-stock alerts, expenses, packing slips, thermal labels, user accounts, laser studio
+│   │   ├── admin/          # Workshop admin, inventory, zero-stock alerts, expenses, packing slips, thermal labels, user accounts, laser studio, panels
 │   │   ├── auth/           # Authentication modal, sign-in, sign-off, profile & avatar manager
 │   │   ├── brand/          # Marine logo & vector brand marks
 │   │   ├── chat/           # Technician-to-client pontoon job messaging thread & photo proofs
@@ -68,7 +73,7 @@ ajwmes/
 │   │   ├── common/         # AppUpdateBanner, FirestoreSyncBanner, ImageLightboxModal
 │   │   ├── forms/          # Booking & diagnostic quote request modal
 │   │   ├── home/           # Landing hero, services overview, pricing highlights
-│   │   ├── modals/         # Environment settings inspector, free hosting guide
+│   │   ├── modals/         # Environment settings inspector, free hosting guide, help center
 │   │   ├── orders/         # Postal order tracker & carrier progress
 │   │   ├── panels/         # Custom switch panel CAD designer & photo replica extractor
 │   │   ├── postal/         # Postal workshop workstation, ShipStation rates & dispatch timeline
@@ -77,8 +82,9 @@ ajwmes/
 │   │   ├── store/          # Marine electrical hardware storefront
 │   │   ├── technician/     # Pontoon diagnostic workstation, stopwatch timer, digital customer sign-off
 │   │   └── Navigation.tsx  # Master tab router & responsive 2-row pill navigation bar
-│   ├── data/               # Seed data, default catalogs, environment test data
+│   ├── data/               # Seed data, default catalogs, environment test data, role manuals:
 │   │   ├── environmentTestData.ts
+│   │   ├── manualData.ts         # Role manual chapters, step procedures & manualData.test.ts
 │   │   ├── seedData.ts
 │   │   └── supplierData.ts
 │   ├── lib/                # Core infrastructure services (accompanied by *.test.ts):
@@ -111,6 +117,7 @@ ajwmes/
 │   │   ├── inventorySync.ts             # Split catalog/category JSON import, export & reconciliation
 │   │   ├── offlineQueueCalculations.ts  # Mutation priority ordering & sync progress calculations
 │   │   ├── postalTimeline.ts            # Royal Mail / DPD dispatch tracking calculations
+│   │   ├── pwaInstallCalculations.ts    # Conditional PWA install prompt calculations
 │   │   ├── resendValidation.ts          # Resend API key & email payload validation
 │   │   ├── shipstationCalculations.ts   # Marine package weight heuristics & box dimensioning
 │   │   ├── stripeCalculations.ts        # Stripe pence conversion, fee estimation, key validation
@@ -119,8 +126,10 @@ ajwmes/
 │   ├── App.tsx             # Root application orchestrator
 │   ├── index.css           # Tailwind CSS v4 directives & theme definitions
 │   └── main.tsx            # React 19 application mount point
-└── tests/                  # Playwright E2E browser specifications (19 spec files + 15 Page Object Models in tests/pages/):
-    ├── pages/              # Page Object Models (AdminDashboardPage, AuthModalPage, CartDrawerPage, ConsignmentTrackerPage, EnvironmentSettingsModalPage, HelpCenterModalPage, JobDiscussionThreadPage, NavigationPage, PostalWorkspacePage, PrintLaserStudioPage, ReplicaPanelUploaderPage, StorePage, SwitchPanelCADPage, TechnicianWorkspacePage, UserAccountsManagerPage, VesselPortalPage)
+└── tests/                  # Playwright E2E browser specifications (21 spec files + 1 video training spec & 16 Page Object Models in tests/pages/):
+    ├── helpers/            # E2E test harness & training video captioning helpers
+    ├── pages/              # 16 Page Object Models (AdminDashboardPage, AuthModalPage, CartDrawerPage, ConsignmentTrackerPage, EnvironmentSettingsModalPage, HelpCenterModalPage, JobDiscussionThreadPage, NavigationPage, PostalWorkspacePage, PrintLaserStudioPage, ReplicaPanelUploaderPage, StorePage, SwitchPanelCADPage, TechnicianWorkspacePage, UserAccountsManagerPage, VesselPortalPage)
+    ├── training/           # Role-based 1080p video training generator (role-training-videos.spec.ts)
     ├── admin-user-accounts.spec.ts
     ├── admin-workshop-management.spec.ts
     ├── app-version-update.spec.ts
@@ -201,7 +210,7 @@ The app runs across 4 isolated hosting environments:
 ## Verification Checklist
 Before completing any coding task, verify the following:
 - [ ] `npm run lint` and `npm run lint:functions` pass with 0 errors.
-- [ ] `npm run test:unit` (287+ tests) and `npm run test:functions` (21+ tests) pass with all tests green.
+- [ ] `npm run test:unit` (296 tests) and `npm run test:functions` (21 tests) pass with all tests green (317 unit tests total).
 - [ ] `npm run validate` passes cleanly.
 - [ ] Any new utility or service logic includes companion `*.test.ts` tests.
 - [ ] Any new interactive UI components include `data-testid` attributes for Playwright.

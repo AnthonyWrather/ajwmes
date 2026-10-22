@@ -11,7 +11,7 @@ You are pair programming on the AJW Marine Electrical Services codebase. Follow 
 ## 2. Code Structure & Conventions
 - Pure business logic belongs in `src/utils/` as standalone, side-effect-free pure functions.
 - Domain types are strictly centralized in `src/types/index.ts` (re-exported in `src/types.ts`).
-- Route guards and action authorization must use `src/lib/rbac.ts` (`canAccessRoute`, `canPerformAction`) and `functions/src/authMiddleware.ts` on the server.
+- Route guards and action authorization must use `src/lib/rbac.ts` (`canAccessRoute`, `canPerformAction`) across all 6 roles (`guest`, `client`, `technician`, `postal`, `admin`, `site`) and `functions/src/authMiddleware.ts` on the server.
 - LocalStorage keys must always be scoped using `src/lib/envStorage.ts` (`getScopedStorageKey`). Never use raw strings in `localStorage`.
 
 ## 3. Offline Resilience & Server Gateways
@@ -22,6 +22,6 @@ You are pair programming on the AJW Marine Electrical Services codebase. Follow 
 
 ## 4. Testing & Verification Checklist
 - Any modification to business logic requires companion unit tests in `src/utils/<name>.test.ts` (and `src/lib/<name>.test.ts` or `functions/src/<name>.test.ts` for service/cloud layers).
-- Unit tests use Node's built-in test runner via `npm run test:unit` (281+ tests) and `npm run test:functions` (21+ tests).
-- All new interactive UI controls must have `data-testid` attributes for Playwright E2E tests (`tests/*.spec.ts` and Page Object Models in `tests/pages/`).
+- Unit tests use Node's built-in test runner via `npm run test:unit` (296 tests) and `npm run test:functions` (21 tests — 317 total unit tests).
+- All new interactive UI controls must have `data-testid` attributes for Playwright E2E tests (21 spec files in `tests/` + 1 training video spec in `tests/training/` across 16 Page Object Models in `tests/pages/`).
 - Always run `npm run lint`, `npm run test:unit`, `npm run test:functions`, and `npm run validate` to verify changes before presenting your solution.

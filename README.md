@@ -14,7 +14,8 @@ Headquartered in Gosport, Hampshire, supporting marine vessels across the Solent
 
 - **Primary Domain**: [https://ajwmes.co.uk](https://ajwmes.co.uk)
 - **Architecture Specification**: See [`DESIGN.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/DESIGN.md) for the 13-section technical architecture specification.
-- **E2E User Journeys & QA Roadmap**: See [`docs/E2E_USER_JOURNEYS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/docs/E2E_USER_JOURNEYS.md) for the 15 automated Playwright E2E user journeys, Page Object Models (`tests/pages/`), and next recommended journeys.
+- **E2E User Journeys & QA Roadmap**: See [`docs/E2E_USER_JOURNEYS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/docs/E2E_USER_JOURNEYS.md) for the 21 automated Playwright E2E user journeys, 16 Page Object Models (`tests/pages/`), and next recommended journeys.
+- **Role Operations Manual**: See [`docs/manual/`](docs/manual/README.md) for step-by-step procedures and automated 1080p video training guides across all 6 roles.
 - **AI Agent Guidelines**: See [`AGENTS.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/AGENTS.md) and [`GEMINI.md`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/GEMINI.md) for automated agent pair-programming rules.
 - **Services Setup Guide**: See [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md) for step-by-step creation of every account, key and endpoint (Firebase, Firestore, Storage, Cloud Functions, Stripe, Resend, ShipStation, Gemini, GitHub Actions, DNS) needed to run development, preview and production.
 
@@ -108,8 +109,8 @@ This codebase enforces strict automated verification using a multi-tier testing 
 
 ```mermaid
 flowchart LR
-    Unit["Unit Tests (302 Passing via tsx)\nsrc/**/*.test.ts (281) & functions/src/**/*.test.ts (21)\n- Pure electrical, CAD & replica math\n- ShipStation weight & box sizing\n- Form, Solent phone & Resend validation\n- Expense, Stripe & RBAC route matrix"]
-    E2E["End-to-End Tests (Playwright - 15 Specs)\ntests/*.spec.ts + tests/pages/* (11 POMs)\n- 5-Browser Matrix (Desktop & Mobile)\n- Authentication, RBAC & Offline Sync\n- Port 5173 isolated Vite server"]
+    Unit["Unit Tests (317 Passing via tsx)\nsrc/**/*.test.ts (296) & functions/src/**/*.test.ts (21)\n- Pure electrical, CAD & replica math\n- ShipStation weight & box sizing\n- Form, Solent phone & Resend validation\n- Expense, Stripe & RBAC route matrix"]
+    E2E["End-to-End Tests (Playwright - 21 Specs + 1 Video Suite)\ntests/*.spec.ts + tests/pages/* (16 POMs)\n- 5-Browser Matrix (Desktop & Mobile)\n- Authentication, RBAC & Offline Sync\n- Port 5173 isolated Vite server"]
     
     Unit --> CI["GitHub Actions CI Pipeline"]
     E2E --> CI
@@ -117,11 +118,11 @@ flowchart LR
 
 ### 1. Unit Testing Suite (`npm run test:unit` & `npm run test:functions`)
 - Uses Node.js's built-in test runner (`node:test`, `node:assert/strict`) via `tsx --test`.
-- Executes **302 unit tests** (**281 frontend tests** across 20 files in `src/` + **21 Cloud Functions tests** across 2 files in `functions/src/`) in under 2 seconds.
+- Executes **317 unit tests** (**296 frontend tests** across 21 files in `src/` + **21 Cloud Functions tests** across 2 files in `functions/src/`) in under 2 seconds.
 - **Dynamic Test Discovery**: Any new test file matching `src/**/*.test.ts` or `functions/src/**/*.test.ts` is automatically picked up and run without modifying configuration files.
 
 ```bash
-# Run frontend unit test suite (281 tests)
+# Run frontend unit test suite (296 tests)
 npm run test:unit
 
 # Run Cloud Functions unit test suite (21 tests)
@@ -132,7 +133,7 @@ npm test
 ```
 
 ### 2. End-to-End Browser Testing (`npm run test:e2e`)
-- Built on **Playwright** (`@playwright/test`) with **15 E2E specification files** and **11 Page Object Models** (`tests/pages/`).
+- Built on **Playwright** (`@playwright/test`) with **21 E2E specification files**, **1 training video suite**, and **16 Page Object Models** (`tests/pages/`).
 - Automatically launches an isolated Vite server on port `5173` before test execution to prevent port conflicts with active local development on port `3000`.
 - Tests authenticate using deterministic `data-testid` selectors across Desktop (Chromium, Firefox, WebKit) and Mobile viewports (Pixel 5, iPhone 12).
 
@@ -145,6 +146,10 @@ npm run test:e2e:all
 
 # Run with interactive UI
 npx playwright test --ui
+
+# Record 1080p role training videos & generate WebVTT subtitles
+npm run record:manuals
+npm run process:videos
 
 # View HTML test report
 npx playwright show-report
@@ -160,7 +165,7 @@ npm run validate
 
 ## Role-Based Access Control (RBAC)
 
-The system features 5 distinct user roles governed by [`src/lib/rbac.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/rbac.ts):
+The system features 6 distinct user roles governed by [`src/lib/rbac.ts`](file:///Users/anthonywrather/Documents/Projects/ajwmes/ajwmes/src/lib/rbac.ts):
 
 | Role | Access Scope | Accessible Application Routes |
 | :--- | :--- | :--- |
@@ -168,7 +173,8 @@ The system features 5 distinct user roles governed by [`src/lib/rbac.ts`](file:/
 | **`client`** | Boat owners | Store, Switch Panel CAD, Replica Panels, Postal Tracker, **Client Vessel Portal** (`/portal`) |
 | **`technician`** | Pontoon engineers | **Technician Field Workstation** (`/technician`: Stopwatch, Materials, Sign-Off), Store, Postal Tracker |
 | **`postal`** | Workshop fulfillment | **Postal Dispatch Workstation** (`/postal`: Consignment Tracking, Packing, 4x6" Thermal Labels), Store, Postal Tracker |
-| **`admin`** | Master administrator | **Unrestricted Access** to all routes, Admin Operations Dashboard (`/admin`), Inventory, Expenses, User Accounts, Print & Laser Studio |
+| **`admin`** | Master workshop administrator | **Unrestricted Access** to operational routes, Admin Operations Dashboard (`/admin`), Inventory, Expenses, User Accounts, Print & Laser Studio |
+| **`site`** | Platform & website administrator | **Platform Infrastructure & Multi-Environment Manager** (Firebase/Resend/ShipStation API keys, test data seeding, JSON snapshots), Store, Custom Panels, Replica Panels |
 
 ---
 
@@ -315,7 +321,7 @@ npm run dev
 npm run lint
 npm run lint:functions
 
-# Run all frontend unit tests (281 tests across 20 suites)
+# Run all frontend unit tests (296 tests across 21 suites)
 npm run test:unit
 
 # Run Cloud Functions unit tests (21 tests across Resend & ShipStation gateways)
@@ -324,11 +330,15 @@ npm run test:functions
 # Build Cloud Functions TypeScript
 npm run build:functions
 
-# Run Playwright end-to-end browser tests (15 spec files)
+# Run Playwright end-to-end browser tests (21 spec files)
 npm run test:e2e
 
 # Run Playwright across all 5 desktop & mobile browsers
 npm run test:e2e:all
+
+# Record 1080p role training videos & generate WebVTT subtitles
+npm run record:manuals
+npm run process:videos
 
 # Run complete pre-flight check (lint + test:unit + build + test:functions + build:functions)
 npm run validate

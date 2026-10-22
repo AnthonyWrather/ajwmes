@@ -15,6 +15,7 @@
 5. [Stripe (Payments)](#5-stripe-payments)
 6. [Resend (Transactional Email)](#6-resend-transactional-email)
 7. [Google Gemini (Optional AI Features)](#7-google-gemini-optional-ai-features)
+7b. [ShipStation (Postal Dispatch & Carrier Labels)](#7b-shipstation-carrier-api--cloud-functions-gateway-postal-dispatch)
 8. [GitHub Repository, Actions & Secrets](#8-github-repository-actions--secrets)
 9. [Custom Domain & DNS](#9-custom-domain--dns)
 10. [Per-Environment Setup Checklists](#10-per-environment-setup-checklists)
@@ -35,6 +36,7 @@
 | **Google Analytics 4** | Operational event tracking | Optional | [`src/lib/analytics.ts`](../src/lib/analytics.ts) | Events are no-ops |
 | **Stripe** | Diagnostic deposits & storefront payments | Optional | [`src/lib/stripeConfig.ts`](../src/lib/stripeConfig.ts), [`src/lib/stripeService.ts`](../src/lib/stripeService.ts) | **Simulated** payments |
 | **Resend** | Quote, dispatch & zero-stock alert emails | Optional | [`src/lib/resendConfig.ts`](../src/lib/resendConfig.ts), [`src/lib/emailService.ts`](../src/lib/emailService.ts) | **Simulated** outbox (console log) |
+| **ShipStation** | Postal carrier rates (Royal Mail, DPD) & 4x6" thermal labels | Optional | [`src/lib/shipstationConfig.ts`](../src/lib/shipstationConfig.ts), [`src/lib/shipstationService.ts`](../src/lib/shipstationService.ts) | **Simulated** rates & deterministic 4x6" SVG thermal label fallback |
 | **Google Gemini** | AI features (switch-panel photo replica) | Optional | `@google/genai` | Feature disabled |
 | **GitHub Actions** | CI tests + automated deploys | **Required** for CD | [`.github/workflows/`](../.github/workflows) | Manual `firebase deploy` |
 
@@ -42,8 +44,9 @@
 flowchart LR
     Dev["Developer / Browser (PWA)"] -->|"VITE_FIREBASE_*"| FB["Firebase\nAuth + Firestore + Storage"]
     Dev -->|"VITE_STRIPE_*"| ST["Stripe\nPublishable key + Payment Links"]
-    Dev -->|"sendEmail Cloud Function"| CF["Cloud Function\n(europe-west2)"]
+    Dev -->|"sendEmail & ShipStation Cloud Functions"| CF["Cloud Function\n(europe-west2)"]
     CF -->|"Secret Manager (RESEND_API_KEY)"| RS["Resend\nEmail API"]
+    CF -->|"Secret Manager (SHIPSTATION_*)"| SS["ShipStation\nCarrier Rates & Labels"]
     GH["GitHub Actions"] -->|"FIREBASE_SERVICE_ACCOUNT"| HO["Firebase Hosting\nlive + preview channels"]
     HO --> Dev
     DNS["Domain Registrar DNS"] --> HO

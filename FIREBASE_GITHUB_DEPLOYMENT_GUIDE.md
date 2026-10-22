@@ -12,7 +12,7 @@ Here are the exact next steps to get your app live on the internet with a free S
 ## What We Have Already Prepared in This Repo
 1. `firebase.json` — Pre-configured for 2nd Gen Firebase Cloud Functions (`functions/` in `europe-west2`) and Vite single-page application (SPA) Hosting, caching headers, `/version.json` rollout manifest, and service-worker PWA support.
 2. `.firebaserc` — Configured with your Firebase project alias.
-3. `.github/workflows/playwright.yml` & `.github/workflows/firebase-hosting-merge.yml` — Automated CI/CD workflows that run TypeScript lint checks, 302 unit tests (frontend + Cloud Functions), and Playwright E2E browser suites before deploying your site to Firebase Hosting.
+3. `.github/workflows/playwright.yml` & `.github/workflows/firebase-hosting-merge.yml` — Automated CI/CD workflows that run TypeScript lint checks, 317 unit tests (296 frontend + 21 Cloud Functions), and Playwright E2E browser suites before deploying your site to Firebase Hosting.
 
 ---
 
