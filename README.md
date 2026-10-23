@@ -2,7 +2,7 @@
 
 [![Node.js Version](https://img.shields.io/badge/Node->=24.12.0-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React Version](https://img.shields.io/badge/React-19.3-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.x%20Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4.x-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Playwright](https://img.shields.io/badge/Playwright-E2E%20Automated-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
@@ -68,8 +68,8 @@ flowchart TD
 
 The system uses an **Offline-First Single-Page Application (SPA) / Progressive Web App (PWA)** architecture built on React 19 and Vite 8, backed by Google Firebase serverless cloud services, 2nd Gen Cloud Functions (`europe-west2`), and Google Gemini Generative AI.
 
-- **Frontend & Build**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
-- **Cloud & Backend**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` for Resend `sendEmail` and ShipStation `getShippingRates`, `generateShippingLabel`, `createShipStationOrder`, `shipstationWebhook` with Google Secret Manager), `@google/genai`
+- **Frontend & Build**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `lucide-react` (v1.59), `vite-plugin-pwa`
+- **Cloud & Backend**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` with `firebase-admin ^14.5.0` & `firebase-functions ^7.4.0` for Resend `sendEmail` and ShipStation `getShippingRates`, `generateShippingLabel`, `createShipStationOrder`, `shipstationWebhook` using Google Secret Manager), `@google/genai`
 - **Persistence**: Multi-tier storage with IndexedDB (`ajw_marine_field_db`), scoped LocalStorage (`ajwmes_<env>_*`), and Cloud Firestore realtime listeners.
 - **Resilience**: Full offline degradation with automatic queuing of mutations when disconnected on the pontoon, plus deterministic local fallbacks for email outbox and 4x6" SVG thermal shipping labels.
 
@@ -109,7 +109,7 @@ This codebase enforces strict automated verification using a multi-tier testing 
 
 ```mermaid
 flowchart LR
-    Unit["Unit Tests (317 Passing via tsx)\nsrc/**/*.test.ts (296) & functions/src/**/*.test.ts (21)\n- Pure electrical, CAD & replica math\n- ShipStation weight & box sizing\n- Form, Solent phone & Resend validation\n- Expense, Stripe & RBAC route matrix"]
+    Unit["Unit Tests (330 Passing via tsx)\nsrc/**/*.test.ts (309) & functions/src/**/*.test.ts (21)\n- Pure electrical, CAD & replica math\n- ShipStation weight & box sizing\n- Form, Solent phone & Resend validation\n- Expense, Stripe & RBAC route matrix"]
     E2E["End-to-End Tests (Playwright - 21 Specs + 1 Video Suite)\ntests/*.spec.ts + tests/pages/* (16 POMs)\n- 5-Browser Matrix (Desktop & Mobile)\n- Authentication, RBAC & Offline Sync\n- Port 5173 isolated Vite server"]
     
     Unit --> CI["GitHub Actions CI Pipeline"]
@@ -118,14 +118,14 @@ flowchart LR
 
 ### 1. Unit Testing Suite (`npm run test:unit` & `npm run test:functions`)
 - Uses Node.js's built-in test runner (`node:test`, `node:assert/strict`) via `tsx --test`.
-- Executes **317 unit tests** (**296 frontend tests** across 21 files in `src/` + **21 Cloud Functions tests** across 2 files in `functions/src/`) in under 2 seconds.
+- Executes **330 unit tests** (**309 frontend tests** across 25 files in `src/` + **21 Cloud Functions tests** across 2 files in `functions/src/`) in under 2 seconds.
 - **Dynamic Test Discovery**: Any new test file matching `src/**/*.test.ts` or `functions/src/**/*.test.ts` is automatically picked up and run without modifying configuration files.
 
 ```bash
-# Run frontend unit test suite (296 tests)
+# Run frontend unit test suite (309 tests across 25 suites)
 npm run test:unit
 
-# Run Cloud Functions unit test suite (21 tests)
+# Run Cloud Functions unit test suite (21 tests across 2 suites)
 npm run test:functions
 
 # Or alias for frontend unit tests
@@ -324,7 +324,7 @@ npm run dev
 npm run lint
 npm run lint:functions
 
-# Run all frontend unit tests (296 tests across 21 suites)
+# Run all frontend unit tests (309 tests across 25 suites)
 npm run test:unit
 
 # Run Cloud Functions unit tests (21 tests across Resend & ShipStation gateways)

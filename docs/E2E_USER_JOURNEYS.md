@@ -3,7 +3,7 @@
 > **Classification:** Engineering & QA Automation Architecture Document  
 > **Author:** Principal Full Stack Engineer, Cloud Infrastructure Platform Engineer & QA Automation Specialist  
 > **Application Version:** `0.0.1` (PoC Baseline) | **Target Runtime:** Node `>=24.12.0`  
-> **Test Framework:** Playwright (`@playwright/test`) with 21 E2E Spec Suites, 1 Video Training Suite, 16 Page Object Models (POM) & 317 Unit Tests (296 Frontend + 21 Cloud Functions)  
+> **Test Framework:** Playwright (`@playwright/test`) with 21 E2E Spec Suites, 1 Video Training Suite, 16 Page Object Models (POM) & 330 Unit Tests (309 Frontend + 21 Cloud Functions)  
 > **Date:** October 2026  
 
 ---

@@ -12,10 +12,10 @@ Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and p
 
 ## Tech Stack & Runtime
 - **Runtime**: Node `>=24.12.0` (as defined in `.node-version`, `.nvmrc`, and `package.json`)
-- **Frontend Core**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
-- **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions` v6 & `firebase-admin` v13 with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
+- **Frontend Core**: React 19, TypeScript (strict ^7.0.2), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `lucide-react` (^1.59.0), `vite-plugin-pwa`
+- **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions ^7.4.0` & `firebase-admin ^14.5.0` with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
 - **Reporting & Icons**: `jspdf` (marine certificate rendering), `lucide-react`
-- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (299 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests — 320 unit tests total), Playwright (`@playwright/test` across 21 E2E browser specs + 1 video training spec & 16 Page Object Models)
+- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (309 frontend unit tests across 25 suites) and `npm run test:functions` (21 Cloud Functions unit tests across 2 suites — 330 unit tests total), Playwright (`@playwright/test` across 21 E2E browser specs + 1 video training spec & 16 Page Object Models)
 
 ---
 
@@ -26,7 +26,7 @@ npm run build           # Production build (Vite + PWA service worker + /version
 npm run preview         # Preview production build locally
 npm run lint            # Typecheck frontend via `tsc --noEmit` (MUST pass with 0 errors)
 npm run lint:functions  # Typecheck Cloud Functions (`functions/`) via `tsc --noEmit`
-npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (299 tests)
+npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (309 tests)
 npm run test:functions  # Run Cloud Functions unit tests matching functions/src/**/*.test.ts (21 tests)
 npm run build:functions # Compile Cloud Functions TypeScript to functions/lib/
 npm run test            # Alias for test:unit
@@ -73,7 +73,7 @@ ajwmes/
 │   │   ├── common/         # AppUpdateBanner, FirestoreSyncBanner, ImageLightboxModal
 │   │   ├── forms/          # Booking & diagnostic quote request modal
 │   │   ├── home/           # Landing hero, services overview, pricing highlights
-│   │   ├── icons/          # Vector SVG icons & brand marks (GithubIcon)
+│   │   ├── icons/          # Vector SVG icons & brand marks (GithubIcon + GithubIcon.test.ts)
 │   │   ├── modals/         # Environment settings inspector, free hosting guide, help center
 │   │   ├── orders/         # Postal order tracker & carrier progress
 │   │   ├── panels/         # Custom switch panel CAD designer & photo replica extractor
@@ -118,7 +118,7 @@ ajwmes/
 │   │   ├── inventorySync.ts             # Split catalog/category JSON import, export & reconciliation
 │   │   ├── offlineQueueCalculations.ts  # Mutation priority ordering & sync progress calculations
 │   │   ├── postalTimeline.ts            # Royal Mail / DPD dispatch tracking calculations
-│   │   ├── pwaInstallCalculations.ts    # Conditional PWA install prompt calculations
+│   │   ├── pwaInstallCalculations.ts    # Conditional PWA install prompt calculations (+ pwaInstallCalculations.test.ts)
 │   │   ├── resendValidation.ts          # Resend API key & email payload validation
 │   │   ├── shipstationCalculations.ts   # Marine package weight heuristics & box dimensioning
 │   │   ├── stripeCalculations.ts        # Stripe pence conversion, fee estimation, key validation
@@ -211,7 +211,7 @@ The app runs across 4 isolated hosting environments:
 ## Verification Checklist
 Before completing any coding task, verify the following:
 - [ ] `npm run lint` and `npm run lint:functions` pass with 0 errors.
-- [ ] `npm run test:unit` (296 tests) and `npm run test:functions` (21 tests) pass with all tests green (317 unit tests total).
+- [ ] `npm run test:unit` (309 tests across 25 suites) and `npm run test:functions` (21 tests across 2 suites) pass with all tests green (330 unit tests total).
 - [ ] `npm run validate` passes cleanly.
 - [ ] Any new utility or service logic includes companion `*.test.ts` tests.
 - [ ] Any new interactive UI components include `data-testid` attributes for Playwright.
