@@ -276,3 +276,46 @@ export function generateSimulatedShipmentId(): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
   return `shp_sim_${hex}_${rand}`;
 }
+
+export interface ShippingLabelMetadataInput {
+  labelUrl?: string;
+  shippingLabelUrl?: string;
+  labelPdfBase64?: string;
+  shippingLabelBase64?: string;
+  trackingNumber?: string;
+  carrierCode?: 'royal_mail' | 'dpd_uk' | string;
+  trackingCarrier?: string;
+  carrier?: string;
+  shipmentId?: string;
+  shipstationShipmentId?: string;
+}
+
+/**
+ * Attaches generated ShipStation shipping label metadata to a PostalOrder record.
+ * Preserves existing order properties and ensures shippingLabelUrl, shippingLabelBase64,
+ * trackingNumber, trackingCarrier, and shipstationShipmentId are persisted.
+ */
+export function attachShippingLabelToPostalOrder(
+  order: PostalOrder,
+  label: ShippingLabelMetadataInput
+): PostalOrder {
+  const resolvedLabelUrl = label.labelUrl || label.shippingLabelUrl || order.shippingLabelUrl;
+  const resolvedLabelBase64 = label.labelPdfBase64 || label.shippingLabelBase64 || order.shippingLabelBase64 || resolvedLabelUrl;
+  const resolvedTrackingNumber = label.trackingNumber || order.trackingNumber;
+  const resolvedShipmentId = label.shipmentId || label.shipstationShipmentId || order.shipstationShipmentId;
+
+  let resolvedCarrier = label.trackingCarrier || label.carrier || order.trackingCarrier || order.carrier;
+  if (!resolvedCarrier && label.carrierCode) {
+    resolvedCarrier = label.carrierCode === 'dpd_uk' ? 'DPD Next Day Courier' : 'Royal Mail Tracked 24';
+  }
+
+  return {
+    ...order,
+    ...(resolvedLabelUrl ? { shippingLabelUrl: resolvedLabelUrl } : {}),
+    ...(resolvedLabelBase64 ? { shippingLabelBase64: resolvedLabelBase64 } : {}),
+    ...(resolvedTrackingNumber ? { trackingNumber: resolvedTrackingNumber } : {}),
+    ...(resolvedCarrier ? { trackingCarrier: resolvedCarrier, carrier: resolvedCarrier } : {}),
+    ...(resolvedShipmentId ? { shipstationShipmentId: resolvedShipmentId } : {})
+  };
+}
+

@@ -7,9 +7,10 @@ import {
   mapShippingMethodToCarrierService,
   estimateCarrierRates,
   generateSimulatedTrackingNumber,
-  generateSimulatedShipmentId
+  generateSimulatedShipmentId,
+  attachShippingLabelToPostalOrder
 } from './shipstationCalculations';
-import { PostalOrderItem, CatalogItem } from '../types';
+import { PostalOrderItem, CatalogItem, PostalOrder } from '../types';
 
 describe('shipstationCalculations Utility Suite', () => {
   const sampleCatalog: CatalogItem[] = [
@@ -249,6 +250,91 @@ describe('shipstationCalculations Utility Suite', () => {
     it('should generate valid shipment reference string', () => {
       const id = generateSimulatedShipmentId();
       assert.match(id, /^shp_sim_[a-f0-9]+_\d{4}$/);
+    });
+  });
+
+  describe('attachShippingLabelToPostalOrder', () => {
+    const baseOrder: PostalOrder = {
+      id: 'ord-test-123',
+      orderNumber: 'AJW-ORD-123',
+      customerName: 'Captain James',
+      customerEmail: 'james@solent-yacht.co.uk',
+      customerPhone: '02392 511 222',
+      shippingAddress: {
+        fullName: 'Captain James',
+        email: 'james@solent-yacht.co.uk',
+        phone: '02392 511 222',
+        addressLine1: 'Ocean Village Marina Berth 42',
+        city: 'Southampton',
+        postcode: 'SO14 3TJ'
+      },
+      shippingMethod: 'royal_mail_tracked',
+      shippingCost: 4.95,
+      items: [
+        {
+          itemId: 'cat-fuse-1',
+          name: 'Mega Fuse 250A',
+          unit: 'pcs',
+          quantity: 2,
+          unitPrice: 4.5,
+          lineTotal: 9.0
+        }
+      ],
+      subtotal: 9.0,
+      total: 13.95,
+      paymentMethod: 'card',
+      paymentStatus: 'paid',
+      orderStatus: 'packed',
+      createdAt: '2026-10-23T10:00:00Z'
+    };
+
+    it('should attach shipping label URL, base64 payload, tracking number and shipment id', () => {
+      const labelPayload = {
+        labelUrl: 'blob:http://localhost:3000/mock-label-blob',
+        labelPdfBase64: 'data:image/svg+xml;base64,PHN2Zz...',
+        trackingNumber: 'GB987654321RM',
+        carrierCode: 'royal_mail' as const,
+        shipmentId: 'shp_sim_abc_1234'
+      };
+
+      const updated = attachShippingLabelToPostalOrder(baseOrder, labelPayload);
+
+      assert.strictEqual(updated.shippingLabelUrl, 'blob:http://localhost:3000/mock-label-blob');
+      assert.strictEqual(updated.shippingLabelBase64, 'data:image/svg+xml;base64,PHN2Zz...');
+      assert.strictEqual(updated.trackingNumber, 'GB987654321RM');
+      assert.strictEqual(updated.trackingCarrier, 'Royal Mail Tracked 24');
+      assert.strictEqual(updated.shipstationShipmentId, 'shp_sim_abc_1234');
+      // Ensure other order fields are intact
+      assert.strictEqual(updated.id, 'ord-test-123');
+      assert.strictEqual(updated.total, 13.95);
+      assert.strictEqual(updated.orderStatus, 'packed');
+    });
+
+    it('should resolve DPD carrier name when carrierCode is dpd_uk', () => {
+      const updated = attachShippingLabelToPostalOrder(baseOrder, {
+        labelUrl: 'https://shipstation.api/dpd-label.pdf',
+        trackingNumber: '15501234567890',
+        carrierCode: 'dpd_uk'
+      });
+
+      assert.strictEqual(updated.trackingCarrier, 'DPD Next Day Courier');
+      assert.strictEqual(updated.trackingNumber, '15501234567890');
+      assert.strictEqual(updated.shippingLabelUrl, 'https://shipstation.api/dpd-label.pdf');
+    });
+
+    it('should preserve existing values when partial label object is provided', () => {
+      const orderWithExisting: PostalOrder = {
+        ...baseOrder,
+        shippingLabelUrl: 'https://existing-label-url.com',
+        shippingLabelBase64: 'existing-base64',
+        trackingNumber: 'GB111222333RM'
+      };
+
+      const updated = attachShippingLabelToPostalOrder(orderWithExisting, {});
+
+      assert.strictEqual(updated.shippingLabelUrl, 'https://existing-label-url.com');
+      assert.strictEqual(updated.shippingLabelBase64, 'existing-base64');
+      assert.strictEqual(updated.trackingNumber, 'GB111222333RM');
     });
   });
 });

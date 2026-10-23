@@ -175,10 +175,12 @@ graph TD
    - Select active consignment card and inspect itemized `Workshop Pick & Pack List` and order total.
 4. **Waterproof A4 Packing Slip Modal & Price Toggle**:
    - Open printable A4 Packing Slip modal (`packingSlipSheet`), verify Haslar Marina Trade Yard letterhead, toggle `toggleShowPrices`, and dismiss.
-5. **ShipStation Live Carrier Rates & 4x6" Thermal Label Generation**:
+5. **ShipStation Live Carrier Rates, 4x6" Thermal Label Generation & Record Persistence (Issue #55)**:
    - Verify live carrier rates panel (`ratesPanel`), connection status badge (`connectionBadge`), and carrier rate cards (`rateCardRoyalMail24`, `rateCardDpdNextDay`).
    - Mark order packed on bench (`markOrderPacked`), select Royal Mail Tracked 24, and generate a 1-click **4x6" Thermal Shipping Label** (`thermalLabelModal`).
+   - Persist generated shipping label URL, base64 payload, and tracking number back to the `PostalOrder` record in state, Firestore, and LocalStorage.
    - Assert generated UK tracking barcode (`/^GB\d{9}RM$/`), trigger thermal print (`printThermalLabelButton`), and dispatch order (`dispatchWithTracking`).
+   - Verify that historical 4x6" thermal labels remain printable and inspectable via the dedicated reprint button (`reprintThermalLabelButton`) across both `dispatched` and `delivered` order states.
 6. **Pontoon Delivery Confirmation & Visual Progress Timelines View**:
    - Advance consignment to `Delivered to Vessel / Marina` (`FULFILLED`).
    - Switch to `Order Progress Timelines & Lifecycle History` view and verify all 4 visual stepper milestones (`timeline-step-received`, `timeline-step-packed`, `timeline-step-dispatched`, `timeline-step-delivered`).

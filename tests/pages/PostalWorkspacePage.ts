@@ -56,6 +56,7 @@ export class PostalWorkspacePage {
   readonly generateCarrierLabelButton: Locator;
   readonly viewThermalLabelButton: Locator;
   readonly openThermalLabelHeaderButton: Locator;
+  readonly reprintThermalLabelButton: Locator;
   readonly thermalLabelModal: Locator;
   readonly modalTrackingNumber: Locator;
   readonly closeThermalLabelButton: Locator;
@@ -126,6 +127,7 @@ export class PostalWorkspacePage {
     this.generateCarrierLabelButton = page.getByTestId('shipstation-generate-label-btn');
     this.viewThermalLabelButton = page.getByTestId('view-thermal-label-btn');
     this.openThermalLabelHeaderButton = page.getByTestId('open-thermal-label-btn');
+    this.reprintThermalLabelButton = page.getByTestId('reprint-thermal-label-btn');
     this.thermalLabelModal = page.getByTestId('shipstation-label-modal');
     this.modalTrackingNumber = page.getByTestId('modal-tracking-number');
     this.closeThermalLabelButton = page.getByTestId('close-thermal-label-btn');
@@ -202,7 +204,7 @@ export class PostalWorkspacePage {
     await this.trackingNumberInput.fill(trackingNumber);
     await expect(this.confirmDispatchButton).toBeVisible({ timeout: 10000 });
     await this.confirmDispatchButton.scrollIntoViewIfNeeded();
-    await this.confirmDispatchButton.click({ force: true });
+    await this.confirmDispatchButton.click();
   }
 
   async markOrderDelivered(): Promise<void> {

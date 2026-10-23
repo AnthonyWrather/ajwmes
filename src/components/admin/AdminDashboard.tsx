@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, CategoryItem, PostalOrder, StockAlert, UserProfile, UserRole, JobExpense } from '../../types';
+import { JobRecord, MessageItem, MaterialLineItem, CatalogItem, CatalogSnapshot, CategoryItem, PostalOrder, StockAlert, UserProfile, UserRole, JobExpense, ShipStationLabelResult } from '../../types';
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { DiagnosticTimerModal } from './DiagnosticTimerModal';
 import { InventoryManager } from './InventoryManager';
@@ -48,7 +48,19 @@ interface AdminDashboardProps {
   onUpdateCatalog: (newCatalog: CatalogItem[]) => void;
   onCreateSnapshot: (label: string) => void;
   onRestoreSnapshot: (snapshot: CatalogSnapshot) => void;
-  onUpdateOrderStatus: (orderId: string, status: PostalOrder['orderStatus'], trackingNumber?: string, carrier?: string) => void;
+  onUpdateOrderStatus: (
+    orderId: string, 
+    status: PostalOrder['orderStatus'], 
+    trackingNumber?: string, 
+    carrier?: string,
+    shippingLabelUrl?: string,
+    shippingLabelBase64?: string,
+    shipstationShipmentId?: string
+  ) => void;
+  onSaveOrderShippingLabel?: (
+    orderId: string,
+    labelResult: ShipStationLabelResult
+  ) => void;
   onOpenSupplierReorder?: (item: CatalogItem) => void;
   onViewAlertEmail?: (alert: StockAlert) => void;
   onSaveUser?: (user: UserProfile) => Promise<void> | void;
@@ -85,6 +97,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onCreateSnapshot,
   onRestoreSnapshot,
   onUpdateOrderStatus,
+  onSaveOrderShippingLabel,
   onOpenSupplierReorder,
   onViewAlertEmail,
   onSaveUser,
@@ -758,6 +771,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <PostalOrdersManager
           orders={postalOrders}
           onUpdateOrderStatus={onUpdateOrderStatus}
+          onSaveOrderShippingLabel={onSaveOrderShippingLabel}
         />
       )}
 

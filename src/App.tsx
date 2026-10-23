@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState, CustomerSignOffRecord, JobExpense } from './types';
+import { UserRole, UserProfile, JobRecord, CatalogItem, CategoryItem, CatalogSnapshot, MessageItem, MaterialLineItem, ServiceType, SwitchPanelConfig, VesselSpec, CartItem, PostalOrder, StockAlert, SupplierPurchaseOrder, FirestoreConnectionState, CustomerSignOffRecord, JobExpense, ShipStationLabelResult } from './types';
+import { attachShippingLabelToPostalOrder } from './utils/shipstationCalculations';
 import { DEFAULT_CATALOG, DEFAULT_CATEGORIES, INITIAL_JOBS, INITIAL_SAMPLE_PANEL, INITIAL_VESSEL_SPEC, INITIAL_POSTAL_ORDERS, DEFAULT_VESSELS, INITIAL_EXPENSES } from './data/seedData';
 import { generateStockAlertEmail } from './data/supplierData';
 import { Navigation } from './components/Navigation';
@@ -1354,11 +1355,34 @@ export default function App() {
     );
   };
 
+  const handleSaveOrderShippingLabel = (
+    orderId: string,
+    labelResult: ShipStationLabelResult
+  ) => {
+    enforceAction(
+      currentUserRole,
+      'update_postal_status',
+      () => {
+        setPostalOrders(prev =>
+          prev.map(o => {
+            if (o.id !== orderId) return o;
+            const updatedOrder = attachShippingLabelToPostalOrder(o, labelResult);
+            syncPostalOrderToFirestore(updatedOrder);
+            return updatedOrder;
+          })
+        );
+      }
+    );
+  };
+
   const handleUpdateOrderStatus = (
     orderId: string,
     status: PostalOrder['orderStatus'],
     trackingNumber?: string,
-    carrier?: string
+    carrier?: string,
+    shippingLabelUrl?: string,
+    shippingLabelBase64?: string,
+    shipstationShipmentId?: string
   ) => {
     enforceAction(
       currentUserRole,
@@ -1378,6 +1402,9 @@ export default function App() {
               orderStatus: status,
               trackingNumber: resolvedTracking || o.trackingNumber,
               trackingCarrier: resolvedCarrier || o.trackingCarrier,
+              shippingLabelUrl: shippingLabelUrl || o.shippingLabelUrl,
+              shippingLabelBase64: shippingLabelBase64 || o.shippingLabelBase64,
+              shipstationShipmentId: shipstationShipmentId || o.shipstationShipmentId,
               packedAt: (status === 'packed' || status === 'ready_for_pickup' || status === 'dispatched' || status === 'delivered') ? (o.packedAt || new Date().toISOString().slice(0, 16).replace('T', ' ')) : o.packedAt,
               dispatchedAt: (status === 'dispatched' || status === 'delivered') ? (o.dispatchedAt || new Date().toISOString().slice(0, 16).replace('T', ' ')) : o.dispatchedAt,
               deliveredAt: status === 'delivered' ? (o.deliveredAt || new Date().toISOString().slice(0, 16).replace('T', ' ')) : o.deliveredAt
@@ -1738,6 +1765,7 @@ export default function App() {
               onCreateSnapshot={handleCreateSnapshot}
               onRestoreSnapshot={handleRestoreSnapshot}
               onUpdateOrderStatus={handleUpdateOrderStatus}
+              onSaveOrderShippingLabel={handleSaveOrderShippingLabel}
               onOpenSupplierReorder={setSupplierReorderItem}
               onViewAlertEmail={setViewingAlertEmail}
               onSaveUser={handleSaveUserToDatabase}
@@ -1776,6 +1804,7 @@ export default function App() {
               <PostalWorkspace
                 orders={postalOrders}
                 onUpdateOrderStatus={handleUpdateOrderStatus}
+                onSaveOrderShippingLabel={handleSaveOrderShippingLabel}
               />
             )}
           </React.Suspense>

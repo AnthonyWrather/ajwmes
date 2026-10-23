@@ -191,6 +191,8 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
       // Assert thermal shipping label modal and barcode sheet
       await expect(postal.thermalLabelModal).toBeVisible();
       await expect(postal.modalTrackingNumber).toContainText(/^GB\d{9}RM$/);
+      const generatedTracking = (await postal.modalTrackingNumber.textContent())?.trim() || '';
+      expect(generatedTracking).toMatch(/^GB\d{9}RM$/);
       await expect(postal.printThermalLabelButton).toBeVisible();
       await postal.printThermalLabelButton.click({ force: true });
 
@@ -202,16 +204,30 @@ test.describe('Solent Marine Postal Workshop Fulfillment & Dispatch E2E Flow', (
       await expect(postal.trackingNumberInput).toBeVisible();
 
       // Dispatch with generated tracking reference
-      await postal.dispatchWithTracking('Royal Mail Tracked 24', 'GB987654321RM');
+      await postal.dispatchWithTracking('Royal Mail Tracked 24', generatedTracking);
 
       // Verify order transitions to Dispatched
       await expect(page.getByText('Dispatched and Consignment Logged').first()).toBeVisible({ timeout: 10000 });
+
+      // Verify shipping label metadata persisted to order record and reprint button is active
+      await expect(postal.reprintThermalLabelButton).toBeVisible();
+      await postal.reprintThermalLabelButton.click({ force: true });
+      await expect(postal.thermalLabelModal).toBeVisible();
+      await expect(postal.modalTrackingNumber).toContainText(generatedTracking);
+      await postal.closeThermalLabelModal();
     });
 
-    await test.step('7. Confirm vessel pontoon delivery', async () => {
+    await test.step('7. Confirm vessel pontoon delivery and verify label persistence', async () => {
       await postal.markOrderDelivered();
       await expect(page.getByText('Delivered to Vessel / Marina').first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('FULFILLED').first()).toBeVisible();
+
+      // Verify historical 4x6" thermal label remains printable in fulfilled state
+      await expect(postal.reprintThermalLabelButton).toBeVisible();
+      await postal.reprintThermalLabelButton.click({ force: true });
+      await expect(postal.thermalLabelModal).toBeVisible();
+      await expect(postal.modalTrackingNumber).toContainText(/^GB\d{9}RM$/);
+      await postal.closeThermalLabelModal();
     });
 
     await test.step('8. Audit Visual Progress Timelines view and lifecycle milestones', async () => {
