@@ -605,39 +605,32 @@ Automated pipelines run via GitHub Actions under [`.github/workflows/`](file:///
 
 ```mermaid
 flowchart TD
-    subgraph Trigger["Git Event Triggers"]
-        PR["Pull Request to main"]
-        PushMain["Push to main / master"]
+    subgraph PRTrigger["Pull Request Quality Gate"]
+        PR["Pull Request to main"] --> CI["Continuous Integration (playwright.yml)"]
+        CI --> Lint["npm run lint\n(TypeScript Strict Compilation)"]
+        Lint --> Unit["npm run test:unit & test:functions\n(320 Unit Tests total)"]
+        Unit --> E2E["Full Matrix Playwright E2E\n(Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari)"]
+        E2E --> GatePass["Status Checks Green\nReady to Merge"]
     end
 
-    subgraph CI["Continuous Integration (playwright.yml)"]
-        direction TB
-        Lint["npm run lint\n(TypeScript Strict Compilation)"]
-        Unit["npm run test:unit\n(296 Unit Tests via tsx)"]
-        CachePW["Restore Playwright Browser Cache"]
-        E2E["npm run test:e2e\n(Multi-browser Playwright Suite)"]
-        Artifacts["Upload Test Failure Reports (if failed)"]
-        
-        Lint --> Unit --> CachePW --> E2E
-        E2E -. Failure .-> Artifacts
+    subgraph CDTrigger["Production Delivery Pipeline"]
+        PushMain["Merge Commit to main"] --> CD["Rapid Deployment (firebase-hosting-merge.yml)"]
+        CD --> FunctionsBuild["npm run build:functions\n(Compile Cloud Functions)"]
+        FunctionsBuild --> Build["npm run build\n(Vite Production + PWA Generation)"]
+        Build --> Deploy["Firebase Extended Action\nDeploy to Firebase Hosting Channel: live"]
+        Deploy --> LiveProd["Live Production\n(ajwmes.co.uk)"]
     end
 
-    subgraph CD["Continuous Deployment (firebase-hosting-merge.yml)"]
-        direction TB
-        Build["npm run build\n(Vite Production + PWA Generation)"]
-        Deploy["Firebase Extended Action\nDeploy to Firebase Hosting Channel: live"]
-    end
-
-    PR --> CI
-    PushMain --> CI
-    CI -- Success on Main --> CD
-    CD --> LiveProd["Live Production\n(ajwmes.co.uk)"]
+    GatePass -.->|"Merge PR"| PushMain
 ```
 
 ### 11.1 Verification Guardrails
 Before code is accepted or deployed:
 1. `npm run lint`: Validates 100% strict TypeScript typing without errors.
-2. `npm run test:unit`: All mathematical and electrical specs must pass.
+2. `npm run test:unit`: All 299 frontend unit tests (electrical calculations, sizing, form validation, auth, etc.) must pass.
+3. `npm run test:functions`: All 21 Cloud Functions unit tests must pass.
+4. `npm run test:e2e`: Playwright matrix across Chromium, Firefox, WebKit, Mobile Chrome, and Mobile Safari must succeed on all PRs.
+5. Merge-to-main executes a fast ~90s production build and live deployment to Firebase Hosting without re-running redundant browser matrix suites.
 3. `npm run test:e2e`: Playwright headless suites across Chromium, Firefox, WebKit, and Mobile must succeed.
 
 ### 11.2 External Services & Environment Provisioning

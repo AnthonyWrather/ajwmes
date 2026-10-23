@@ -12,7 +12,7 @@ Here are the exact next steps to get your app live on the internet with a free S
 ## What We Have Already Prepared in This Repo
 1. `firebase.json` — Pre-configured for 2nd Gen Firebase Cloud Functions (`functions/` in `europe-west2`) and Vite single-page application (SPA) Hosting, caching headers, `/version.json` rollout manifest, and service-worker PWA support.
 2. `.firebaserc` — Configured with your Firebase project alias.
-3. `.github/workflows/playwright.yml` & `.github/workflows/firebase-hosting-merge.yml` — Automated CI/CD workflows that run TypeScript lint checks, 317 unit tests (296 frontend + 21 Cloud Functions), and Playwright E2E browser suites before deploying your site to Firebase Hosting.
+3. `.github/workflows/playwright.yml` & `.github/workflows/firebase-hosting-merge.yml` — Automated CI/CD workflows: `playwright.yml` executes TypeScript lint checks, 320 unit tests (299 frontend + 21 Cloud Functions), and Playwright 5-browser matrix tests on PRs, while `firebase-hosting-merge.yml` rapidly builds and deploys production assets to Firebase Hosting on merge to `main`.
 
 ---
 
@@ -59,7 +59,7 @@ Every time you commit or merge changes into your GitHub repository, GitHub Actio
 2. The CLI will ask:
    - *For which GitHub repository would you like to set up a GitHub workflow?* -> Enter your repo (e.g. `username/repo-name`).
    - *Set up the workflow to run a build script before every deploy?* -> Press **Yes**, script: `npm install && npm run build`.
-   - *Set up automatic deployment to your site's live channel when a PR is merged?* -> Press **Yes**, branch: `main` (or `master`).
+   - *Set up automatic deployment to your site's live channel when a PR is merged?* -> Press **Yes**, branch: `main`.
 3. Firebase CLI will automatically create the required encrypted secret (`FIREBASE_SERVICE_ACCOUNT_...`) in your GitHub repository settings!
 4. **Test-Gated Deployment Pipeline (`needs: test`)**:
    - The workflow (`.github/workflows/firebase-hosting-merge.yml`) runs the full automated test suite (TypeScript check, unit tests, and Playwright E2E browser tests) in the `test` job.
