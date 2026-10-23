@@ -163,7 +163,7 @@ export default function App() {
   }, []);
 
   const [vessels, setVessels] = useState<VesselSpec[]>(() => {
-    return getEnvStorageItem('vessels', (envSeed as any).vessels || DEFAULT_VESSELS);
+    return getEnvStorageItem('vessels', envSeed.vessels || DEFAULT_VESSELS);
   });
   const [activeVesselId, setActiveVesselId] = useState<string>('');
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SwitchPanelConfig, SwitchConfig, CatalogItem } from '../../types';
+import { SwitchPanelConfig, SwitchConfig, CatalogItem, PackageOption } from '../../types';
 import { INITIAL_SAMPLE_PANEL } from '../../data/seedData';
 import { 
   Sliders, 
@@ -749,15 +749,17 @@ export const SwitchPanelDesigner: React.FC<SwitchPanelDesignerProps> = ({
                   Package Readiness
                 </label>
                 <div className="space-y-2">
-                  {[
-                    { id: 'faceplate_only', title: 'Faceplate Only', desc: 'Laser cut & engraved panel with mounting holes. You transfer existing switches.' },
-                    { id: 'diy_kit', title: 'DIY Assembly Kit', desc: 'Faceplate + IP66 Carling rockers + marine terminals + circuit fuses.' },
-                    { id: 'assembled_wired', title: 'Assembled & Bench-Tested', desc: 'Drop-in unit with tinned copper busbars, labeled jumpers & 12V bench test.' },
-                  ].map(pkg => (
+                  {(
+                    [
+                      { id: 'faceplate_only', title: 'Faceplate Only', desc: 'Laser cut & engraved panel with mounting holes. You transfer existing switches.' },
+                      { id: 'diy_kit', title: 'DIY Assembly Kit', desc: 'Faceplate + IP66 Carling rockers + marine terminals + circuit fuses.' },
+                      { id: 'assembled_wired', title: 'Assembled & Bench-Tested', desc: 'Drop-in unit with tinned copper busbars, labeled jumpers & 12V bench test.' },
+                    ] as const satisfies readonly { id: PackageOption; title: string; desc: string }[]
+                  ).map(pkg => (
                     <div
                       key={pkg.id}
                       data-testid={`package-option-${pkg.id}`}
-                      onClick={() => updateConfig({ packageOption: pkg.id as any })}
+                      onClick={() => updateConfig({ packageOption: pkg.id })}
                       className={`p-3 rounded-xl border cursor-pointer transition-all ${
                         config.packageOption === pkg.id
                           ? 'border-sky-500 bg-sky-950/40 text-white'

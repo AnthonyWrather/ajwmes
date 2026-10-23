@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CatalogItem, SupplierPurchaseOrder, SupplierInfo } from '../../types';
+import { CatalogItem, SupplierPurchaseOrder, SupplierInfo, SupplierShippingSpeed } from '../../types';
 import { normalizeImageUrl } from '../../utils/imageUrl';
 import { MARINE_SUPPLIERS, getDefaultSupplierForCategory, generateSupplierPOEmail } from '../../data/supplierData';
 import { 
@@ -49,7 +49,7 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
   const [unitCost, setUnitCost] = useState<number>(() => {
     return Number((item.unitPrice * 0.65).toFixed(2));
   });
-  const [shippingSpeed, setShippingSpeed] = useState<SupplierPurchaseOrder['shippingSpeed']>('next_day_solent');
+  const [shippingSpeed, setShippingSpeed] = useState<SupplierShippingSpeed>('next_day_solent');
   const [deliveryNotes, setDeliveryNotes] = useState<string>('Leave at Unit 4 Haslar Marina yard if technician is out on vessel diagnostics.');
   const [poNumber] = useState<string>(() => `PO-AJW-${Date.now().toString().slice(-4)}`);
   const [copied, setCopied] = useState(false);
@@ -350,7 +350,7 @@ export const SupplierReorderModal: React.FC<SupplierReorderModalProps> = ({
                   <select
                     value={shippingSpeed}
                     data-testid="reorder-shipping-speed-select"
-                    onChange={e => setShippingSpeed(e.target.value as any)}
+                    onChange={e => setShippingSpeed(e.target.value as SupplierShippingSpeed)}
                     className="w-full bg-slate-900 border border-slate-700 text-xs px-2 py-2 rounded-xl text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                   >
                     <option value="next_day_solent">Next-Day Solent Priority</option>

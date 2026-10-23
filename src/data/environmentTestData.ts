@@ -178,7 +178,7 @@ export const AI_STUDIO_DEV_POSTAL_ORDERS: PostalOrder[] = [
     createdAt: '2026-10-10 11:30',
     dispatchedAt: '2026-10-10 15:45',
     notes: 'AI Studio Test Postal Order · Dispatched from Southampton Workshop'
-  } as any,
+  },
   {
     id: 'ais-ord-102',
     orderNumber: 'AJW-AIS-10493',
@@ -216,7 +216,7 @@ export const AI_STUDIO_DEV_POSTAL_ORDERS: PostalOrder[] = [
     paymentStatus: 'paid',
     createdAt: '2026-10-11 08:15',
     notes: 'Awaiting Carling labels from laser engraving bench'
-  } as any
+  }
 ];
 
 export const AI_STUDIO_DEV_VESSEL_SPEC: VesselSpec = {
@@ -331,7 +331,7 @@ export const AI_STUDIO_PREVIEW_POSTAL_ORDERS: PostalOrder[] = [
     trackingNumber: 'DPD-PRE-884192',
     createdAt: '2026-10-10 14:00',
     notes: 'Preview Environment Test Order'
-  } as any
+  }
 ];
 
 export const AI_STUDIO_PREVIEW_VESSEL_SPEC: VesselSpec = {

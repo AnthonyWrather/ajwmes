@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { JobRecord, MessageItem, VesselSpec, PostalOrder, HULL_TYPES, HullType } from '../../types';
+import { 
+  JobRecord, 
+  MessageItem, 
+  VesselSpec, 
+  PostalOrder, 
+  HULL_TYPES, 
+  HullType,
+  SystemVoltage,
+  BatteryType
+} from '../../types';
 import { JobDiscussionThread } from '../chat/JobDiscussionThread';
 import { VesselSpecManager } from './VesselSpecManager';
 import { PostalOrderTracker } from '../orders/PostalOrderTracker';
@@ -86,10 +95,10 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
     beam: '',
     draft: '',
     displacement: '',
-    systemVoltage: '12V' as '12V' | '24V',
+    systemVoltage: '12V' as SystemVoltage,
     homeMarina: 'Haslar Marina, Gosport',
     berthPontoon: 'Berth 12',
-    houseBatteryType: 'LiFePO4 Lithium' as 'LiFePO4 Lithium' | 'AGM Deep Cycle' | 'Gel' | 'Flooded Lead-Acid',
+    houseBatteryType: 'LiFePO4 Lithium' as BatteryType,
     houseCapacityAh: 200,
     generalNotes: ''
   });
@@ -920,7 +929,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                   <select
                     data-testid="boat-voltage-select"
                     value={boatForm.systemVoltage}
-                    onChange={e => setBoatForm(prev => ({ ...prev, systemVoltage: e.target.value as any }))}
+                    onChange={e => setBoatForm(prev => ({ ...prev, systemVoltage: e.target.value as SystemVoltage }))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
                   >
                     <option value="12V">12V DC (Standard)</option>
@@ -934,7 +943,7 @@ export const ClientVesselPortal: React.FC<ClientVesselPortalProps> = ({
                   <select
                     data-testid="boat-battery-type-select"
                     value={boatForm.houseBatteryType}
-                    onChange={e => setBoatForm(prev => ({ ...prev, houseBatteryType: e.target.value as any }))}
+                    onChange={e => setBoatForm(prev => ({ ...prev, houseBatteryType: e.target.value as BatteryType }))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-500"
                   >
                     <option value="LiFePO4 Lithium">LiFePO4 Lithium</option>

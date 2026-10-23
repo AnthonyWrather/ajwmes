@@ -32,6 +32,17 @@ import { mergeCatalogItems, mergeCategories } from '../utils/inventorySync';
  * or overwrite each other in the browser's persistent storage.
  */
 
+export interface EnvironmentSeedData {
+  jobs: JobRecord[];
+  catalog: CatalogItem[];
+  categories: CategoryItem[];
+  postalOrders: PostalOrder[];
+  vesselSpec: VesselSpec;
+  vessels: VesselSpec[];
+  users: UserProfile[];
+  expenses: JobExpense[];
+}
+
 export interface ExportedEnvironmentData {
   version: string;
   exportedAt: string;
@@ -139,7 +150,7 @@ export function removeEnvStorageItem(baseKey: string, envCode?: AppEnvironment):
 /**
  * Returns the initial seed dataset suited for the specified environment
  */
-export function getEnvironmentSeedData(envCode?: AppEnvironment) {
+export function getEnvironmentSeedData(envCode?: AppEnvironment): EnvironmentSeedData {
   const env = envCode || detectEnvironment().envCode;
 
   switch (env) {
@@ -203,16 +214,7 @@ export function getEnvironmentSeedData(envCode?: AppEnvironment) {
 /**
  * Resets the current environment's local storage to fresh baseline test data
  */
-export function resetEnvironmentToTestData(envCode?: AppEnvironment): {
-  jobs: JobRecord[];
-  catalog: CatalogItem[];
-  categories: CategoryItem[];
-  postalOrders: PostalOrder[];
-  vesselSpec: VesselSpec;
-  vessels: VesselSpec[];
-  users: UserProfile[];
-  expenses: JobExpense[];
-} {
+export function resetEnvironmentToTestData(envCode?: AppEnvironment): EnvironmentSeedData {
   const seed = getEnvironmentSeedData(envCode);
   setEnvStorageItem('jobs', seed.jobs, envCode);
   setEnvStorageItem('catalog', seed.catalog, envCode);
