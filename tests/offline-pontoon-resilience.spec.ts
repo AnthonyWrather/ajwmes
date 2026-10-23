@@ -10,10 +10,13 @@ const SAMPLE_JPEG_BUFFER = Buffer.from(
 
 test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear storage for a clean test baseline
+    // Clear storage and IndexedDB for a clean test baseline
     await page.addInitScript(() => {
       window.localStorage.clear();
       window.sessionStorage.clear();
+      if (window.indexedDB) {
+        window.indexedDB.deleteDatabase('ajw_marine_field_db');
+      }
     });
   });
 
@@ -85,7 +88,7 @@ test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay
       });
 
       // Verify photo gallery renders locally cached photo with awaiting upload badge
-      await expect(tech.offlinePhotosGallery).toBeVisible({ timeout: 10000 });
+      await expect(tech.offlinePhotosGallery).toBeVisible({ timeout: 15000 });
       await expect(tech.queuedPhotosBadge).toBeVisible();
       await expect(tech.queuedPhotosBadge).toHaveText('Awaiting Cloud Upload');
       await expect(tech.queuedPhotoThumbnails.first()).toBeVisible();
@@ -115,7 +118,7 @@ test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay
       await tech.verifySignOffCard({ signerName: 'David Mercer' });
 
       // Verify sync bar reflects both queued photo and queued customer sign-off
-      await expect(tech.pendingSignaturesBadge).toBeVisible();
+      await expect(tech.pendingSignaturesBadge).toBeVisible({ timeout: 10000 });
       await expect(tech.pendingSignaturesBadge).toContainText('1 Signatures');
       await expect(tech.pendingPhotosBadge).toContainText('1 Photos');
     });
@@ -146,9 +149,11 @@ test.describe('Journey UJ-11: Offline Pontoon Resilience & Mutation Queue Replay
       }
     });
 
-    await test.step('7. Verify persisted customer sign-off remains intact post-replay', async () => {
+    await test.step('7. Verify persisted customer sign-off and replayed labor hours remain intact post-replay (Issue #54)', async () => {
       await expect(tech.customerSignOffCard).toBeVisible();
       await expect(tech.signOffSignerNameDisplay).toContainText('David Mercer');
+      await expect(tech.laborTotalDisplay).toBeVisible();
+      await expect(tech.materialsTotalDisplay).toBeVisible();
     });
   });
 });

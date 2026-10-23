@@ -3,7 +3,7 @@
  * Governs mutation queue rollups, synchronization progress, and replay sequencing.
  */
 
-import { CustomerSignOffRecord, OfflineQueuedMedia, OfflineJobSheetUpdate } from '../types';
+import { CustomerSignOffRecord, OfflineQueuedMedia, OfflineJobSheetUpdate, MaterialLineItem } from '../types';
 
 export interface QueueTotalsSummary {
   totalPending: number;
@@ -207,4 +207,33 @@ export function validateQueuedPhotoPayload(photo: Partial<OfflineQueuedMedia> | 
     valid: errors.length === 0,
     errors
   };
+}
+
+export interface JobSheetReplayEvaluation {
+  shouldSave: boolean;
+  resolvedMaterials: MaterialLineItem[];
+}
+
+/**
+ * Pure evaluation for replaying offline job sheet and customer sign-off mutations.
+ * Ensures diagnostic labor hours logged without materials are never skipped upon queue replay.
+ * Preserves existing job materials when a customer sign-off payload is replayed.
+ */
+export function evaluateJobSheetReplay(
+  hours: number = 0,
+  materials?: MaterialLineItem[],
+  existingMaterials?: MaterialLineItem[],
+  isSignOff?: boolean
+): JobSheetReplayEvaluation {
+  const hasHours = typeof hours === 'number' && hours > 0;
+  const hasMaterials = Array.isArray(materials) && materials.length > 0;
+  const shouldSave = hasHours || hasMaterials;
+
+  const resolvedMaterials: MaterialLineItem[] = hasMaterials
+    ? materials
+    : (isSignOff && Array.isArray(existingMaterials) && existingMaterials.length > 0
+        ? existingMaterials
+        : (Array.isArray(materials) ? materials : []));
+
+  return { shouldSave, resolvedMaterials };
 }

@@ -8,6 +8,7 @@ import {
   prioritizeQueueReplayOrder,
   validateSignOffPayload,
   validateQueuedPhotoPayload,
+  evaluateJobSheetReplay,
   PrioritizableReplayItem
 } from './offlineQueueCalculations';
 
@@ -212,6 +213,60 @@ describe('offlineQueueCalculations', () => {
       const result = validateQueuedPhotoPayload(null);
       assert.equal(result.valid, false);
       assert.equal(result.errors[0], 'Photo payload is missing');
+    });
+  });
+
+  describe('evaluateJobSheetReplay (Issue #54)', () => {
+    const sampleMaterial = {
+      id: 'mat-1',
+      catalogId: 'cat-fuse-30a',
+      name: 'Blue Sea 30A Marine Fuse',
+      quantity: 2,
+      unit: 'pcs',
+      unitPrice: 4.5
+    };
+
+    it('evaluates pure labor hours when materials array is empty (Issue #54 fix)', () => {
+      const result = evaluateJobSheetReplay(2.5, [], undefined, false);
+      assert.equal(result.shouldSave, true);
+      assert.deepEqual(result.resolvedMaterials, []);
+    });
+
+    it('evaluates labor hours with non-empty materials', () => {
+      const result = evaluateJobSheetReplay(1.5, [sampleMaterial], undefined, false);
+      assert.equal(result.shouldSave, true);
+      assert.deepEqual(result.resolvedMaterials, [sampleMaterial]);
+    });
+
+    it('evaluates parts-only update with zero diagnostic hours', () => {
+      const result = evaluateJobSheetReplay(0, [sampleMaterial], undefined, false);
+      assert.equal(result.shouldSave, true);
+      assert.deepEqual(result.resolvedMaterials, [sampleMaterial]);
+    });
+
+    it('does not trigger save when both hours and materials are empty', () => {
+      const result = evaluateJobSheetReplay(0, [], undefined, false);
+      assert.equal(result.shouldSave, false);
+      assert.deepEqual(result.resolvedMaterials, []);
+    });
+
+    it('preserves existing job materials when customer sign-off arrives with empty materials', () => {
+      const result = evaluateJobSheetReplay(3.0, [], [sampleMaterial], true);
+      assert.equal(result.shouldSave, true);
+      assert.deepEqual(result.resolvedMaterials, [sampleMaterial]);
+    });
+
+    it('returns empty materials array on sign-off replay when job had no prior materials', () => {
+      const result = evaluateJobSheetReplay(2.0, [], [], true);
+      assert.equal(result.shouldSave, true);
+      assert.deepEqual(result.resolvedMaterials, []);
+    });
+
+    it('prefers replayed materials if explicitly provided during sign-off replay', () => {
+      const replacementMaterial = { ...sampleMaterial, quantity: 4 };
+      const result = evaluateJobSheetReplay(2.0, [replacementMaterial], [sampleMaterial], true);
+      assert.equal(result.shouldSave, true);
+      assert.deepEqual(result.resolvedMaterials, [replacementMaterial]);
     });
   });
 });
