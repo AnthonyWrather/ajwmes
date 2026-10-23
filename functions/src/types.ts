@@ -113,3 +113,66 @@ export interface SendEmailFunctionResponse {
   error?: string;
 }
 
+export type PostalOrderStatus =
+  | 'pending'
+  | 'received'
+  | 'processing'
+  | 'packed'
+  | 'ready_for_pickup'
+  | 'dispatched'
+  | 'delivered';
+
+export interface PostalOrderTimelineEvent {
+  id: string;
+  status: PostalOrderStatus;
+  title: string;
+  description: string;
+  timestamp: string;
+  location?: string;
+  carrier?: string;
+  trackingNumber?: string;
+  completed?: boolean;
+  isCurrent?: boolean;
+  operator?: string;
+  notes?: string;
+}
+
+export type ShipStationWebhookEventType =
+  | 'ORDER_SHIPPED'
+  | 'SHIP_NOTIFY'
+  | 'ITEM_DELIVERED'
+  | 'DELIVERED'
+  | 'ORDER_NOTIFY';
+
+export interface ShipStationWebhookPayload {
+  event?: ShipStationWebhookEventType | string;
+  resource_type?: string;
+  resource_url?: string;
+  orderNumber?: string;
+  order_number?: string;
+  orderId?: string;
+  order_id?: string;
+  shipstationOrderId?: number | string;
+  trackingNumber?: string;
+  tracking_number?: string;
+  carrierCode?: string;
+  carrier?: string;
+  status?: string;
+  orderStatus?: string;
+  environment?: string;
+  location?: string;
+  notes?: string;
+  shipDate?: string;
+}
+
+export interface ShipStationWebhookResult {
+  received: boolean;
+  success: boolean;
+  orderId?: string;
+  orderNumber?: string;
+  status?: PostalOrderStatus;
+  matchedCollection?: string;
+  error?: string;
+  reason?: string;
+}
+
