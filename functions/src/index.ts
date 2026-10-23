@@ -1,11 +1,13 @@
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { validatePostalDispatcherAuth, validateEmailCallerAuth } from './authMiddleware.js';
 import { 
   fetchRatesFromShipStation, 
   createLabelInShipStation, 
-  createOrderInShipStation 
+  createOrderInShipStation,
+  processShipstationWebhook
 } from './shipstationClient.js';
 import {
   sendEmailViaResend,
@@ -135,11 +137,13 @@ export const createShipStationOrder = onCall<CreateShipStationOrderRequest, Prom
 
 /**
  * Inbound Webhook: shipstationWebhook
- * Listens for carrier tracking events (ORDER_SHIPPED, DELIVERED).
+ * Listens for carrier tracking events (ORDER_SHIPPED, DELIVERED), updates Firestore postal order status,
+ * and appends verified PostalOrderTimelineEvent milestone records.
  */
 export const shipstationWebhook = onRequest(
   {
     region: REGION,
+    secrets: [shipstationApiKey, shipstationApiSecret],
     cors: true
   },
   async (req, res) => {
@@ -149,15 +153,26 @@ export const shipstationWebhook = onRequest(
     }
 
     try {
-      const eventData = req.body;
-      console.log('Received ShipStation Webhook Event:', JSON.stringify(eventData));
-      
-      // Acknowledge webhook delivery to prevent ShipStation retry storms
-      res.status(200).json({ received: true });
+      const apiKey = shipstationApiKey.value() || process.env.SHIPSTATION_API_KEY;
+      const apiSecret = shipstationApiSecret.value() || process.env.SHIPSTATION_API_SECRET;
+      const firestore = getFirestore();
+
+      const result = await processShipstationWebhook({
+        payload: req.body,
+        query: req.query,
+        headers: req.headers,
+        firestore,
+        apiKey,
+        apiSecret
+      });
+
+      console.log('Processed ShipStation Webhook Event:', JSON.stringify(result));
+      res.status(200).json(result);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('Error handling webhook event:', message);
-      res.status(500).json({ error: message });
+      // Return HTTP 200 with error property so ShipStation does not produce retry storms
+      res.status(200).json({ received: true, success: false, error: message });
     }
   }
 );

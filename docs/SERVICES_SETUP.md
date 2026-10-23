@@ -365,7 +365,7 @@ For each link (**Product catalogue → Payment Links → New**):
    - `getShippingRates`: Live rate quoting from `/shipments/getrates`.
    - `generateShippingLabel`: 4x6" carrier thermal label generation from `/shipments/createlabelwithshipmentdetails`.
    - `createShipStationOrder`: Order synchronization via `/orders/createorder`.
-   - `shipstationWebhook`: Webhook receiver for carrier status events (`ORDER_SHIPPED`, `DELIVERED`).
+   - `shipstationWebhook`: Webhook receiver for carrier status events (`ORDER_SHIPPED`, `SHIP_NOTIFY`, `DELIVERED`). Automatically resolves the postal order in Firestore across environment collections (`ais_dev_postal_orders`, `gh_pre_postal_orders`, or root `postal_orders`), transitions `orderStatus` to `dispatched` or `delivered`, sets timestamps (`dispatchedAt`, `deliveredAt`), and appends a verified `PostalOrderTimelineEvent` record.
 4. **Resilient Simulated Fallback**:
    - When running offline on the pontoon, in local dev, or before credentials are configured, the frontend gracefully falls back to deterministic local rate calculation and 4x6" SVG thermal label emulation (`src/lib/shipstationService.ts`).
 
