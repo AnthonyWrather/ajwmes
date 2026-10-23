@@ -32,13 +32,21 @@ interface PostalOrdersManagerProps {
     orderId: string, 
     status: PostalOrder['orderStatus'], 
     trackingNumber?: string, 
-    carrier?: string
+    carrier?: string,
+    shippingLabelUrl?: string,
+    shippingLabelBase64?: string,
+    shipstationShipmentId?: string
+  ) => void;
+  onSaveOrderShippingLabel?: (
+    orderId: string,
+    labelResult: ShipStationLabelResult
   ) => void;
 }
 
 export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
   orders,
-  onUpdateOrderStatus
+  onUpdateOrderStatus,
+  onSaveOrderShippingLabel
 }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -97,12 +105,14 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
 
     // If order already has shipping label metadata, initialize activeLabelResult
     if (selectedOrder.shippingLabelUrl && selectedOrder.trackingNumber) {
+      const isDpd = selectedOrder.shippingMethod === 'dpd_heavy' ||
+        Boolean(selectedOrder.trackingCarrier && selectedOrder.trackingCarrier.toLowerCase().includes('dpd'));
       setActiveLabelResult({
         success: true,
         shipmentId: selectedOrder.shipstationShipmentId || 'shp-sim-preassigned',
         trackingNumber: selectedOrder.trackingNumber,
-        carrierCode: selectedOrder.shippingMethod === 'dpd_heavy' ? 'dpd_uk' : 'royal_mail',
-        serviceCode: defaultService,
+        carrierCode: isDpd ? 'dpd_uk' : 'royal_mail',
+        serviceCode: isDpd ? 'dpd_next_day' : defaultService,
         labelUrl: selectedOrder.shippingLabelUrl,
         labelPdfBase64: selectedOrder.shippingLabelBase64 || selectedOrder.shippingLabelUrl,
         isSimulated: true
@@ -150,6 +160,11 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
             carrier: carrierName
           }
         }));
+
+        // Persist shipping label metadata immediately to PostalOrder
+        if (onSaveOrderShippingLabel) {
+          onSaveOrderShippingLabel(selectedOrder.id, result);
+        }
       }
     } catch (err) {
       console.error('Failed to generate carrier label:', err);
@@ -163,7 +178,15 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
       number: `GB${Math.floor(100000000 + Math.random() * 900000000)}RM`,
       carrier: 'Royal Mail Tracked 24'
     };
-    onUpdateOrderStatus(orderId, 'dispatched', tracking.number, tracking.carrier);
+    onUpdateOrderStatus(
+      orderId, 
+      'dispatched', 
+      tracking.number, 
+      tracking.carrier,
+      activeLabelResult?.labelUrl || selectedOrder?.shippingLabelUrl,
+      activeLabelResult?.labelPdfBase64 || selectedOrder?.shippingLabelBase64,
+      activeLabelResult?.shipmentId || selectedOrder?.shipstationShipmentId
+    );
   };
 
   return (
@@ -712,13 +735,26 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                           </div>
                         </div>
                       </div>
-                      <button
-                        data-testid="mark-delivered-btn"
-                        onClick={() => onUpdateOrderStatus(selectedOrder.id, 'delivered')}
-                        className="scroll-mt-28 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow transition-all shrink-0 cursor-pointer"
-                      >
-                        Mark Delivered
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {(activeLabelResult || selectedOrder.shippingLabelUrl) && (
+                          <button
+                            data-testid="reprint-thermal-label-btn"
+                            onClick={() => setShowThermalModal(true)}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white font-semibold rounded-lg text-xs shadow border border-slate-700 transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+                            title="Re-open 4x6 inch thermal shipping label for printing"
+                          >
+                            <Tag className="w-3.5 h-3.5" />
+                            <span>Reprint 4x6" Label</span>
+                          </button>
+                        )}
+                        <button
+                          data-testid="mark-delivered-btn"
+                          onClick={() => onUpdateOrderStatus(selectedOrder.id, 'delivered')}
+                          className="scroll-mt-28 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow transition-all shrink-0 cursor-pointer"
+                        >
+                          Mark Delivered
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -734,9 +770,22 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                         </div>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-emerald-900/50 text-emerald-300 border border-emerald-500/30">
-                      FULFILLED
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {(activeLabelResult || selectedOrder.shippingLabelUrl) && (
+                        <button
+                          data-testid="reprint-thermal-label-btn"
+                          onClick={() => setShowThermalModal(true)}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white font-medium rounded text-[11px] border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
+                          title="Re-open 4x6 inch thermal shipping label for printing"
+                        >
+                          <Tag className="w-3 h-3" />
+                          <span>Reprint 4x6" Label</span>
+                        </button>
+                      )}
+                      <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-emerald-900/50 text-emerald-300 border border-emerald-500/30">
+                        FULFILLED
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>

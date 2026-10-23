@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PostalOrder, PostalOrderStatus, PostalOrderTimelineEvent } from '../../types';
+import { PostalOrder, PostalOrderStatus, PostalOrderTimelineEvent, ShipStationLabelResult } from '../../types';
 import { PostalOrdersManager } from '../admin/PostalOrdersManager';
 import { OrderProgressTimeline } from './OrderProgressTimeline';
 import { 
@@ -26,13 +26,21 @@ interface PostalWorkspaceProps {
     orderId: string, 
     status: PostalOrder['orderStatus'], 
     trackingNumber?: string, 
-    carrier?: string
+    carrier?: string,
+    shippingLabelUrl?: string,
+    shippingLabelBase64?: string,
+    shipstationShipmentId?: string
+  ) => void;
+  onSaveOrderShippingLabel?: (
+    orderId: string,
+    labelResult: ShipStationLabelResult
   ) => void;
 }
 
 export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
   orders,
-  onUpdateOrderStatus
+  onUpdateOrderStatus,
+  onSaveOrderShippingLabel
 }) => {
   const [activeView, setActiveView] = useState<'manager' | 'timelines'>('manager');
   const [timelineFilter, setTimelineFilter] = useState<string>('all');
@@ -184,6 +192,7 @@ export const PostalWorkspace: React.FC<PostalWorkspaceProps> = ({
           <PostalOrdersManager
             orders={orders}
             onUpdateOrderStatus={onUpdateOrderStatus}
+            onSaveOrderShippingLabel={onSaveOrderShippingLabel}
           />
         </div>
       )}
