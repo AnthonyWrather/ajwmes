@@ -15,7 +15,7 @@ Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and p
 - **Frontend Core**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `vite-plugin-pwa`
 - **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions` v6 & `firebase-admin` v13 with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
 - **Reporting & Icons**: `jspdf` (marine certificate rendering), `lucide-react`
-- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (296 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests — 317 unit tests total), Playwright (`@playwright/test` across 21 E2E browser specs + 1 video training spec & 16 Page Object Models)
+- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (299 frontend unit tests) and `npm run test:functions` (21 Cloud Functions unit tests — 320 unit tests total), Playwright (`@playwright/test` across 21 E2E browser specs + 1 video training spec & 16 Page Object Models)
 
 ---
 
@@ -26,7 +26,7 @@ npm run build           # Production build (Vite + PWA service worker + /version
 npm run preview         # Preview production build locally
 npm run lint            # Typecheck frontend via `tsc --noEmit` (MUST pass with 0 errors)
 npm run lint:functions  # Typecheck Cloud Functions (`functions/`) via `tsc --noEmit`
-npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (296 tests)
+npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (299 tests)
 npm run test:functions  # Run Cloud Functions unit tests matching functions/src/**/*.test.ts (21 tests)
 npm run build:functions # Compile Cloud Functions TypeScript to functions/lib/
 npm run test            # Alias for test:unit
@@ -73,6 +73,7 @@ ajwmes/
 │   │   ├── common/         # AppUpdateBanner, FirestoreSyncBanner, ImageLightboxModal
 │   │   ├── forms/          # Booking & diagnostic quote request modal
 │   │   ├── home/           # Landing hero, services overview, pricing highlights
+│   │   ├── icons/          # Vector SVG icons & brand marks (GithubIcon)
 │   │   ├── modals/         # Environment settings inspector, free hosting guide, help center
 │   │   ├── orders/         # Postal order tracker & carrier progress
 │   │   ├── panels/         # Custom switch panel CAD designer & photo replica extractor
