@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Github, Globe, Cloud, Check, Copy, X, Terminal, ExternalLink, Key } from 'lucide-react';
+import { Globe, Cloud, Check, Copy, X, Terminal, ExternalLink, Key } from 'lucide-react';
+import { GithubIcon } from '../icons/GithubIcon';
 
 interface FreeHostingGuideModalProps {
   isOpen: boolean;
@@ -108,7 +109,7 @@ Add your custom or preview domain:
               activeTab === 'github_actions' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Github className="w-4 h-4" />
+            <GithubIcon className="w-4 h-4" />
             <span>2. GitHub Auto-Deploy</span>
           </button>
           <button

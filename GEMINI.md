@@ -26,7 +26,7 @@ You are acting as an expert pair programmer on the **AJW Marine Electrical Servi
 6. **Environment Scoping**:
    - Always route browser storage through `src/lib/envStorage.ts` via `getScopedStorageKey()`. Never use un-scoped raw keys.
 7. **Testing Verification Protocol**:
-   - Before finishing any task, run `npm run lint`, `npm run test:unit` (296 frontend tests), `npm run test:functions` (21 Cloud Functions tests — 317 total unit tests), and `npm run validate`. All must pass with zero errors.
+   - Before finishing any task, run `npm run lint`, `npm run test:unit` (299 frontend tests), `npm run test:functions` (21 Cloud Functions tests — 320 total unit tests), and `npm run validate`. All must pass with zero errors.
    - For UI changes, ensure interactive elements have meaningful `data-testid` attributes and update/create Page Object Models in `tests/pages/` to preserve Playwright E2E compatibility (21 E2E spec files + 1 video training spec across 16 Page Object Models, documented in `docs/E2E_USER_JOURNEYS.md`).
 8. **Supporting Services & Secrets**:
    - Account, key and endpoint provisioning for Firebase, Firestore, Storage, Cloud Functions, Stripe, Resend, ShipStation, Gemini and GitHub Actions is documented in `docs/SERVICES_SETUP.md`. Keep it in sync when adding or changing any environment variable, secret, or external integration (and update `.env.example`).

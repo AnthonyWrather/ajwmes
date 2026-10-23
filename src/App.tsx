@@ -48,7 +48,8 @@ import { BookingQuoteModal } from './components/forms/BookingQuoteModal';
 import { FreeHostingGuideModal } from './components/modals/FreeHostingGuideModal';
 import { HelpCenterModal } from './components/common/HelpCenterModal';
 import { Logo } from './components/brand/Logo';
-import { ShieldCheck, MapPin, Clock, Github, HelpCircle, Phone, Mail, Bell, Truck, CheckCircle2, ArrowRight, X, AlertTriangle } from 'lucide-react';
+import { GithubIcon } from './components/icons/GithubIcon';
+import { ShieldCheck, MapPin, Clock, HelpCircle, Phone, Mail, Bell, Truck, CheckCircle2, ArrowRight, X, AlertTriangle } from 'lucide-react';
 import { 
   AppRoute, 
   RbacAction, 
@@ -2105,7 +2106,7 @@ export default function App() {
                   onClick={() => setIsHostingGuideOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 transition-colors cursor-pointer"
                 >
-                  <Github className="w-3.5 h-3.5" />
+                  <GithubIcon className="w-3.5 h-3.5" />
                   <span>Free Hosting &amp; GitHub Setup Guide</span>
                 </button>
               )}
