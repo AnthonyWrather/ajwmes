@@ -47,6 +47,7 @@ import {
   triggerSyncNow,
   registerSyncCallbacks
 } from '../../lib/offlineSync';
+import { evaluateJobSheetReplay } from '../../utils/offlineQueueCalculations';
 
 interface TechnicianWorkspaceProps {
   jobs: JobRecord[];
@@ -85,6 +86,9 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
   const proofInputRef = useRef<HTMLInputElement>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
+  const jobsRef = useRef(jobs);
+  jobsRef.current = jobs;
+
   const selectedJob = jobs.find(j => j.id === selectedJobId) || jobs[0];
 
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -121,8 +125,15 @@ export const TechnicianWorkspace: React.FC<TechnicianWorkspaceProps> = ({
           setLocalSignOffs(prev => ({ ...prev, [jobId]: signOff }));
           if (onCustomerSignOff) onCustomerSignOff(jobId, signOff);
         }
-        if (hours > 0 && materials && materials.length > 0) {
-          onSaveJobSheet(jobId, hours, materials);
+        const currentJob = jobsRef.current.find(j => j.id === jobId);
+        const { shouldSave, resolvedMaterials } = evaluateJobSheetReplay(
+          hours,
+          materials,
+          currentJob?.materialsUsed,
+          Boolean(signOff)
+        );
+        if (shouldSave) {
+          onSaveJobSheet(jobId, hours, resolvedMaterials);
         }
       },
       onPostMessage: (jobId, text, attachments) => {

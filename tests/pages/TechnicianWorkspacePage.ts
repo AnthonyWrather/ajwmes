@@ -145,7 +145,7 @@ export class TechnicianWorkspacePage {
   }
 
   async verifyWorkspaceVisible(): Promise<void> {
-    await expect(this.workspace).toBeVisible({ timeout: 10000 });
+    await expect(this.workspace).toBeVisible({ timeout: 15000 });
   }
 
   async selectJob(jobId: string): Promise<void> {

@@ -269,9 +269,10 @@ graph TD
    - Restore marina network connectivity (`context.setOffline(false)`).
    - Assert sync bar updates state to "Syncing Local Changes..." with live progress percentage indicators.
    - Verify transactional mutation queue drains in prioritized order (signatures and job consent before heavy binary work photos).
-6. **Queue Draining & Synchronization Completion**:
+6. **Queue Draining, Synchronization Completion & Labor Hours Integrity (Issue #54)**:
    - Assert mutation queue drains completely to 0 pending mutations.
    - Verify sync bar returns to emerald green "All Synced" state (`data-testid="sync-status-badge"`).
+   - Verify replayed diagnostic labor hours logged without materials are preserved intact on the job card and workstation metrics without being dropped upon queue replay.
 
 ---
 
