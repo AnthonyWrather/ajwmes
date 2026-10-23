@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { VesselSpec, ElectricalLogEntry, HULL_TYPES, HullType } from '../../types';
+import { 
+  VesselSpec, 
+  ElectricalLogEntry, 
+  ElectricalLogCategory, 
+  HULL_TYPES, 
+  HullType,
+  SystemVoltage,
+  BatteryType 
+} from '../../types';
 import { generateVesselPdf } from '../../utils/generateVesselPdf';
 import { VesselPdfSummaryModal } from './VesselPdfSummaryModal';
 import { Anchor, Battery, Sun, Zap, Shield, Wrench, Plus, Check, Edit3, Save, Printer, Calendar, FileText, ChevronDown, ChevronUp, AlertCircle, Download, FileDown } from 'lucide-react';
@@ -31,11 +39,11 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
   const [newLogTitle, setNewLogTitle] = useState('');
   const [newLogDate, setNewLogDate] = useState(new Date().toISOString().slice(0, 10));
   const [newLogContractor, setNewLogContractor] = useState('AJW Marine Electrical Services');
-  const [newLogCategory, setNewLogCategory] = useState<ElectricalLogEntry['category']>('battery_upgrade');
+  const [newLogCategory, setNewLogCategory] = useState<ElectricalLogCategory>('battery_upgrade');
   const [newLogDesc, setNewLogDesc] = useState('');
   const [newLogParts, setNewLogParts] = useState('');
 
-  const handleFieldChange = (field: keyof VesselSpec, value: any) => {
+  const handleFieldChange = <K extends keyof VesselSpec>(field: K, value: VesselSpec[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -453,7 +461,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                 {isEditing ? (
                   <select
                     value={formData.systemVoltage}
-                    onChange={e => handleFieldChange('systemVoltage', e.target.value)}
+                    onChange={e => handleFieldChange('systemVoltage', e.target.value as SystemVoltage)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500"
                   >
                     <option value="12V">12V DC Standard</option>
@@ -557,7 +565,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                   <select
                     data-testid="vessel-edit-battery-type"
                     value={formData.houseBatteryType}
-                    onChange={e => handleFieldChange('houseBatteryType', e.target.value)}
+                    onChange={e => handleFieldChange('houseBatteryType', e.target.value as BatteryType)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 font-medium"
                   >
                     <option value="LiFePO4 Lithium">LiFePO4 Lithium (Lithium Iron Phosphate)</option>
@@ -1035,7 +1043,7 @@ export const VesselSpecManager: React.FC<VesselSpecManagerProps> = ({
                   <select
                     data-testid="log-category-select"
                     value={newLogCategory}
-                    onChange={e => setNewLogCategory(e.target.value as any)}
+                    onChange={e => setNewLogCategory(e.target.value as ElectricalLogCategory)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                   >
                     <option value="battery_upgrade">Battery Bank Upgrade</option>

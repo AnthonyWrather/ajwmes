@@ -67,6 +67,8 @@ export interface SwitchConfig {
   icon?: string;
 }
 
+export type PackageOption = 'faceplate_only' | 'diy_kit' | 'assembled_wired';
+
 export interface SwitchPanelConfig {
   id?: string;
   material: 'acrylic_black' | 'acrylic_white' | 'wood_teak' | 'wood_birch';
@@ -79,7 +81,7 @@ export interface SwitchPanelConfig {
   has12vSocket: boolean;
   mountingHoleStyle: '4_corner' | '6_perimeter';
   backlightColor: 'cyan' | 'red' | 'amber' | 'blue';
-  packageOption: 'faceplate_only' | 'diy_kit' | 'assembled_wired';
+  packageOption: PackageOption;
   estimatedPrice: number;
 }
 
@@ -166,6 +168,8 @@ export interface SupplierInfo {
   accountNumber: string;
 }
 
+export type SupplierShippingSpeed = 'standard_courier' | 'next_day_solent' | 'workshop_pickup';
+
 export interface SupplierPurchaseOrder {
   id: string;
   poNumber: string;
@@ -177,7 +181,7 @@ export interface SupplierPurchaseOrder {
   unit: string;
   estimatedUnitCost: number;
   totalCost: number;
-  shippingSpeed: 'standard_courier' | 'next_day_solent' | 'workshop_pickup';
+  shippingSpeed: SupplierShippingSpeed;
   status: 'draft' | 'dispatched' | 'received';
   notes: string;
   createdAt: string;
@@ -191,6 +195,17 @@ export type ExpenseCategory =
   | 'equipment_hire'
   | 'consumables'
   | 'other';
+
+export type ExpenseBillableFilter = 'all' | 'billable' | 'overhead';
+
+export type ExpensePaymentMethod = 
+  | 'company_card' 
+  | 'cash' 
+  | 'bacs_transfer' 
+  | 'fuel_card' 
+  | 'personal_reimbursement';
+
+export type ExpenseStatus = 'recorded' | 'billed' | 'reimbursed';
 
 export interface JobExpense {
   id: string;
@@ -206,8 +221,8 @@ export interface JobExpense {
   receiptReference?: string;
   receiptUrl?: string;
   isBillableToClient: boolean;
-  paymentMethod?: 'company_card' | 'cash' | 'bacs_transfer' | 'fuel_card' | 'personal_reimbursement';
-  status: 'recorded' | 'billed' | 'reimbursed';
+  paymentMethod?: ExpensePaymentMethod;
+  status: ExpenseStatus;
   notes?: string;
   createdAt: string;
   updatedAt?: string;
@@ -239,6 +254,8 @@ export interface PostalOrderItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  price?: number;
+  total?: number;
 }
 
 export type PostalOrderStatus = 
@@ -388,12 +405,21 @@ export interface ImportValidationResult<T> {
   warnings?: string[];
 }
 
+export type ElectricalLogCategory = 
+  | 'diagnostic' 
+  | 'battery_upgrade' 
+  | 'solar' 
+  | 'switch_panel' 
+  | 'navigation' 
+  | 'inspection' 
+  | 'maintenance';
+
 export interface ElectricalLogEntry {
   id: string;
   date: string;
   title: string;
   contractor: string;
-  category: 'diagnostic' | 'battery_upgrade' | 'solar' | 'switch_panel' | 'navigation' | 'inspection' | 'maintenance';
+  category: ElectricalLogCategory;
   description: string;
   partsReplaced?: string[];
   jobReference?: string;
@@ -416,6 +442,10 @@ export const HULL_TYPES = [
 
 export type HullType = typeof HULL_TYPES[number] | string;
 
+export type SystemVoltage = '12V' | '24V' | '12V/24V Dual';
+
+export type BatteryType = 'LiFePO4 Lithium' | 'AGM Deep Cycle' | 'Gel' | 'Flooded Lead-Acid';
+
 export interface VesselSpec {
   id: string;
   userId?: string;
@@ -432,8 +462,8 @@ export interface VesselSpec {
   sailNumber: string;
   homeMarina: string;
   berthPontoon: string;
-  systemVoltage: '12V' | '24V' | '12V/24V Dual';
-  houseBatteryType: 'LiFePO4 Lithium' | 'AGM Deep Cycle' | 'Gel' | 'Flooded Lead-Acid';
+  systemVoltage: SystemVoltage;
+  houseBatteryType: BatteryType;
   houseCapacityAh: number;
   houseBankInstalled: string;
   starterBatteryType: string;
@@ -471,11 +501,15 @@ export interface FirestoreConnectionState {
   hasApiKey?: boolean;
 }
 
+export type SignerRole = 'vessel_owner' | 'skipper' | 'marina_agent';
+
+export type StoreSortOption = 'featured' | 'price-asc' | 'price-desc' | 'name';
+
 export interface CustomerSignOffRecord {
   jobId: string;
   jobReference: string;
   clientName: string;
-  signerRole: 'vessel_owner' | 'skipper' | 'marina_agent';
+  signerRole: SignerRole;
   signatureDataUrl: string; // Base64 data URL from signature pad
   signedAtOffline: string;  // ISO timestamp when captured on pontoon
   signedAtSynced?: string;  // ISO timestamp when synchronized to cloud

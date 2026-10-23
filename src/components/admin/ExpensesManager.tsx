@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { JobExpense, JobRecord, ExpenseCategory } from '../../types';
+import { 
+  JobExpense, 
+  JobRecord, 
+  ExpenseCategory, 
+  ExpenseBillableFilter, 
+  ExpensePaymentMethod, 
+  ExpenseStatus 
+} from '../../types';
 import { 
   calculateTotalExpenses, 
   calculateBillableExpenses, 
@@ -55,7 +62,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJobFilter, setSelectedJobFilter] = useState<string>(initialJobIdFilter);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
-  const [selectedBillableFilter, setSelectedBillableFilter] = useState<'all' | 'billable' | 'overhead'>('all');
+  const [selectedBillableFilter, setSelectedBillableFilter] = useState<ExpenseBillableFilter>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
 
   // Modal states
@@ -72,8 +79,8 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
   const [formVendor, setFormVendor] = useState('');
   const [formReceiptRef, setFormReceiptRef] = useState('');
   const [formIsBillable, setFormIsBillable] = useState(false);
-  const [formPaymentMethod, setFormPaymentMethod] = useState<JobExpense['paymentMethod']>('company_card');
-  const [formStatus, setFormStatus] = useState<JobExpense['status']>('recorded');
+  const [formPaymentMethod, setFormPaymentMethod] = useState<ExpensePaymentMethod>('company_card');
+  const [formStatus, setFormStatus] = useState<ExpenseStatus>('recorded');
   const [formNotes, setFormNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -569,7 +576,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
             <select
               value={selectedBillableFilter}
               data-testid="expenses-billable-filter"
-              onChange={e => setSelectedBillableFilter(e.target.value as any)}
+              onChange={e => setSelectedBillableFilter(e.target.value as ExpenseBillableFilter)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden focus:border-amber-500/60 cursor-pointer"
             >
               <option value="all">Billable &amp; Overhead</option>
@@ -1037,7 +1044,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   <select
                     value={formPaymentMethod}
                     data-testid="expense-form-payment-select"
-                    onChange={e => setFormPaymentMethod(e.target.value as any)}
+                    onChange={e => setFormPaymentMethod(e.target.value as ExpensePaymentMethod)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
                   >
                     <option value="company_card">Company Debit / Credit Card</option>
@@ -1074,7 +1081,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                   <select
                     value={formStatus}
                     data-testid="expense-form-status-select"
-                    onChange={e => setFormStatus(e.target.value as any)}
+                    onChange={e => setFormStatus(e.target.value as ExpenseStatus)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-hidden focus:border-amber-500/60"
                   >
                     <option value="recorded">Recorded (Draft / Open)</option>

@@ -1,4 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
+import type { PackageOption } from '../../src/types';
 
 export class SwitchPanelCADPage {
   readonly page: Page;
@@ -208,7 +209,7 @@ export class SwitchPanelCADPage {
     await ampsSelect.selectOption(String(amps));
   }
 
-  async selectPackage(packageId: string): Promise<void> {
+  async selectPackage(packageId: PackageOption | string): Promise<void> {
     await this.tabOptions.click();
     const option = this.getPackageOption(packageId);
     await expect(option).toBeVisible();

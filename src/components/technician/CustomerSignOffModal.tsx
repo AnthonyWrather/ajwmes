@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { JobRecord, CustomerSignOffRecord } from '../../types';
+import { JobRecord, CustomerSignOffRecord, SignerRole } from '../../types';
 import { 
   X, 
   PenTool, 
@@ -31,7 +31,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [signerName, setSignerName] = useState(job.clientName || '');
-  const [signerRole, setSignerRole] = useState<CustomerSignOffRecord['signerRole']>('vessel_owner');
+  const [signerRole, setSignerRole] = useState<SignerRole>('vessel_owner');
   const [feedback, setFeedback] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -279,7 +279,7 @@ export const CustomerSignOffModal: React.FC<CustomerSignOffModalProps> = ({
               <select
                 data-testid="signoff-signer-role-select"
                 value={signerRole}
-                onChange={(e) => setSignerRole(e.target.value as any)}
+                onChange={(e) => setSignerRole(e.target.value as SignerRole)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-500"
               >
                 <option value="vessel_owner">Vessel Owner</option>

@@ -15,7 +15,7 @@ Marine electrical diagnostics, lithium/solar sizing, custom switch panels, and p
 - **Frontend Core**: React 19, TypeScript (strict ^7.0.2), Vite 8, Tailwind CSS v4 (`@tailwindcss/vite`), Motion, `lucide-react` (^1.59.0), `vite-plugin-pwa`
 - **Backend / Cloud**: Firebase v13 (Authentication, Cloud Firestore, Cloud Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` using `firebase-functions ^7.4.0` & `firebase-admin ^14.5.0` with Google Secret Manager for `RESEND_API_KEY`, `SHIPSTATION_API_KEY`, `SHIPSTATION_API_SECRET`), Google GenAI SDK (`@google/genai`)
 - **Reporting & Icons**: `jspdf` (marine certificate rendering), `lucide-react`
-- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (309 frontend unit tests across 25 suites) and `npm run test:functions` (21 Cloud Functions unit tests across 2 suites — 330 unit tests total), Playwright (`@playwright/test` across 21 E2E browser specs + 1 video training spec & 16 Page Object Models)
+- **Testing**: Node.js built-in test runner via `tsx --test "src/**/*.test.ts"` (319 frontend unit tests across 26 suites) and `npm run test:functions` (21 Cloud Functions unit tests across 2 suites — 340 unit tests total), Playwright (`@playwright/test` across 21 E2E browser specs + 1 video training spec & 16 Page Object Models)
 
 ---
 
@@ -26,7 +26,7 @@ npm run build           # Production build (Vite + PWA service worker + /version
 npm run preview         # Preview production build locally
 npm run lint            # Typecheck frontend via `tsc --noEmit` (MUST pass with 0 errors)
 npm run lint:functions  # Typecheck Cloud Functions (`functions/`) via `tsc --noEmit`
-npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (309 tests)
+npm run test:unit       # Run all frontend unit tests matching src/**/*.test.ts (319 tests)
 npm run test:functions  # Run Cloud Functions unit tests matching functions/src/**/*.test.ts (21 tests)
 npm run build:functions # Compile Cloud Functions TypeScript to functions/lib/
 npm run test            # Alias for test:unit
@@ -94,7 +94,7 @@ ajwmes/
 │   │   ├── auth.ts               # Firebase auth & developer 1-click profiles (+ auth.test.ts)
 │   │   ├── emailService.ts       # Transactional email client & simulated outbox (+ emailService.test.ts)
 │   │   ├── environment.ts        # Runtime environment detection (dev/preview/prod)
-│   │   ├── envStorage.ts         # Environment-scoped LocalStorage manager (ajwmes_<env>_*)
+│   │   ├── envStorage.ts         # Environment-scoped LocalStorage manager (ajwmes_<env>_*) (+ envStorage.test.ts)
 │   │   ├── firebase.ts           # Firebase client initialization & offline Firestore fallback
 │   │   ├── firebaseConfig.ts     # Extracted client config & dynamic overrides
 │   │   ├── incomingEmail.ts      # Inbound Resend webhook parser & simulator (+ incomingEmail.test.ts)
@@ -211,7 +211,7 @@ The app runs across 4 isolated hosting environments:
 ## Verification Checklist
 Before completing any coding task, verify the following:
 - [ ] `npm run lint` and `npm run lint:functions` pass with 0 errors.
-- [ ] `npm run test:unit` (309 tests across 25 suites) and `npm run test:functions` (21 tests across 2 suites) pass with all tests green (330 unit tests total).
+- [ ] `npm run test:unit` (319 tests across 26 suites) and `npm run test:functions` (21 tests across 2 suites) pass with all tests green (340 unit tests total).
 - [ ] `npm run validate` passes cleanly.
 - [ ] Any new utility or service logic includes companion `*.test.ts` tests.
 - [ ] Any new interactive UI components include `data-testid` attributes for Playwright.

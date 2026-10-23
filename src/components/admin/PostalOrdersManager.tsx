@@ -478,12 +478,12 @@ export const PostalOrdersManager: React.FC<PostalOrdersManagerProps> = ({
                         <div>
                           <div className="font-bold text-white">{item.name}</div>
                           <div className="text-[11px] text-slate-400">
-                            Unit: {item.unit || 'unit'} @ £{(item.unitPrice ?? (item as any).price ?? 0).toFixed(2)}
+                            Unit: {item.unit || 'unit'} @ £{(item.unitPrice ?? item.price ?? 0).toFixed(2)}
                           </div>
                         </div>
                       </div>
                       <div className="font-mono font-bold text-white">
-                        £{(item.lineTotal ?? (item as any).total ?? 0).toFixed(2)}
+                        £{(item.lineTotal ?? item.total ?? 0).toFixed(2)}
                       </div>
                     </div>
                   ))}

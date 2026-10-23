@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CatalogItem, CategoryItem, CartItem, PostalOrder, PostalOrderShippingAddress } from '../../types';
+import { CatalogItem, CategoryItem, CartItem, PostalOrder, PostalOrderShippingAddress, StoreSortOption } from '../../types';
 import { normalizeImageUrl } from '../../utils/imageUrl';
 import { resolveStripeConfig } from '../../lib/stripeConfig';
 import { processStripePayment } from '../../lib/stripeService';
@@ -59,7 +59,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
+  const [sortBy, setSortBy] = useState<StoreSortOption>('featured');
 
   // Cable custom length state per product
   const [selectedLengths, setSelectedLengths] = useState<{ [itemId: string]: number }>({});
@@ -343,7 +343,7 @@ export const StoreFront: React.FC<StoreFrontProps> = ({
             {/* Sort Selector */}
             <select
               value={sortBy}
-              onChange={e => setSortBy(e.target.value as any)}
+              onChange={e => setSortBy(e.target.value as StoreSortOption)}
               className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
             >
               <option value="featured">Featured / Category</option>

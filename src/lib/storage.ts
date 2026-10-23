@@ -44,7 +44,7 @@ export interface UploadProgressInfo {
   progress: number; // 0 to 100
   bytesTransferred: number;
   totalBytes: number;
-  state: 'running' | 'paused' | 'success' | 'error';
+  state: 'running' | 'paused' | 'success' | 'canceled' | 'error';
   fileName: string;
 }
 
@@ -312,7 +312,7 @@ export async function uploadSwitchPanelImage(
               progress: Math.min(95, Math.round(progress)),
               bytesTransferred: snapshot.bytesTransferred,
               totalBytes: snapshot.totalBytes,
-              state: snapshot.state as any,
+              state: snapshot.state,
               fileName: file.name
             });
           }
@@ -519,7 +519,7 @@ export async function uploadCatalogItemImage(
               progress: Math.min(100, Math.round(progress)),
               bytesTransferred: snapshot.bytesTransferred,
               totalBytes: snapshot.totalBytes,
-              state: snapshot.state as any,
+              state: snapshot.state,
               fileName: file.name
             });
           }
