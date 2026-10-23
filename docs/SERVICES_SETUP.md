@@ -377,8 +377,8 @@ For each link (**Product catalogue → Payment Links → New**):
 
 | Workflow | Trigger | What it does |
 | :--- | :--- | :--- |
-| [`playwright.yml`](../.github/workflows/playwright.yml) | PR → `main`, push → `main` | `npm run lint`, `npm run test:unit`, Playwright across Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari |
-| [`firebase-hosting-merge.yml`](../.github/workflows/firebase-hosting-merge.yml) | Push → `main` | Lint + unit + Playwright gate → `npm run build` → deploy to Firebase Hosting **live** channel |
+| [`playwright.yml`](../.github/workflows/playwright.yml) | PR → `main`, `workflow_dispatch` | `npm run lint`, `npm run test:unit` (309 tests), `npm run test:functions` (21 tests), `npm run build:functions`, and Playwright 5-browser matrix across Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari |
+| [`firebase-hosting-merge.yml`](../.github/workflows/firebase-hosting-merge.yml) | Push/merge → `main` | Compile Cloud Functions (`npm run build:functions`) → production Vite build (`npm run build`) → rapid deploy to Firebase Hosting **live** channel |
 
 ### 8.2 Deployment service account
 

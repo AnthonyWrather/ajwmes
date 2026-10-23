@@ -12,7 +12,7 @@ Fixes #(issue)
 
 ## Verification Checklist
 - [ ] `npm run lint` and `npm run lint:functions` pass with 0 errors
-- [ ] `npm run test:unit` (296 frontend tests) and `npm run test:functions` (21 functions tests) pass with all tests green
+- [ ] `npm run test:unit` (309 frontend tests across 25 suites) and `npm run test:functions` (21 functions tests) pass with all tests green (330 total)
 - [ ] `npm run validate` passes cleanly
 - [ ] Playwright E2E tests pass (`ALL_BROWSERS=true npm run test:e2e` for full cross-browser matrix)
 - [ ] Storage keys use scoped environment storage (`src/lib/envStorage.ts`)

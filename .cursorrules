@@ -4,8 +4,8 @@ You are pair programming on the AJW Marine Electrical Services codebase. Follow 
 
 ## 1. Tech Stack & Environment
 - Runtime: Node >=24.12.0
-- Framework: React 19, TypeScript strict mode, Vite 8, Tailwind CSS v4 (@tailwindcss/vite).
-- Cloud: Firebase v13 (Auth, Firestore, Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2`), Google GenAI SDK (@google/genai).
+- Framework: React 19, TypeScript strict mode (^7.0.2), Vite 8, Tailwind CSS v4 (@tailwindcss/vite).
+- Cloud: Firebase v13 (Auth, Firestore, Storage, Hosting), Firebase Cloud Functions 2nd Gen (`functions/` in `europe-west2` with `firebase-admin ^14.5.0` & `firebase-functions ^7.4.0`), Google GenAI SDK (@google/genai).
 - Do NOT generate legacy config files like `tailwind.config.js` or `postcss.config.js`.
 
 ## 2. Code Structure & Conventions
@@ -22,6 +22,6 @@ You are pair programming on the AJW Marine Electrical Services codebase. Follow 
 
 ## 4. Testing & Verification Checklist
 - Any modification to business logic requires companion unit tests in `src/utils/<name>.test.ts` (and `src/lib/<name>.test.ts` or `functions/src/<name>.test.ts` for service/cloud layers).
-- Unit tests use Node's built-in test runner via `npm run test:unit` (296 tests) and `npm run test:functions` (21 tests — 317 total unit tests).
+- Unit tests use Node's built-in test runner via `npm run test:unit` (309 tests across 25 suites) and `npm run test:functions` (21 tests across 2 suites — 330 total unit tests).
 - All new interactive UI controls must have `data-testid` attributes for Playwright E2E tests (21 spec files in `tests/` + 1 training video spec in `tests/training/` across 16 Page Object Models in `tests/pages/`).
 - Always run `npm run lint`, `npm run test:unit`, `npm run test:functions`, and `npm run validate` to verify changes before presenting your solution.

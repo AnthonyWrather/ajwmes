@@ -551,7 +551,7 @@ As Principal QA Automation Specialist, the quality engineering strategy implemen
 graph BT
     subgraph TestPyramid["Quality Assurance Test Pyramid"]
         direction BT
-        Unit["Level 1: Pure Unit & Cloud Function Tests\n(Node.js Built-in Runner via tsx --test)\n- src/utils/*.test.ts, src/lib/*.test.ts & src/data/*.test.ts (296 tests)\n- functions/src/*.test.ts (21 tests)\n- electricalCalculations, expenseCalculations, formValidation\n- stripeCalculations, stripeConfig, shipstationCalculations, shipstationService\n- emailTemplates, emailService, resendConfig, resendValidation, incomingEmail\n- auth, rbac, offlineQueueCalculations, inventorySync, postalTimeline\n- generateVesselPdf, imageResize, imageUrl, version, versionCheck, manualData\nExecution: < 1.5s | 317 Passing Unit Tests"]
+        Unit["Level 1: Pure Unit & Cloud Function Tests\n(Node.js Built-in Runner via tsx --test)\n- src/utils/*.test.ts, src/lib/*.test.ts, src/data/*.test.ts & src/components/icons/*.test.ts (309 tests)\n- functions/src/*.test.ts (21 tests)\n- electricalCalculations, expenseCalculations, formValidation\n- stripeCalculations, stripeConfig, shipstationCalculations, shipstationService\n- emailTemplates, emailService, resendConfig, resendValidation, incomingEmail\n- auth, rbac, offlineQueueCalculations, inventorySync, postalTimeline\n- generateVesselPdf, imageResize, imageUrl, version, versionCheck, manualData\n- pwaInstallCalculations, GithubIcon\nExecution: < 1.5s | 330 Passing Unit Tests"]
         
         Integration["Level 2: Resilient Integration Tests\n- IndexedDB Queue CRUD Verification\n- Offline Network Interception Simulation\n- RBAC Matrix & Cloud Function Auth Middleware\n- Environment Partition Prefix Routing"]
         
@@ -561,8 +561,8 @@ graph BT
 
 ### 10.1 Level 1: Fast Pure Logic & Cloud Function Unit Tests (`tsx --test`)
 Executed directly on Node.js using `npm run test:unit` and `npm run test:functions`:
-- **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts`, `src/data/*.test.ts` (21 files, 296 tests), and `functions/src/*.test.ts` (2 files, 21 tests).
-- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (**317 passing unit tests**).
+- **Execution Target**: `src/lib/*.test.ts`, `src/utils/*.test.ts`, `src/data/*.test.ts`, `src/components/icons/*.test.ts` (25 files, 309 tests), and `functions/src/*.test.ts` (2 files, 21 tests).
+- **Performance**: Completes in **< 1.5 seconds** with zero external dependencies or browser spins (**330 passing unit tests**).
 - **Verification Matrix**:
   - `stripeCalculations.test.ts` & `stripeConfig.test.ts`: Verifies IEEE-754 pound/pence conversions, UK card fee estimation (1.5% + 20p), key validator (`pk_test_` / `pk_live_`), hosted payment link construction, and scoped storage overrides.
   - `shipstationCalculations.test.ts`, `shipstationService.test.ts`, & `functions/src/shipstationClient.test.ts`: Verifies marine conductor weight heuristics, parcel dimensioning, 4x6" SVG thermal label generation, Basic Auth encoding, and ShipStation Cloud Function API mapping.
@@ -607,8 +607,8 @@ Automated pipelines run via GitHub Actions under [`.github/workflows/`](file:///
 flowchart TD
     subgraph PRTrigger["Pull Request Quality Gate"]
         PR["Pull Request to main"] --> CI["Continuous Integration (playwright.yml)"]
-        CI --> Lint["npm run lint\n(TypeScript Strict Compilation)"]
-        Lint --> Unit["npm run test:unit & test:functions\n(320 Unit Tests total)"]
+        CI --> Lint["npm run lint & lint:functions\n(TypeScript Strict Compilation)"]
+        Lint --> Unit["npm run test:unit & test:functions\n(330 Unit Tests total)"]
         Unit --> E2E["Full Matrix Playwright E2E\n(Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari)"]
         E2E --> GatePass["Status Checks Green\nReady to Merge"]
     end
@@ -626,12 +626,11 @@ flowchart TD
 
 ### 11.1 Verification Guardrails
 Before code is accepted or deployed:
-1. `npm run lint`: Validates 100% strict TypeScript typing without errors.
-2. `npm run test:unit`: All 299 frontend unit tests (electrical calculations, sizing, form validation, auth, etc.) must pass.
-3. `npm run test:functions`: All 21 Cloud Functions unit tests must pass.
+1. `npm run lint` & `npm run lint:functions`: Validates 100% strict TypeScript typing without errors.
+2. `npm run test:unit`: All 309 frontend unit tests (electrical calculations, sizing, form validation, auth, etc.) must pass.
+3. `npm run test:functions`: All 21 Cloud Functions unit tests must pass (330 total unit tests).
 4. `npm run test:e2e`: Playwright matrix across Chromium, Firefox, WebKit, Mobile Chrome, and Mobile Safari must succeed on all PRs.
 5. Merge-to-main executes a fast ~90s production build and live deployment to Firebase Hosting without re-running redundant browser matrix suites.
-3. `npm run test:e2e`: Playwright headless suites across Chromium, Firefox, WebKit, and Mobile must succeed.
 
 ### 11.2 External Services & Environment Provisioning
 Provisioning of every supporting service — Firebase (Auth, Firestore, Storage, Hosting, Analytics), Stripe (publishable keys & Payment Links), Resend (domain verification & sending keys), Google Gemini, GitHub Actions secrets and custom-domain DNS — is documented step by step in [`docs/SERVICES_SETUP.md`](docs/SERVICES_SETUP.md), including a per-environment (dev / preview / production) matrix and checklists.
@@ -691,14 +690,14 @@ Known architectural gaps and status:
 
 Before merging any feature into `main`:
 - [x] **Static Typing**: `npm run lint` and `npm run lint:functions` pass with 0 type errors.
-- [x] **Unit Test Suite**: `npm run test:unit` (281/281) and `npm run test:functions` (21/21) pass (**302/302 passing unit tests**).
+- [x] **Unit Test Suite**: `npm run test:unit` (309/309) and `npm run test:functions` (21/21) pass (**330/330 passing unit tests**).
 - [x] **ShipStation & Postal Dispatch**: Validated marine weight heuristics, live rate comparison, 4x6" thermal label generation, and Cloud Functions 2nd Gen backend gateway.
 - [x] **Resend Transactional Email Gateway**: Validated server-side `sendEmail` 2nd Gen Cloud Function (`europe-west2`), Google Secret Manager key isolation, inbound webhook parsing (`incomingEmail.ts`), and simulated offline outbox fallback.
 - [x] **Stripe Payment Gateway**: Validated test/live key detection, UK domestic interchange calculations (1.5% + 20p), and simulated fallback.
 - [x] **Offline Resilience**: Field mutations gracefully store to IndexedDB when disconnected (`navigator.onLine = false`).
 - [x] **RBAC Matrix Conformance**: Route and action access matrix adhered to across all 6 roles (`guest`, `client`, `admin`, `technician`, `postal`, `site`).
 - [x] **PWA Manifest & Assets**: Icons, theme colors (`#0A192F`), `/version.json` rollout manifest, and service worker registered without console warnings.
-- [x] **End-to-End Validation**: `npm run test:e2e` completes successfully across all 15 Playwright specification suites and 11 Page Object Models.
+- [x] **End-to-End Validation**: `npm run test:e2e` completes successfully across all 21 Playwright specification suites (+ 1 video training suite) and 16 Page Object Models.
 
 ---
 *Signed off by:*  
