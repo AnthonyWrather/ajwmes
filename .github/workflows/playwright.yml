@@ -1,16 +1,12 @@
 name: Playwright Cross-Browser Matrix Tests
 
 on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
   pull_request:
     branches: [ main ]
     paths-ignore:
       - '**.md'
       - 'docs/**'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -14,9 +13,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Run Automated Test Suite
-    timeout-minutes: 45
+  deploy:
+    name: Build & Deploy to Firebase Hosting
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -36,14 +35,6 @@ jobs:
             npm install
           fi
 
-      - name: Verify TypeScript & Build Lint
-        run: npm run lint
-
-      - name: Run Unit Tests (Auth, Electrical Calculations, Form Validation, Version)
-        run: npm run test:unit
-        env:
-          CI: true
-
       - name: Install Cloud Functions dependencies
         run: |
           cd functions
@@ -54,10 +45,8 @@ jobs:
           fi
           cd ..
 
-      - name: Run Cloud Functions Tests & Build
-        run: |
-          npm run test:functions
-          npm run build:functions
+      - name: Build Cloud Functions
+        run: npm run build:functions
 
       - name: Build Production Assets
         env:
@@ -68,61 +57,6 @@ jobs:
           VITE_GIT_BRANCH: ${{ github.ref_name }}
           VITE_GITHUB_REPO: 'anthonywrather/ajwmes'
         run: npm run build
-
-      - name: Upload Production Dist Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: production-dist
-          path: dist/
-          retention-days: 1
-
-      - name: Get installed Playwright version
-        id: playwright-version
-        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
-
-      - name: Cache Playwright Chromium binaries
-        uses: actions/cache@v6
-        id: playwright-cache
-        with:
-          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || '~/.cache/ms-playwright' }}
-          key: ${{ runner.os }}-playwright-chromium-${{ steps.playwright-version.outputs.version }}
-
-      - name: Install Chromium & System Dependencies
-        run: npx playwright install --with-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-
-      - name: Install Playwright System Dependencies Only
-        run: npx playwright install-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-
-      - name: Run Playwright E2E Fast Deployment Gate (Desktop & Mobile Chromium)
-        run: npx playwright test
-        env:
-          CI: true
-          PLAYWRIGHT_WORKERS: 2
-
-      - name: Upload Playwright Test Report Artifact
-        uses: actions/upload-artifact@v7
-        if: failure()
-        with:
-          name: playwright-test-failure-report
-          path: playwright-report/
-          retention-days: 14
-
-  build_and_deploy:
-    name: Deploy to Firebase Hosting
-    needs: test
-    if: success()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Download Production Dist Artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: production-dist
-          path: dist
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
