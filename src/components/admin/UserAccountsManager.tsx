@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, UserRole } from '../../types';
 import { ROLE_CONFIGS } from '../../lib/auth';
 import { detectEnvironment } from '../../lib/environment';
@@ -14,6 +14,7 @@ import {
   MapPin, 
   Clock, 
   CheckCircle2, 
+  AlertCircle,
   Database, 
   Edit3, 
   Trash2, 
@@ -90,10 +91,26 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
     return matchesSearch && matchesRole;
   });
 
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const showToast = (msg: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 10000);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+      toastTimeoutRef.current = null;
+    }, 10000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,18 +138,17 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       passwordHash: 'YWp3bWVzMjAyNg=='
     };
 
-    showToast(`User account for ${newUser.name} saved to Firestore database!`);
-    setIsAddModalOpen(false);
-    // Reset form
-    setNewName('');
-    setNewEmail('');
-    setNewPhone('');
-    setNewRole('client');
-    setNewVesselName('');
-    setNewMarinaBerth('Haslar Marina');
-
     try {
       await onSaveUser(newUser);
+      showToast(`User account for ${newUser.name} saved to Firestore database!`);
+      setIsAddModalOpen(false);
+      // Reset form
+      setNewName('');
+      setNewEmail('');
+      setNewPhone('');
+      setNewRole('client');
+      setNewVesselName('');
+      setNewMarinaBerth('Haslar Marina');
     } catch (err: any) {
       showToast(`Error saving to database: ${err?.message || 'Failed'}`);
     } finally {
@@ -151,11 +167,10 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       updatedAt: new Date().toISOString()
     };
 
-    showToast(`Account details for ${updated.name} updated in Firestore database.`);
-    setEditingUser(null);
-
     try {
       await onSaveUser(updated);
+      showToast(`Account details for ${updated.name} updated in Firestore database.`);
+      setEditingUser(null);
     } catch (err: any) {
       showToast(`Error updating database: ${err?.message || 'Failed'}`);
     } finally {
@@ -164,9 +179,9 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
   };
 
   const handleRoleChange = async (userId: string, targetRole: UserRole) => {
-    showToast(`Role updated to ${targetRole.toUpperCase()} in Firestore database.`);
     try {
       await onUpdateUserRole(userId, targetRole);
+      showToast(`Role updated to ${targetRole.toUpperCase()} in Firestore database.`);
     } catch (err: any) {
       showToast(`Failed to update role: ${err?.message || 'Error'}`);
     }
@@ -177,9 +192,9 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
       return;
     }
     if (onDeleteUser) {
-      showToast(`Account ${user.name} removed from database.`);
       try {
         await onDeleteUser(user.id);
+        showToast(`Account ${user.name} removed from database.`);
       } catch (err: any) {
         showToast(`Failed to delete account: ${err?.message || 'Error'}`);
       }
@@ -196,15 +211,40 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
   return (
     <div data-testid="user-accounts-manager" className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
-      {toastMessage && (
-        <div className="p-3 bg-emerald-950/90 border border-emerald-500/40 rounded-2xl text-xs text-emerald-200 flex items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>{toastMessage}</span>
+      {toastMessage && (() => {
+        const isError = /^(error|failed)/i.test(toastMessage.trim());
+        return (
+          <div 
+            data-testid="accounts-toast"
+            className={`p-3 rounded-2xl text-xs flex items-center justify-between gap-3 shadow-lg border ${
+              isError 
+                ? 'bg-rose-950/90 border-rose-500/40 text-rose-200' 
+                : 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {isError ? (
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              )}
+              <span>{toastMessage}</span>
+            </div>
+            <button 
+              onClick={() => {
+                if (toastTimeoutRef.current) {
+                  clearTimeout(toastTimeoutRef.current);
+                  toastTimeoutRef.current = null;
+                }
+                setToastMessage(null);
+              }} 
+              className="text-slate-400 hover:text-white text-xs cursor-pointer"
+            >
+              ✕
+            </button>
           </div>
-          <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Database Overview Banner & Stats */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6">

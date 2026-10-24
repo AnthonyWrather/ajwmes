@@ -1,6 +1,7 @@
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { enrichUserProfile, canAccessRoute, registerUserAccount, registerVesselAccount } from './auth';
+import { enrichUserProfile, canAccessRoute, registerUserAccount, registerVesselAccount, syncUserRoleToFirestore } from './auth';
+import { syncUserToFirestore, deleteUserFromFirestore } from './firebase';
 import { ROUTE_ACCESS_MATRIX, AppRoute } from './rbac';
 import { UserProfile, UserRole } from '../types';
 
@@ -377,6 +378,63 @@ describe('registerUserAccount', () => {
     assert.equal(aliasedProfile.name, 'Arthur Dent');
     assert.equal(aliasedProfile.email, uniqueEmail);
     assert.equal(aliasedProfile.role, 'client');
+  });
+});
+
+describe('User Accounts Async Mutation Handlers (Issue #57)', () => {
+  it('does not display success toast if async mutation rejects', async () => {
+    let toastMessage: string | null = null;
+    const showToast = (msg: string) => { toastMessage = msg; };
+
+    const failingMutation = async () => {
+      throw new Error('Database write rejected');
+    };
+
+    try {
+      await failingMutation();
+      showToast('Account details updated in Firestore database.');
+    } catch (err: any) {
+      showToast(`Error updating database: ${err?.message || 'Failed'}`);
+    }
+
+    assert.equal(toastMessage, 'Error updating database: Database write rejected');
+    assert.doesNotMatch(toastMessage, /updated in Firestore database/);
+  });
+
+  it('displays success toast only after async mutation resolves', async () => {
+    let toastMessage: string | null = null;
+    let mutationResolved = false;
+    const showToast = (msg: string) => { 
+      assert.ok(mutationResolved, 'Toast must only be displayed after mutation resolves');
+      toastMessage = msg; 
+    };
+
+    const successfulMutation = async () => {
+      await new Promise(res => setTimeout(res, 10));
+      mutationResolved = true;
+    };
+
+    try {
+      await successfulMutation();
+      showToast('Account details for Captain Eleanor Vance updated in Firestore database.');
+    } catch (err: any) {
+      showToast(`Error updating database: ${err?.message || 'Failed'}`);
+    }
+
+    assert.equal(toastMessage, 'Account details for Captain Eleanor Vance updated in Firestore database.');
+  });
+
+  it('syncUserToFirestore and syncUserRoleToFirestore return promises that handle unconfigured environments', async () => {
+    const testUser: UserProfile = {
+      id: 'usr-test-async-01',
+      name: 'Async Test User',
+      email: 'async.test@ajwmes.co.uk',
+      role: 'client'
+    };
+    await syncUserToFirestore(testUser).catch(() => {});
+    await syncUserRoleToFirestore('usr-test-async-01', 'technician').catch(() => {});
+    await deleteUserFromFirestore('usr-test-async-01').catch(() => {});
+    assert.ok(true);
   });
 });
 

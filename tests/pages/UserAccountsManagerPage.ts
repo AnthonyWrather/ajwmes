@@ -20,6 +20,7 @@ export class UserAccountsManagerPage {
   readonly btnOpenAddUserModal: Locator;
   readonly emptyState: Locator;
   readonly userCards: Locator;
+  readonly toast: Locator;
 
   // Stat Counters
   readonly statClients: Locator;
@@ -60,6 +61,7 @@ export class UserAccountsManagerPage {
     this.btnOpenAddUserModal = page.getByTestId('open-add-user-modal-button');
     this.emptyState = page.getByTestId('user-accounts-empty-state');
     this.userCards = page.getByTestId('user-account-card');
+    this.toast = page.getByTestId('accounts-toast');
 
     // Stat counters
     this.statClients = page.getByTestId('stat-count-clients');
@@ -100,6 +102,7 @@ export class UserAccountsManagerPage {
     const pill = this.page.getByTestId(`user-role-filter-${role.toLowerCase()}`);
     await expect(pill).toBeVisible();
     await pill.click();
+    await expect(pill).toHaveClass(/bg-sky-600/);
   }
 
   async searchAccounts(query: string): Promise<void> {
@@ -155,6 +158,7 @@ export class UserAccountsManagerPage {
     await expect(card).toBeVisible();
     const roleSelect = card.getByTestId('user-role-select');
     await expect(roleSelect).toBeVisible();
+    await roleSelect.scrollIntoViewIfNeeded();
     await roleSelect.selectOption(targetRole);
   }
 
@@ -163,6 +167,7 @@ export class UserAccountsManagerPage {
     await expect(card).toBeVisible();
     const editBtn = card.getByTestId('edit-user-button');
     await expect(editBtn).toBeVisible();
+    await editBtn.scrollIntoViewIfNeeded();
     await editBtn.click();
     await expect(this.editUserModal).toBeVisible();
   }
