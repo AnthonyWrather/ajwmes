@@ -1,6 +1,7 @@
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { enrichUserProfile, canAccessRoute, registerUserAccount, registerVesselAccount } from './auth';
+import { enrichUserProfile, canAccessRoute, registerUserAccount, registerVesselAccount, syncUserRoleToFirestore } from './auth';
+import { syncUserToFirestore, deleteUserFromFirestore } from './firebase';
 import { ROUTE_ACCESS_MATRIX, AppRoute } from './rbac';
 import { UserProfile, UserRole } from '../types';
 
@@ -377,6 +378,41 @@ describe('registerUserAccount', () => {
     assert.equal(aliasedProfile.name, 'Arthur Dent');
     assert.equal(aliasedProfile.email, uniqueEmail);
     assert.equal(aliasedProfile.role, 'client');
+  });
+});
+
+describe('User Accounts Firestore Synchronization Handlers (Issue #57)', () => {
+  it('syncUserToFirestore rejects on network timeout so callers can catch and display errors', async () => {
+    const testUser: UserProfile = {
+      id: 'usr-test-async-01',
+      name: 'Async Test User',
+      email: 'async.test@ajwmes.co.uk',
+      role: 'client'
+    };
+    await assert.rejects(
+      async () => {
+        await syncUserToFirestore(testUser);
+      },
+      /syncUserToFirestore timeout/
+    );
+  });
+
+  it('syncUserRoleToFirestore rejects on network timeout so callers can catch and display errors', async () => {
+    await assert.rejects(
+      async () => {
+        await syncUserRoleToFirestore('usr-test-async-01', 'technician');
+      },
+      /syncUserRoleToFirestore timeout/
+    );
+  });
+
+  it('deleteUserFromFirestore rejects on network timeout so callers can catch and display errors', async () => {
+    await assert.rejects(
+      async () => {
+        await deleteUserFromFirestore('usr-test-async-01');
+      },
+      /deleteUserFromFirestore timeout/
+    );
   });
 });
 

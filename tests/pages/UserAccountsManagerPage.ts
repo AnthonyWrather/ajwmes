@@ -20,6 +20,7 @@ export class UserAccountsManagerPage {
   readonly btnOpenAddUserModal: Locator;
   readonly emptyState: Locator;
   readonly userCards: Locator;
+  readonly toast: Locator;
 
   // Stat Counters
   readonly statClients: Locator;
@@ -60,6 +61,7 @@ export class UserAccountsManagerPage {
     this.btnOpenAddUserModal = page.getByTestId('open-add-user-modal-button');
     this.emptyState = page.getByTestId('user-accounts-empty-state');
     this.userCards = page.getByTestId('user-account-card');
+    this.toast = page.getByTestId('accounts-toast');
 
     // Stat counters
     this.statClients = page.getByTestId('stat-count-clients');
