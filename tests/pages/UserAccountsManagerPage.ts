@@ -157,6 +157,7 @@ export class UserAccountsManagerPage {
     await expect(card).toBeVisible();
     const roleSelect = card.getByTestId('user-role-select');
     await expect(roleSelect).toBeVisible();
+    await roleSelect.scrollIntoViewIfNeeded();
     await roleSelect.selectOption(targetRole);
   }
 
@@ -165,6 +166,7 @@ export class UserAccountsManagerPage {
     await expect(card).toBeVisible();
     const editBtn = card.getByTestId('edit-user-button');
     await expect(editBtn).toBeVisible();
+    await editBtn.scrollIntoViewIfNeeded();
     await editBtn.click();
     await expect(this.editUserModal).toBeVisible();
   }

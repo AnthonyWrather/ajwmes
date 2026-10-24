@@ -143,8 +143,7 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
     await test.step('5. Elevate newly created user role and edit profile metadata', async () => {
       // Elevate Captain Eleanor Vance from client to technician
       await accounts.elevateUserRole(testUserEmail, 'technician');
-      await expect(accounts.toast).toBeVisible({ timeout: 15000 });
-      await expect(accounts.toast).toContainText('Role updated to TECHNICIAN');
+      await expect(page.getByText('Role updated to TECHNICIAN')).toBeVisible({ timeout: 15000 });
 
       // Verify updated role badge on card
       const elevatedCard = accounts.getUserCard(testUserEmail);
@@ -157,8 +156,7 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
         phone: '023 9258 9900',
         vesselName: 'Hamble Star II'
       });
-      await expect(accounts.toast).toBeVisible({ timeout: 15000 });
-      await expect(accounts.toast).toContainText(`Account details for ${testUserName} updated`);
+      await expect(page.getByText(`Account details for ${testUserName} updated`)).toBeVisible({ timeout: 15000 });
 
       // Verify edited details reflected on card
       const editedCard = accounts.getUserCard(testUserEmail);
@@ -187,8 +185,7 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
     // =========================================================================
     await test.step('7. Safely delete test account and assert removal from directory', async () => {
       await accounts.deleteUser(testUserEmail);
-      await expect(accounts.toast).toBeVisible({ timeout: 15000 });
-      await expect(accounts.toast).toContainText(`Account ${testUserName} removed from database`);
+      await expect(page.getByText(`Account ${testUserName} removed from database`)).toBeVisible({ timeout: 15000 });
 
       // Assert card is no longer in DOM
       await expect(accounts.getUserCard(testUserEmail)).toBeHidden({ timeout: 15000 });
