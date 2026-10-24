@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, UserRole } from '../../types';
 import { ROLE_CONFIGS } from '../../lib/auth';
 import { detectEnvironment } from '../../lib/environment';
@@ -91,10 +91,26 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
     return matchesSearch && matchesRole;
   });
 
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const showToast = (msg: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 10000);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+      toastTimeoutRef.current = null;
+    }, 10000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,7 +230,18 @@ export const UserAccountsManager: React.FC<UserAccountsManagerProps> = ({
               )}
               <span>{toastMessage}</span>
             </div>
-            <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white text-xs cursor-pointer">✕</button>
+            <button 
+              onClick={() => {
+                if (toastTimeoutRef.current) {
+                  clearTimeout(toastTimeoutRef.current);
+                  toastTimeoutRef.current = null;
+                }
+                setToastMessage(null);
+              }} 
+              className="text-slate-400 hover:text-white text-xs cursor-pointer"
+            >
+              ✕
+            </button>
           </div>
         );
       })()}

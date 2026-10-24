@@ -102,6 +102,7 @@ export class UserAccountsManagerPage {
     const pill = this.page.getByTestId(`user-role-filter-${role.toLowerCase()}`);
     await expect(pill).toBeVisible();
     await pill.click();
+    await expect(pill).toHaveClass(/bg-sky-600/);
   }
 
   async searchAccounts(query: string): Promise<void> {

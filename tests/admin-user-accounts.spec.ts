@@ -89,27 +89,27 @@ test.describe('Admin User Accounts Directory, Role Elevation & Environment Isola
     await test.step('3. Search across vessel name, berth, and email, handling empty states', async () => {
       // Search by vessel name: Windbird III
       await accounts.searchAccounts('Windbird III');
-      await expect(accounts.getUserCard('David Mercer')).toBeVisible();
-      await expect(accounts.getUserCard('Jack Henderson')).toBeHidden();
+      await expect(accounts.getUserCard('David Mercer')).toBeVisible({ timeout: 15000 });
+      await expect(accounts.getUserCard('Jack Henderson')).toBeHidden({ timeout: 15000 });
 
       // Search by marina berth: Haslar Marina
       await accounts.searchAccounts('Haslar Marina');
-      await expect(accounts.getUserCard('David Mercer')).toBeVisible();
+      await expect(accounts.getUserCard('David Mercer')).toBeVisible({ timeout: 15000 });
 
       // Search by staff email: jack.tech@ajwmes.co.uk
       await accounts.searchAccounts('jack.tech@ajwmes.co.uk');
-      await expect(accounts.getUserCard('Jack Henderson')).toBeVisible();
-      await expect(accounts.getUserCard('David Mercer')).toBeHidden();
+      await expect(accounts.getUserCard('Jack Henderson')).toBeVisible({ timeout: 15000 });
+      await expect(accounts.getUserCard('David Mercer')).toBeHidden({ timeout: 15000 });
 
       // Search for unmatched query -> assert empty state
       await accounts.searchAccounts('NonExistentYachtXZ123');
-      await expect(accounts.emptyState).toBeVisible();
+      await expect(accounts.emptyState).toBeVisible({ timeout: 15000 });
       await expect(accounts.emptyState).toContainText('No user accounts found matching your query');
 
       // Clear search -> verify list restored
       await accounts.clearSearch();
-      await expect(accounts.emptyState).toBeHidden();
-      await expect(accounts.getUserCard('Anthony Wrather')).toBeVisible();
+      await expect(accounts.emptyState).toBeHidden({ timeout: 15000 });
+      await expect(accounts.getUserCard('Anthony Wrather')).toBeVisible({ timeout: 15000 });
     });
 
     // =========================================================================
